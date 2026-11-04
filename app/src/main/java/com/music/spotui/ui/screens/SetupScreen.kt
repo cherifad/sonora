@@ -92,8 +92,13 @@ object Setup {
     private const val KEY = "SetupDone"
     private const val EXTENSIONS_KEY = "SetupExtensionsSeen"
     /** The permissions step, the sound quality one, the look one or the extensions one (each new step is shown once after the update too). */
-    fun needed(context: Context) = !permissionsDone(context) || !com.music.spotui.data.preferences.isQualityChosen(context) ||
-        !com.music.spotui.data.preferences.LookPref.isChosen(context) || !extensionsSeen(context)
+    fun needed(context: Context): Boolean {
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) {
+            return !permissionsDone(context) || !com.music.spotui.data.preferences.LookPref.isChosen(context)
+        }
+        return !permissionsDone(context) || !com.music.spotui.data.preferences.isQualityChosen(context) ||
+            !com.music.spotui.data.preferences.LookPref.isChosen(context) || !extensionsSeen(context)
+    }
     fun permissionsDone(context: Context) = prefs(context).getBoolean(KEY, false)
     fun done(context: Context) = prefs(context).edit().putBoolean(KEY, true).apply()
     fun extensionsSeen(context: Context) = prefs(context).getBoolean(EXTENSIONS_KEY, false)
@@ -113,15 +118,17 @@ fun SetupScreen(onDone: () -> Unit) {
     // How Myspoti works (first setup only), the look, the sound quality, the permissions, then the
     // extensions (last, so the end of the setup leads straight to their page); each skipped when
     // done before an update. Every step after the look is drawn in the look chosen there.
+    val subsonic = app.myspoti.host.android.MyspotiRuntime.isSubsonic
     val needPerms = remember { !Setup.permissionsDone(context) }
-    val needQuality = remember { !com.music.spotui.data.preferences.isQualityChosen(context) }
+    val needQuality = remember { !subsonic && !com.music.spotui.data.preferences.isQualityChosen(context) }
     val needLook = remember { !com.music.spotui.data.preferences.LookPref.isChosen(context) }
-    val needExtensions = remember { !Setup.extensionsSeen(context) }
+    val needExtensions = remember { !subsonic && !Setup.extensionsSeen(context) }
+    val needIntro = !subsonic && needPerms
     val order = remember {
         listOfNotNull(
-            STEP_INTRO.takeIf { needPerms }, STEP_LOOK.takeIf { needLook }, STEP_QUALITY.takeIf { needQuality },
+            STEP_INTRO.takeIf { needIntro }, STEP_LOOK.takeIf { needLook }, STEP_QUALITY.takeIf { needQuality },
             STEP_PERMISSIONS.takeIf { needPerms }, STEP_EXTENSIONS.takeIf { needExtensions },
-        ).ifEmpty { listOf(STEP_PERMISSIONS) }
+        ).ifEmpty { listOf(STEP_LOOK, STEP_PERMISSIONS) }
     }
     var index by remember { mutableIntStateOf(0) }
     val steps = order.size
@@ -226,7 +233,7 @@ private fun PermissionsStep(onNext: () -> Unit) {
             stringResource(R.string.setup_notifications_title), stringResource(R.string.setup_notifications_detail),
             granted(context, Manifest.permission.POST_NOTIFICATIONS), Modifier.riseIn(row++),
         ) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
-        SetupRow(
+        if (!app.myspoti.host.android.MyspotiRuntime.isSubsonic) SetupRow(
             stringResource(R.string.setup_local_title), stringResource(R.string.setup_local_detail),
             LocalMusic.hasPermission(context), Modifier.riseIn(row++),
         ) { launcher.launch(LocalMusic.permission) }

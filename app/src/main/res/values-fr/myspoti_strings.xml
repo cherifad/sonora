@@ -203,7 +203,7 @@
     <string name="track_sort_artist">Artiste</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Durée</string>
-    <string name="setup_title">Configurer Myspoti</string>
+    <string name="setup_title">Configurer Jellyfin Audio</string>
     <string name="setup_subtitle">Autorisez ce que vous voulez ; vous pourrez changer plus tard dans les réglages du téléphone.</string>
     <string name="setup_notifications_title">Notifications</string>
     <string name="setup_notifications_detail">Contrôles sur l\'écran verrouillé et dans les notifications</string>

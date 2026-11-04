@@ -176,7 +176,7 @@
     <string name="track_sort_artist">Künstler*in</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Dauer</string>
-    <string name="setup_title">Myspoti einrichten</string>
+    <string name="setup_title">Jellyfin Audio einrichten</string>
     <string name="setup_subtitle">Erlaube, was du willst; du kannst es später in den Telefoneinstellungen ändern.</string>
     <string name="setup_notifications_title">Benachrichtigungen</string>
     <string name="setup_notifications_detail">Steuerung auf dem Sperrbildschirm und in der Benachrichtigungsleiste</string>

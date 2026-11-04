@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         // The user's rotation choice (portrait by default); changes are applied from the UI below.
         requestedOrientation = orientationFor(resources.configuration)
         signedIn = MyspotiRuntime.isSubsonic || prefs.getBoolean("LoggedIn", false)
-        setupNeeded = if (MyspotiRuntime.isSubsonic) false else com.music.spotui.ui.screens.Setup.needed(this)
+        setupNeeded = com.music.spotui.ui.screens.Setup.needed(this)
         lookOffered = if (MyspotiRuntime.isSubsonic) true else com.music.spotui.data.preferences.LookPref.isOffered(this)
         subsonicConfigured = !MyspotiRuntime.isSubsonic || SubsonicSettings.load(this) != null
         root = FrameLayout(this)

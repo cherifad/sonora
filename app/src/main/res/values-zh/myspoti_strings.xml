@@ -197,7 +197,7 @@
     <string name="track_sort_artist">艺人</string>
     <string name="track_sort_album">专辑</string>
     <string name="track_sort_duration">时长</string>
-    <string name="setup_title">设置 Myspoti</string>
+    <string name="setup_title">设置 Jellyfin Audio</string>
     <string name="setup_subtitle">按需授权；之后可在手机设置中更改。</string>
     <string name="setup_notifications_title">通知</string>
     <string name="setup_notifications_detail">在锁屏和通知栏中控制播放</string>
