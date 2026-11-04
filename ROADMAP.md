@@ -1,29 +1,25 @@
 # Roadmap — Subsonic client
 
-The repository now contains two clients:
+This repository contains a single Android client: the Myspoti-fork UI in `app/` with the
+Subsonic backend in `api-subsonic/`.
 
-- **`app/`** — the original lightweight Compose client. It stays as a clean, small
-  fallback and as the reference implementation of the Subsonic mapping.
-- **`myspoti/`** — a GPL-3.0 fork of [Myspoti](https://github.com/kota-zo/myspoti) whose
-  Spotify backend has been replaced with Subsonic/OpenSubsonic. It is the feature-rich
-  UI path.
-
-The milestones below track the **`myspoti/` fork**. `M0` is done and the core of `M1` is
-done; `M2` is the current focus.
+The milestones below track that client. `M0` is done and the core of `M1` is done; `M2`
+is the current focus.
 
 ## M0 — Consolidation and licensing ✅
 
-- [x] Fork copied into `myspoti/` (source only, no nested `.git`, no build outputs).
-- [x] Root `LICENSE` is GPL-3.0; `THIRD_PARTY_NOTICES.md` credits Myspoti and keeps its
-      notices.
-- [x] Fork builds in this environment (`cd myspoti/base && ./gradlew :app:assembleDebug`).
+- [x] Fork moved to the repository root as the single app; the original lightweight
+      client was removed from the tree (it remains in git history).
+- [x] Root `LICENSE` is GPL-3.0; `THIRD_PARTY_NOTICES.md` credits Myspoti and the
+      upstream projects (Spotui, BitChord, Backdrop, Haze, Inter...).
+- [x] The app builds with `./gradlew :app:assembleDebug`.
 - [x] Subsonic spike verified on an emulator against Navidrome: Home, Search, Library,
       Album, Player, playback.
 
 ## M1 — Server setup and authentication (mostly done)
 
 - [x] `SubsonicSettings` store (SharedPreferences): URL, username, password.
-- [x] Native setup screen shown on first run (and reachable from Settings → cloud icon):
+- [x] Native setup screen shown on first run (and reachable from Settings → Server, the cloud icon, or the profile menu):
       URL, username/password, **Test connection** (`ping`), save, error states.
 - [x] Token auth (`u`, `t = md5(password + salt)`, `s`) instead of the plain `p=`.
 - [ ] API-key auth when the server advertises `apiKeyAuthentication` (OpenSubsonic).

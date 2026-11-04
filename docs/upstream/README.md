@@ -1,3 +1,6 @@
+> **Upstream Myspoti README (GPL-3.0).** Kept for provenance. The app in this repository
+> is a Subsonic/OpenSubsonic fork; see the root `README.md`, `PORTING.md` and `ROADMAP.md`.
+
 # Myspoti
 
 [![Latest release](https://img.shields.io/github/v/release/kota-zo/myspoti?label=release)](https://github.com/kota-zo/myspoti/releases/latest)

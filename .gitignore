@@ -1,30 +1,48 @@
-# Reverse-engineering artifacts (large / generated; do not commit)
-.rea/
-re/
-*.apk
-go1.27.2.linux-amd64.tar.gz
-
-# Android / Gradle
-.gradle/
+# Build outputs
 build/
+.gradle/
+.kotlin/
 local.properties
+/captures
 captures/
-.externalNativeBuild/
-.cxx/
+.externalNativeBuild
+.cxx
 *.iml
 .idea/
+app/build/
+app/google-services.json
 
-# OS / editors
+# Keystore
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore/
+
+# Logs / archives / OS / IDE
+*.log
+*.apk
+*.zip
+dist/
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.swp
+*.swo
+*~
+__pycache__/
 
-# Kotlin
-.kotlin/
+# Reverse-engineering artifacts (legacy evidence, not part of the app)
+.rea/
+re/
+spotify.apk
+go1.27.2.linux-amd64.tar.gz
 
-# Myspoti fork build outputs
-myspoti/base/.gradle/
-myspoti/base/**/build/
-myspoti/base/local.properties
-myspoti/base/.kotlin/
-myspoti/base/**/*.apk
+# Internal working notes
+PROMPT-*.md
+HANDOFF.md
+ANNEXE-ETAT.txt
+docs/RESTE-A-FAIRE.md
+tools/handoff_state.sh
+REDDIT-*.md
+tools/qa-results/

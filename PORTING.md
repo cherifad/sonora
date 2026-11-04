@@ -29,9 +29,9 @@ WebView, de DRM Widevine ni de blocage de pubs.
 
 ## Architecture du portage
 
-- `base/api-subsonic/` : nouveau module Android.
+- `api-subsonic/` : module Android du backend.
   - `SubsonicApi` implémente `MyspotiApi` (le contrat que toute l'UI Myspoti utilise déjà).
-  - `SubsonicClient` : OkHttp + JSON, auth Subsonic `u/p` (mot de passe en clair pour le spike).
+  - `SubsonicClient` : OkHttp + JSON, auth Subsonic `u/t/s` (token, pas de mot de passe dans l'URL).
   - `SubsonicBackend` : `Home`, `Search`, `Catalog`, `Library`, `Playlists`, `Users` + stubs.
   - `SubsonicPlayer` : `app.myspoti.api.Player` au-dessus de Media3 `ExoPlayer`.
 - `MyspotiRuntime` : ajoute `startSubsonic(...)` et `isSubsonic` ; `api` renvoie le backend
@@ -49,7 +49,6 @@ des identifiants opaques pour l'UI Myspoti. Un nettoyage ultérieur peut les pas
 ## Lancer
 
 ```bash
-cd base
 printf 'sdk.dir=/home/adlen/android-sdk\n' > local.properties
 JAVA_HOME=/home/adlen/tools/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -62,11 +61,11 @@ Le serveur se configure dans l'app :
    et le mot de passe.
 2. **Connect** fait un `ping`, sauvegarde dans les SharedPreferences `subsonic` et recharge
    l'app.
-3. Pour changer de serveur plus tard : **Settings → icône nuage** (en haut à droite).
+3. Pour changer de serveur plus tard : **Settings → icône nuage** (en haut à droite) ou **menu profil → Server**.
 
 L'authentification utilise le token Subsonic (`u`, `t = md5(password + salt)`, `s`), donc
 le mot de passe n'apparaît pas dans les URLs. Le client est dans
-`base/api-subsonic/src/main/kotlin/app/myspoti/subsonic/` ; `SubsonicSettings` garde la
+`api-subsonic/src/main/kotlin/app/myspoti/subsonic/` ; `SubsonicSettings` garde la
 configuration.
 
 Exemples d'URL :
