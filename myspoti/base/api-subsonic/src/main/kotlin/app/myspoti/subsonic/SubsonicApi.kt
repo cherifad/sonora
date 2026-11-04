@@ -49,4 +49,9 @@ class SubsonicApi(
 
     private val readyFlow = MutableStateFlow(true)
     override val ready: StateFlow<Boolean> = readyFlow
+
+    /** The setup screen changed the server: the same client/player now talk to the new one. */
+    fun updateConfig(config: SubsonicConfig) {
+        client.updateConfig(config)
+    }
 }

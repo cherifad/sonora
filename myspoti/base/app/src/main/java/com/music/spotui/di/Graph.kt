@@ -3,6 +3,7 @@ package com.music.spotui.di
 import android.app.Application
 import app.myspoti.host.android.MyspotiRuntime
 import app.myspoti.subsonic.SubsonicConfig
+import app.myspoti.subsonic.SubsonicSettings
 import com.music.spotui.data.api.Api
 import com.music.spotui.ui.repository.AppRepository
 
@@ -16,7 +17,12 @@ object Graph {
         // The data saver first: on a metered network with it on, nothing may go out, not even the page.
         com.music.spotui.data.DataSaver.init(application)
         // The Subsonic backend (porting spike): no Web Player, no Spotify session.
-        MyspotiRuntime.startSubsonic(application, subsonicConfig(application))
+        // The setup screen replaces the placeholder on first run.
+        val subsonic = SubsonicSettings.load(application)
+        MyspotiRuntime.startSubsonic(
+            application,
+            subsonic ?: SubsonicConfig("http://127.0.0.1/", "", ""),
+        )
         // The streaming quality the user chose, set on the player at every page load.
         com.music.spotui.data.preferences.applyStreamingQuality(application)
         // The crossfade length (0 = off), in the player from the first song on.
@@ -42,13 +48,4 @@ object Graph {
     val api: Api by lazy { Api(app) }
     val repository: AppRepository by lazy { AppRepository(api) }
     val currentSongState: CurrentSongState by lazy { CurrentSongState() }
-
-    private fun subsonicConfig(app: Application): SubsonicConfig {
-        val prefs = app.getSharedPreferences("subsonic", android.content.Context.MODE_PRIVATE)
-        return SubsonicConfig(
-            baseUrl = prefs.getString("url", "http://10.0.2.2:4533/")!!,
-            username = prefs.getString("username", "admin")!!,
-            password = prefs.getString("password", "admin")!!,
-        )
-    }
 }

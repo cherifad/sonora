@@ -12,6 +12,8 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Surface | État |
 |---|---|
 | Démarrage sans login Spotify | Oui : `MyspotiRuntime.startSubsonic(...)`, le WebView n'est pas démarré |
+| Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings (icône nuage) |
+| Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s` |
 | Home | Oui : nouveautés, souvent écoutés, playlists depuis Subsonic |
 | Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
 | Library | Oui : artistes, albums, playlists |
@@ -53,20 +55,28 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n app.myspoti.dev/app.myspoti.MainActivity
 ```
 
-Le serveur est lu dans les SharedPreferences `subsonic` :
+Le serveur se configure dans l'app :
 
-```
-url      = http://10.0.2.2:4533/   (10.0.2.2 = hôte depuis l'émulateur)
-username = admin
-password = admin
-```
+1. Au premier lancement, l'écran **« Connect to your server »** demande l'URL, l'utilisateur
+   et le mot de passe.
+2. **Connect** fait un `ping`, sauvegarde dans les SharedPreferences `subsonic` et recharge
+   l'app.
+3. Pour changer de serveur plus tard : **Settings → icône nuage** (en haut à droite).
 
-Valeurs par défaut dans `Graph.subsonicConfig`. Pour un vrai appareil, mettre l'IP du
-serveur ou ajouter un écran de configuration.
+L'authentification utilise le token Subsonic (`u`, `t = md5(password + salt)`, `s`), donc
+le mot de passe n'apparaît pas dans les URLs. Le client est dans
+`base/api-subsonic/src/main/kotlin/app/myspoti/subsonic/` ; `SubsonicSettings` garde la
+configuration.
+
+Exemples d'URL :
+
+- Jellyfin + Subfin : `http://<host>:8096/subfin/`
+- Navidrome : `http://<host>:4533/`
+- Émulateur Android vers l'hôte : `http://10.0.2.2:4533/`
 
 ## Prochaines étapes (pour un vrai port)
 
-1. Écran de configuration serveur (URL, utilisateur, mot de passe) + auth par token `t/s`.
+1. ~~Écran de configuration serveur + auth par token~~ ✅ (M1).
 2. Remplacer/retirer les écrans et le code Spotify-only (Connect, Jam, Blends, podcasts,
    Canvas, Genius, extensions, pubs, DRM) — ils restent dans ce fork.
 3. MediaSession + notification + lecture en arrière-plan (le spike n'a qu'un ExoPlayer
@@ -84,3 +94,7 @@ serveur ou ajouter un écran de configuration.
 | Album | Player |
 |:---:|:---:|
 | ![](docs/screenshots/subsonic-spike/album.png) | ![](docs/screenshots/subsonic-spike/player.png) |
+
+| Setup | Server dialog |
+|:---:|:---:|
+| ![](docs/screenshots/subsonic-spike/setup.png) | ![](docs/screenshots/subsonic-spike/server-dialog.png) |

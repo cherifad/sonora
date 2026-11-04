@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,12 +66,17 @@ import com.music.spotui.ui.theme.AppBackground
 fun SettingsScreen(navController: NavController) {
     val energy by app.myspoti.power.EnergySettings.state.collectAsStateWithLifecycle()
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    var showServer by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(AppBackground).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.accessibility_navigate_back), tint = AppText)
             }
             Text(stringResource(R.string.settings_title), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = { showServer = true }) {
+                Icon(Icons.Filled.Cloud, contentDescription = "Server", tint = AppText)
+            }
         }
         // One tab per group, so the page is no longer one long list.
         var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
@@ -349,6 +355,15 @@ fun SettingsScreen(navController: NavController) {
             // last rows, "Restart the player" among them, under the mini player).
             Spacer(Modifier.height(com.music.spotui.ui.components.bottomBarsSpace()))
         }
+    }
+    if (showServer) {
+        com.music.spotui.ui.setup.SubsonicSetupDialog(
+            onDismiss = { showServer = false },
+            onSaved = {
+                showServer = false
+                (ctx as? android.app.Activity)?.recreate()
+            },
+        )
     }
 }
 

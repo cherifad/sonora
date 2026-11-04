@@ -33,6 +33,12 @@ object MyspotiRuntime {
         Logbook.log("Subsonic backend started: ${config.baseUrl}")
     }
 
+    /** The setup screen saved a new server: keep the same player, point it at the new one. */
+    fun updateSubsonicConfig(config: app.myspoti.subsonic.SubsonicConfig) {
+        (subsonic as? app.myspoti.subsonic.SubsonicApi)?.updateConfig(config)
+        Logbook.log("Subsonic backend updated: ${config.baseUrl}")
+    }
+
     val isStarted: Boolean get() = ::host.isInitialized
     val loginRequired: StateFlow<Boolean> get() = host.loginRequired
 

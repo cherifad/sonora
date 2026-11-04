@@ -22,16 +22,15 @@ focus.
 
 ## M1 — Server setup and authentication (current)
 
-- [ ] `SubsonicSettings` store (DataStore or SharedPreferences): URL, username, password,
-      optional API key, remember toggle.
-- [ ] Native setup screen shown on first run (and reachable from Settings → Server):
+- [x] `SubsonicSettings` store (SharedPreferences): URL, username, password.
+- [x] Native setup screen shown on first run (and reachable from Settings → cloud icon):
       URL, username/password, **Test connection** (`ping`), save, error states.
-- [ ] Token auth (`u`, `t = md5(password + salt)`, `s`) instead of the plain `p=` used by
-      the spike; never log the password, salt or token.
+- [x] Token auth (`u`, `t = md5(password + salt)`, `s`) instead of the plain `p=`.
 - [ ] API-key auth when the server advertises `apiKeyAuthentication` (OpenSubsonic).
 - [ ] Capability probe (`getOpenSubsonicExtensions`, server type/version) and a typed
       error model (`Auth`, `NotFound`, `Server`, `Network`).
-- [ ] Remove the hard-coded `10.0.2.2:4533` / `admin` / `admin` defaults.
+- [x] Remove the hard-coded `10.0.2.2:4533` / `admin` / `admin` defaults (the runtime
+      starts with a placeholder only until setup is saved).
 - [ ] Trust-on-first-use for self-signed TLS, with an explicit warning for HTTP.
 
 **Done when:** a fresh install asks for a server, connects to Jellyfin + Subfin and

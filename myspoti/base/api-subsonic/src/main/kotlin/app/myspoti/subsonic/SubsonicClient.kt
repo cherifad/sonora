@@ -1,4 +1,4 @@
-// Subsonic/OpenSubsonic backend for Myspoti. GPL-3.0 (see the repository LICENSE and AGENTS.md).
+// Subsonic/OpenSubsonic backend for Myspoti. GPL-3.0.
 package app.myspoti.subsonic
 
 import kotlinx.coroutines.Dispatchers
@@ -9,27 +9,48 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
+import kotlin.random.Random
 
 data class SubsonicConfig(
     val baseUrl: String,
     val username: String,
     val password: String,
-)
+) {
+    fun normalized(): SubsonicConfig =
+        copy(baseUrl = baseUrl.trim().trimEnd('/') + "/")
+}
 
 /**
- * A very small Subsonic client: JSON only, plain password auth (`p`), one call per endpoint.
- * The spike reads the server settings from SharedPreferences (see Graph.init).
+ * A small Subsonic client: JSON only, token auth (`u`/`t`/`s`), one call per endpoint.
+ * The server can be changed at runtime (setup screen) through [updateConfig].
  */
-class SubsonicClient(val config: SubsonicConfig) {
+class SubsonicClient(initialConfig: SubsonicConfig) {
 
     private val http = OkHttpClient.Builder().build()
-    private val base: HttpUrl = config.baseUrl.trim().trimEnd('/').toHttpUrl()
+
+    @Volatile
+    var config: SubsonicConfig = initialConfig.normalized()
+        private set
+
+    @Volatile
+    private var base: HttpUrl = config.baseUrl.toHttpUrl()
+
+    fun updateConfig(newConfig: SubsonicConfig) {
+        config = newConfig.normalized()
+        base = config.baseUrl.toHttpUrl()
+    }
+
+    suspend fun ping(): JSONObject = call("ping")
 
     private fun endpoint(method: String, params: Map<String, String>): HttpUrl {
+        val salt = randomSalt()
+        val token = md5(config.password + salt)
         val builder = base.newBuilder()
             .addPathSegments("rest/$method.view")
             .addQueryParameter("u", config.username)
-            .addQueryParameter("p", config.password)
+            .addQueryParameter("t", token)
+            .addQueryParameter("s", salt)
             .addQueryParameter("v", "1.16.1")
             .addQueryParameter("c", "MyspotiSubsonic")
             .addQueryParameter("f", "json")
@@ -57,6 +78,18 @@ class SubsonicClient(val config: SubsonicConfig) {
     fun coverUrl(coverArt: String?, size: Int = 300): String? {
         val id = coverArt?.takeIf { it.isNotBlank() } ?: return null
         return endpoint("getCoverArt", mapOf("id" to id, "size" to size.toString())).toString()
+    }
+
+    private fun randomSalt(): String =
+        (1..12).map { ALPHANUM[Random.nextInt(ALPHANUM.length)] }.joinToString("")
+
+    private fun md5(value: String): String =
+        MessageDigest.getInstance("MD5")
+            .digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
+    private companion object {
+        const val ALPHANUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     }
 }
 
