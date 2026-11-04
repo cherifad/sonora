@@ -55,6 +55,8 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
       still selectable in Settings → Display → Look.
 - [x] Immersive Settings cleaned: Server / Playback (Server) / Data / Display / App;
       Downloads and Extensions tabs removed.
+- [x] Home quick-tile grid (the 2-column "shortcuts" of the Myspoti look): an untitled
+      lead shelf of playlists/albums, with Liked Songs prepended by the UI.
 - [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
       Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.

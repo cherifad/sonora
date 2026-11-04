@@ -62,6 +62,12 @@ internal class SubsonicHome(private val client: SubsonicClient) : Home {
         val frequent = client.albums("frequent", itemsPerShelf)
         val playlists = client.playlists()
         val shelves = buildList {
+            // Untitled lead shelf: the Myspoti 2-column shortcut grid. The UI prepends
+            // "Liked Songs" itself; playlists then albums fill the rest.
+            val shortcuts = (playlists.map { it.toCard() } + newest.map { it.toCard() } + frequent.map { it.toCard() })
+                .distinctBy { it.uri }
+                .take(6)
+            if (shortcuts.isNotEmpty()) add(Shelf(null, null, shortcuts, shortcuts.size))
             val newItems = newest.map { it.toCard() }
             if (newItems.isNotEmpty()) add(Shelf(null, "Nouveautés", newItems, newItems.size))
             val frequentItems = frequent.map { it.toCard() }

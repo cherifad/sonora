@@ -20,7 +20,7 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Menu profil | Oui, Classic et Immersive : Settings / Server / About |
 | Sortie audio | Oui : « This phone » local ; plus de liste Connect ni de sonde qualité Spotify |
 | Look | Oui : **Immersive par défaut** (celui du README) ; Classic dans Settings → Display → Look |
-| Home | Oui : nouveautés, souvent écoutés, playlists depuis Subsonic |
+| Home | Oui : quick tiles (playlists/albums + Liked Songs) puis nouveautés, souvent écoutés, playlists |
 | Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
 | Library | Oui : artistes, albums, playlists |
 | Album | Oui : `getAlbum`, gradient, liste des morceaux |
