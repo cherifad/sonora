@@ -3,6 +3,22 @@
 An original Android music client inspired by Spotify's core experience, backed by
 the **Subsonic / OpenSubsonic** API and optimized for **Jellyfin**.
 
+> **License: GPL-3.0.** This repository also contains a fork of
+> [Myspoti](https://github.com/kota-zo/myspoti); attribution and third-party notices are
+> in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), and the shared license text is
+> in [`LICENSE`](LICENSE). The plan is in [`ROADMAP.md`](ROADMAP.md).
+
+## Two clients in this repository
+
+| Path | What it is | Build |
+|---|---|---|
+| `app/` | The original lightweight Compose client described below. | `./gradlew :app:assembleDebug` |
+| `myspoti/` | A GPL-3.0 fork of Myspoti with a Subsonic backend (ported UI, in progress). | `cd myspoti/base && ./gradlew :app:assembleDebug` |
+
+The fork reuses Myspoti's UI and replaces its Spotify Web Player with Subsonic +
+Media3. See [`myspoti/PORTING.md`](myspoti/PORTING.md) for what works and what is still
+stubbed.
+
 - Reverse-engineering dossier:
   [`docs/reverse-engineering/spotify-9.1.92.md`](docs/reverse-engineering/spotify-9.1.92.md)
 - Architecture and API mapping:
