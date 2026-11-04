@@ -39,6 +39,9 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 - [x] Settings: Downloads/Extensions tabs hidden; Playback reduced to Server + data/battery;
       the WebView "Restart player" row removed (it crashed in Subsonic mode).
 - [x] Home: only the All/Music chips (Podcasts/Audiobooks are not supported).
+- [x] Immersive profile sheet: Spotify entries replaced by Settings / Server / About.
+- [x] Player output sheet: local "This phone" only (no Connect list, no Spotify quality probe).
+- [x] Own profile: listening-stats/extensions buttons hidden.
 - [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
       Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.

@@ -110,9 +110,13 @@ internal fun AvatarDisc(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ImmersiveProfileSheet(onOpen: (route: String) -> Unit, onDismiss: () -> Unit) {
-    val name = ProfileCache.name.orEmpty()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val config = app.myspoti.subsonic.SubsonicSettings.load(context)
+    val name = config?.username ?: ProfileCache.name.orEmpty()
     val avatar = ProfileCache.imageUrl
     val myId = ProfileCache.id
+    var showServer by remember { mutableStateOf(false) }
+    var about by remember { mutableStateOf(false) }
     // Opened in full: half-open, the sheet and its list both moved under the finger.
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -161,60 +165,21 @@ internal fun ImmersiveProfileSheet(onOpen: (route: String) -> Unit, onDismiss: (
             SheetRow(stringResource(R.string.settings_title), stringResource(R.string.settings_detail)) {
                 onOpen(Routes.Settings.route)
             }
-            SheetRow(stringResource(R.string.recap_title), stringResource(R.string.recap_detail)) {
-                onOpen(Routes.Recap.route)
-            }
-            SheetRow(stringResource(R.string.recents_title), stringResource(R.string.recents_detail)) {
-                onOpen(Routes.Recent.route)
-            }
-            // What the followed people are listening to (the official Friend Activity feed).
-            SheetRow(stringResource(R.string.friends_title), stringResource(R.string.friends_detail)) {
-                onOpen(Routes.Friends.route)
-            }
-            // Third-party extensions: installed, enabled, repositories.
-            val extRegistry by com.music.spotui.extensions.Extensions.registry.collectAsState()
-            val installed = extRegistry.extensions
-            SheetRow(
-                stringResource(R.string.extensions_title),
-                if (installed.isEmpty()) stringResource(R.string.extensions_row_detail)
-                else stringResource(R.string.extensions_row_count, installed.size, installed.count { it.enabled }),
-            ) {
-                onOpen(Routes.Extensions.route)
-            }
-            // The account page (plan, privacy, devices), in the app's signed-in browser.
-            SheetRow(
-                stringResource(R.string.immersive_screens_account_page),
-                stringResource(R.string.immersive_screens_account_page_detail),
-            ) {
-                onDismiss()
-                AccountBrowser.open(Graph.app, AccountBrowser.ACCOUNT_URL)
-            }
-            // Donations: always here, never in the way.
-            var support by remember { mutableStateOf(false) }
-            if (support) SupportSheet(onDismiss = { support = false })
-            SheetRow(
-                stringResource(R.string.support_title),
-                stringResource(R.string.support_row_detail),
-                titleColor = Immersive.Accent,
-            ) { support = true }
-            // About: version, Discord, source code and Ko-fi.
-            var about by remember { mutableStateOf(false) }
+            SheetRow("Server", config?.baseUrl ?: "No server configured") { showServer = true }
             if (about) AboutSheet(onDismiss = { about = false })
             SheetRow(stringResource(R.string.creator_biography_section_title), stringResource(R.string.about_detail)) {
                 about = true
             }
-            var perks by remember { mutableStateOf(false) }
-            if (perks) SupporterSheet(onDismiss = { perks = false })
-            if (SupportReminder.PERKS_ENABLED) {
-                SheetRow(stringResource(R.string.supporter_perks_title), stringResource(R.string.supporter_perks_detail)) {
-                    perks = true
-                }
-            }
-            SheetRow(stringResource(R.string.connect_device_menu_logout), null) {
-                onDismiss()
-                SessionActions.logout(Graph.app)
-            }
         }
+    }
+    if (showServer) {
+        com.music.spotui.ui.setup.SubsonicSetupDialog(
+            onDismiss = { showServer = false },
+            onSaved = {
+                showServer = false
+                (context as? android.app.Activity)?.recreate()
+            },
+        )
     }
 }
 

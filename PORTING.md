@@ -17,6 +17,8 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
 | Settings | Oui : serveur, apparence, à propos ; onglets Downloads/Extensions masqués |
 | Filtres Home | Oui : All / Music seulement (pas de podcasts/audiobooks) |
+| Menu profil | Oui, Classic et Immersive : Settings / Server / About |
+| Sortie audio | Oui : « This phone » local ; plus de liste Connect ni de sonde qualité Spotify |
 | Home | Oui : nouveautés, souvent écoutés, playlists depuis Subsonic |
 | Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
 | Library | Oui : artistes, albums, playlists |

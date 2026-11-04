@@ -175,7 +175,7 @@ fun ProfileScreen(navController: NavController, userId: String, userName: String
                     }
                 }
                 // Your own profile leads to your listening stats, like the official app's.
-                if (me) {
+                if (me && !MyspotiRuntime.isSubsonic) {
                     Spacer(Modifier.height(14.dp))
                     Text(
                         stringResource(R.string.stats_listening_stats),

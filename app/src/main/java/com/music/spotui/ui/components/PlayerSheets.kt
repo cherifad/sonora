@@ -159,6 +159,7 @@ private const val QUALITY_TRIES = 15
 
 @Composable
 private fun spotifyQualityLabel(uri: String): String {
+    if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) return ""
     if (SongPlayer.activeDevice.value != null || uri.isBlank()) return ""
     val label by androidx.compose.runtime.produceState("", uri) {
         value = ""
@@ -194,6 +195,19 @@ private fun deviceIcon(type: String): ImageVector = when (type.uppercase()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DevicesSheet(onDismiss: () -> Unit) {
+    if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) {
+        com.music.spotui.ui.components.LookSheet(onDismissRequest = onDismiss, containerColor = SheetColor) {
+            Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp)) {
+                Text(stringResource(R.string.listen_on), color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Smartphone, null, tint = Green, modifier = Modifier.size(28.dp))
+                    Text(stringResource(R.string.connect_phone_is_self), color = AppText, fontSize = 18.sp, modifier = Modifier.padding(start = 12.dp))
+                }
+            }
+        }
+        return
+    }
     val context = androidx.compose.ui.platform.LocalContext.current
     var devices by remember { mutableStateOf<List<SongPlayer.ConnectDevice>?>(null) }
     var quality by remember { mutableStateOf(false) }
