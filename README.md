@@ -14,6 +14,10 @@ the **Subsonic / OpenSubsonic** API and optimized for **Jellyfin**.
 
 This is the first vertical slice (M0/M1 in the blueprint):
 
+- **Spotify-style UI system**: Encore dark tokens and Figtree type scale,
+  artwork-derived gradients, quick-pick tiles, a Browse-all genre grid, gradient
+  album/playlist headers, an artist page, and an animated full-screen player with
+  swipe-down dismissal and drag-to-seek.
 - Server setup with Subsonic token auth (`ping`).
 - Home with New releases (`getAlbumList2?type=newest`), Most played
   (`type=frequent`), Your playlists (`getPlaylists`), Favorite albums/artists

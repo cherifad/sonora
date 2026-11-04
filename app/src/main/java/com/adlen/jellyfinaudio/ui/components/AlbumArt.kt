@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +28,9 @@ fun AlbumArt(
     size: Int = 300,
     shape: Shape = RoundedCornerShape(8.dp),
 ) {
-    val model = config?.let { SubsonicUrls.coverArt(it, coverArtId, size) }
+    val model = remember(config, coverArtId, size) {
+        config?.let { SubsonicUrls.coverArt(it, coverArtId, size) }
+    }
 
     if (model != null) {
         AsyncImage(

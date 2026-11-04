@@ -15,7 +15,9 @@ object SubsonicUrls {
             append("rest/getCoverArt.view")
             append("?id=").append(encode(id))
             append("&size=").append(size)
-            append(authQuery(config))
+            // A stable salt keeps the URL identical across recompositions so Coil
+            // can cache it and palette extraction can settle on one model.
+            append(authQuery(config, salt = SubsonicAuthInterceptor.md5("cover:$id").take(16)))
         }
     }
 
@@ -34,8 +36,7 @@ object SubsonicUrls {
         append(authQuery(config))
     }
 
-    private fun authQuery(config: ServerConfig): String {
-        val salt = UUID.randomUUID().toString().replace("-", "").take(16)
+    private fun authQuery(config: ServerConfig, salt: String = randomSalt()): String {
         val token = SubsonicAuthInterceptor.md5(config.password + salt)
         return buildString {
             append("&u=").append(encode(config.username))
@@ -45,6 +46,9 @@ object SubsonicUrls {
             append("&c=").append(SubsonicAuthInterceptor.CLIENT_NAME)
         }
     }
+
+    private fun randomSalt(): String =
+        UUID.randomUUID().toString().replace("-", "").take(16)
 
     private fun encode(value: String): String =
         URLEncoder.encode(value, StandardCharsets.UTF_8.name())

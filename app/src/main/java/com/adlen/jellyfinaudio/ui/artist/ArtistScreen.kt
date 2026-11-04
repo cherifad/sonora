@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +52,9 @@ fun ArtistScreen(
     onClose: () -> Unit,
     onOpenAlbum: (Album) -> Unit,
 ) {
-    val artworkModel = state.config?.let { SubsonicUrls.coverArt(it, artist.coverArtId, 300) }
+    val artworkModel = remember(state.config, artist.coverArtId) {
+        state.config?.let { SubsonicUrls.coverArt(it, artist.coverArtId, 300) }
+    }
     val headerColor = rememberArtworkColor(artworkModel, artist.coverArtId ?: artist.name)
 
     Box(
@@ -63,7 +66,7 @@ fun ArtistScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            contentPadding = PaddingValues(bottom = Spacing.massive),
+            contentPadding = PaddingValues(bottom = 96.dp),
         ) {
             item {
                 Row(

@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +54,9 @@ fun DetailScreen(
     onPlaySongs: (List<Song>, Int) -> Unit,
 ) {
     val detail = state.detail ?: return
-    val artworkModel = state.config?.let { SubsonicUrls.coverArt(it, detail.coverArtId, 300) }
+    val artworkModel = remember(state.config, detail.coverArtId) {
+        state.config?.let { SubsonicUrls.coverArt(it, detail.coverArtId, 300) }
+    }
     val headerColor = rememberArtworkColor(artworkModel, detail.coverArtId ?: detail.title)
 
     Box(
@@ -83,7 +86,7 @@ private fun DetailContent(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding(),
-        contentPadding = PaddingValues(bottom = Spacing.massive),
+        contentPadding = PaddingValues(bottom = 96.dp),
     ) {
         item {
             Row(

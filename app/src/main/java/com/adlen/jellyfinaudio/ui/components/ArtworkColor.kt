@@ -14,6 +14,7 @@ import androidx.palette.graphics.Palette
 import coil3.SingletonImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.toBitmap
 import com.adlen.jellyfinaudio.ui.theme.Background
 import com.adlen.jellyfinaudio.ui.theme.Black
@@ -36,33 +37,45 @@ fun rememberArtworkColor(model: Any?, seed: String? = null): Color {
             extracted = null
             return@LaunchedEffect
         }
-        extracted = runCatching {
+        try {
             val request = ImageRequest.Builder(context)
                 .data(model)
                 .size(96)
+                .allowHardware(false)
                 .build()
-            val result = SingletonImageLoader.get(context).execute(request) as? SuccessResult
-            val bitmap = result?.image?.toBitmap() ?: return@runCatching null
-            val palette = Palette.from(bitmap).generate()
-            val argb = listOf(
-                palette.getDarkVibrantColor(0),
-                palette.getVibrantColor(0),
-                palette.getMutedColor(0),
-                palette.getDominantColor(0),
-            ).firstOrNull { it != 0 } ?: return@runCatching null
-            normalizeArtworkColor(argb)
-        }.getOrNull()
+            val result = SingletonImageLoader.get(context).execute(request)
+            val image = (result as? SuccessResult)?.image
+            val bitmap = image?.toBitmap()
+            if (bitmap != null) {
+                val palette = Palette.from(bitmap).generate()
+                val candidates = listOf(
+                    palette.getDarkVibrantColor(0),
+                    palette.getVibrantColor(0),
+                    palette.getMutedColor(0),
+                    palette.getDominantColor(0),
+                )
+                val argb = candidates.firstOrNull { it != 0 }
+                if (argb != null) {
+                    extracted = normalizeArtworkColor(argb)
+                }
+            }
+        } catch (t: Throwable) {
+            android.util.Log.e(TAG, "palette extraction failed", t)
+        }
     }
 
     return extracted ?: fallback
 }
 
+private const val TAG = "ArtworkColor"
+
 /** A full-screen vertical gradient: saturated artwork colour fading into the app background. */
 fun artworkGradient(color: Color): Brush = Brush.verticalGradient(
-    0f to lerp(color, Black, 0.08f),
-    0.30f to color,
-    0.62f to lerp(color, Background, 0.62f),
-    0.85f to lerp(color, Background, 0.85f),
+    0f to lerp(color, Black, 0.06f),
+    0.18f to color,
+    0.42f to lerp(color, Background, 0.58f),
+    0.62f to lerp(color, Background, 0.84f),
+    0.80f to Background,
     1f to Background,
 )
 
@@ -76,9 +89,26 @@ fun seededArtworkColor(seed: String?): Color {
 /** Saturated, stable colour for a "Browse all" category tile. */
 fun browseColorFor(seed: String?): Color {
     val hash = (seed ?: "jellyfin").hashCode()
-    val hue = ((hash % 360) + 360) % 360
-    return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.60f, 0.62f)))
+    val index = ((hash % browseTilePalette.size) + browseTilePalette.size) % browseTilePalette.size
+    return Color(browseTilePalette[index])
 }
+
+// Spotify's Browse tiles use a small curated set of vivid colours rather than a
+// full hue wheel; keeping that set makes the grid read correctly.
+private val browseTilePalette = intArrayOf(
+    0xFF8400E7.toInt(),
+    0xFF1E3264.toInt(),
+    0xFF148A08.toInt(),
+    0xFFE8115B.toInt(),
+    0xFFFF6437.toInt(),
+    0xFF0D73EC.toInt(),
+    0xFFE13300.toInt(),
+    0xFF8D67AB.toInt(),
+    0xFF477D95.toInt(),
+    0xFFF037A5.toInt(),
+    0xFFB02897.toInt(),
+    0xFFA56752.toInt(),
+)
 
 private fun normalizeArtworkColor(argb: Int): Color {
     val hsv = FloatArray(3)

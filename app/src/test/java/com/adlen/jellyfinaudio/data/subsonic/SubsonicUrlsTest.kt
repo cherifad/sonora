@@ -47,6 +47,16 @@ class SubsonicUrlsTest {
         )
     }
 
+    @Test
+    fun coverArtUrlIsStableSoCoilCanCacheIt() {
+        val first = SubsonicUrls.coverArt(config, "cover/1", size = 300)!!
+        val second = SubsonicUrls.coverArt(config, "cover/1", size = 300)!!
+
+        assertEquals(first, second)
+        val salt = queryValue(first, "s")
+        assertEquals(SubsonicAuthInterceptor.md5("secret$salt"), queryValue(first, "t"))
+    }
+
     private fun queryValue(url: String, key: String): String =
         Regex("[?&]$key=([^&]+)").find(url)?.groupValues?.get(1)
             ?: error("Missing $key in $url")
