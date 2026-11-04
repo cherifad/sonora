@@ -1,0 +1,23 @@
+# Reverse-engineering artifacts (large / generated; do not commit)
+.rea/
+re/
+*.apk
+go1.27.2.linux-amd64.tar.gz
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.iml
+.idea/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+*.swp
+
+# Kotlin
+.kotlin/

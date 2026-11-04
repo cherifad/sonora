@@ -1,0 +1,22 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "servers": {
+            "rea": {
+                "type": "local",
+                "command": [
+                    "wsl.exe",
+                    "-d",
+                    "Debian",
+                    "--",
+                    "bash",
+                    "-lc",
+                    "export PATH=/home/adlen/tools/node-v22.19.0-linux-x64/bin:/usr/local/bin:/usr/bin:/bin; export REA_JADX_MCP_JAR=/home/adlen/tools/jadx-headless-mcp-0.7.1-all.jar; cd /home/adlen/jellyfin/jellyfin-audio && exec npx -y rea-agents@6.7.0 mcp"
+                ],
+                "timeout": {
+                    "startup": 120000
+                }
+            }
+        }
+    }
+}
