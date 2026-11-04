@@ -10,6 +10,22 @@ the **Subsonic / OpenSubsonic** API and optimized for **Jellyfin**.
 - UI fidelity, free assets, and Subsonic content replacement:
   [`docs/architecture/ui-content-mapping.md`](docs/architecture/ui-content-mapping.md)
 
+## Screenshots
+
+Captured from the debug build against a local Navidrome server.
+
+| Home | Search | Library |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/home.png" width="220"> | <img src="docs/screenshots/search.png" width="220"> | <img src="docs/screenshots/library.png" width="220"> |
+
+| Album | Artist | Now Playing |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/album.png" width="220"> | <img src="docs/screenshots/artist.png" width="220"> | <img src="docs/screenshots/now-playing.png" width="220"> |
+
+| Playlist | Search results | Queue |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/playlist.png" width="220"> | <img src="docs/screenshots/search-results.png" width="220"> | <img src="docs/screenshots/queue.png" width="220"> |
+
 ## Current status
 
 This is the first vertical slice (M0/M1 in the blueprint):
