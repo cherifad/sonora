@@ -7,6 +7,7 @@ import com.adlen.jellyfinaudio.data.ServerConfig
 import com.adlen.jellyfinaudio.data.ServerRepository
 import com.adlen.jellyfinaudio.data.subsonic.Album
 import com.adlen.jellyfinaudio.data.subsonic.Artist
+import com.adlen.jellyfinaudio.data.subsonic.Genre
 import com.adlen.jellyfinaudio.data.subsonic.LyricsLine
 import com.adlen.jellyfinaudio.data.subsonic.Playlist
 import com.adlen.jellyfinaudio.data.subsonic.SearchResult3
@@ -27,6 +28,18 @@ data class DetailUiState(
     val subtitle: String,
     val coverArtId: String?,
     val songs: List<Song>,
+    val typeLabel: String = "Album",
+    val meta: String = "",
+    val error: String? = null,
+)
+
+data class ArtistUiState(
+    val id: String,
+    val name: String,
+    val coverArtId: String?,
+    val albumCount: Int? = null,
+    val albums: List<Album> = emptyList(),
+    val loading: Boolean = false,
     val error: String? = null,
 )
 
@@ -44,12 +57,15 @@ data class MainUiState(
     val homeSections: List<HomeSection> = emptyList(),
     val libraryLoading: Boolean = false,
     val artists: List<Artist> = emptyList(),
+    val libraryAlbums: List<Album> = emptyList(),
     val searchLoading: Boolean = false,
     val searchResults: SearchResult3? = null,
     val detail: DetailUiState? = null,
+    val artistDetail: ArtistUiState? = null,
     val detailLoading: Boolean = false,
     val lyrics: LyricsUiState = LyricsUiState(),
     val playlists: List<Playlist> = emptyList(),
+    val genres: List<Genre> = emptyList(),
     val userMessage: String? = null,
     val error: String? = null,
 )
@@ -124,6 +140,7 @@ class MainViewModel @Inject constructor(
                     homeLoading = false,
                     homeSections = sections,
                     playlists = playlists,
+                    genres = genres,
                     error = if (sections.isEmpty()) {
                         "No library content found. Check that your server has music."
                     } else {
@@ -136,31 +153,40 @@ class MainViewModel @Inject constructor(
 
     fun loadLibrary() {
         val config = _state.value.config ?: return
-        if (_state.value.artists.isNotEmpty()) return
+        if (_state.value.artists.isNotEmpty() && _state.value.libraryAlbums.isNotEmpty()) return
         viewModelScope.launch {
             _state.update { it.copy(libraryLoading = true, error = null) }
-            runCatching {
-                SubsonicClientFactory.create(config).getArtists().response
-            }.onSuccess { response ->
-                if (response.status == "ok") {
-                    val artists = response.artists?.index
-                        ?.flatMap { it.artist }
-                        .orEmpty()
-                    _state.update { it.copy(libraryLoading = false, artists = artists) }
-                } else {
-                    _state.update {
-                        it.copy(
-                            libraryLoading = false,
-                            error = response.error?.message ?: "Could not load artists",
-                        )
-                    }
-                }
-            }.onFailure { error ->
+            val api = SubsonicClientFactory.create(config)
+
+            val artistsResult = runCatching { api.getArtists().response }
+            val albumsResult = runCatching {
+                api.getAlbumList2(type = "alphabeticalByName", size = 100)
+                    .response.albumList2?.album.orEmpty()
+            }
+            val playlistsResult = runCatching {
+                api.getPlaylists().response.playlists?.playlist.orEmpty()
+            }
+
+            val response = artistsResult.getOrNull()
+            if (response?.status == "ok") {
+                val artists = response.artists?.index
+                    ?.flatMap { it.artist }
+                    .orEmpty()
                 _state.update {
                     it.copy(
                         libraryLoading = false,
-                        error = error.message ?: "Could not load artists",
+                        artists = artists,
+                        libraryAlbums = albumsResult.getOrDefault(emptyList()),
+                        playlists = playlistsResult.getOrDefault(it.playlists),
+                        error = null,
                     )
+                }
+            } else {
+                val message = response?.error?.message
+                    ?: artistsResult.exceptionOrNull()?.message
+                    ?: "Could not load library"
+                _state.update {
+                    it.copy(libraryLoading = false, error = message)
                 }
             }
         }
@@ -217,6 +243,8 @@ class MainViewModel @Inject constructor(
                     subtitle = album.artist.orEmpty(),
                     coverArtId = album.coverArt,
                     songs = emptyList(),
+                    typeLabel = "Album",
+                    meta = albumMeta(album),
                 ),
             )
         }
@@ -248,12 +276,11 @@ class MainViewModel @Inject constructor(
                         detailLoading = false,
                         detail = DetailUiState(
                             title = detailAlbum.name ?: album.name ?: "Album",
-                            subtitle = listOfNotNull(
-                                detailAlbum.artist ?: album.artist,
-                                detailAlbum.year?.toString(),
-                            ).joinToString(" • "),
+                            subtitle = detailAlbum.artist ?: album.artist.orEmpty(),
                             coverArtId = detailAlbum.coverArt ?: album.coverArt,
                             songs = songs,
+                            typeLabel = "Album",
+                            meta = albumMeta(detailAlbum).ifBlank { albumMeta(album) },
                             error = if (songs.isEmpty()) {
                                 "The server returned no tracks for this album."
                             } else {
@@ -292,6 +319,8 @@ class MainViewModel @Inject constructor(
                     ).joinToString(" • "),
                     coverArtId = playlist.coverArt,
                     songs = emptyList(),
+                    typeLabel = "Playlist",
+                    meta = playlistMeta(playlist),
                 ),
             )
         }
@@ -312,12 +341,11 @@ class MainViewModel @Inject constructor(
                         detailLoading = false,
                         detail = DetailUiState(
                             title = detailPlaylist.name ?: playlist.name ?: "Playlist",
-                            subtitle = listOfNotNull(
-                                detailPlaylist.owner ?: playlist.owner,
-                                detailPlaylist.songCount?.let { "$it songs" },
-                            ).joinToString(" • "),
+                            subtitle = detailPlaylist.owner ?: playlist.owner.orEmpty(),
                             coverArtId = detailPlaylist.coverArt ?: playlist.coverArt,
                             songs = detailPlaylist.entry,
+                            typeLabel = "Playlist",
+                            meta = playlistMeta(detailPlaylist).ifBlank { playlistMeta(playlist) },
                             error = if (detailPlaylist.entry.isEmpty()) {
                                 "The server returned no tracks for this playlist."
                             } else {
@@ -344,6 +372,57 @@ class MainViewModel @Inject constructor(
 
     fun closeDetail() {
         _state.update { it.copy(detail = null) }
+    }
+
+    fun openArtist(artist: Artist) {
+        val config = _state.value.config ?: return
+        _state.update {
+            it.copy(
+                artistDetail = ArtistUiState(
+                    id = artist.id,
+                    name = artist.name ?: "Artist",
+                    coverArtId = artist.coverArt,
+                    albumCount = artist.albumCount,
+                    loading = true,
+                ),
+            )
+        }
+        viewModelScope.launch {
+            val result = runCatching {
+                SubsonicClientFactory.create(config).getArtist(artist.id).response
+            }
+            val response = result.getOrNull()
+            val artistDetail = response?.artist
+            if (response?.status == "ok" && artistDetail != null) {
+                _state.update {
+                    it.copy(
+                        artistDetail = ArtistUiState(
+                            id = artistDetail.id,
+                            name = artistDetail.name ?: artist.name ?: "Artist",
+                            coverArtId = artistDetail.coverArt ?: artist.coverArt,
+                            albumCount = artistDetail.albumCount ?: artist.albumCount,
+                            albums = artistDetail.album.sortedByDescending { album ->
+                                album.year ?: 0
+                            },
+                            loading = false,
+                        ),
+                    )
+                }
+            } else {
+                val message = response?.error?.message
+                    ?: result.exceptionOrNull()?.message
+                    ?: "Could not load artist"
+                _state.update {
+                    it.copy(
+                        artistDetail = it.artistDetail?.copy(loading = false, error = message),
+                    )
+                }
+            }
+        }
+    }
+
+    fun closeArtist() {
+        _state.update { it.copy(artistDetail = null) }
     }
 
     fun playSongs(songs: List<Song>, startIndex: Int) {
@@ -502,3 +581,14 @@ class MainViewModel @Inject constructor(
         const val TAG = "JellyfinAudio"
     }
 }
+
+private fun albumMeta(album: Album): String = listOfNotNull(
+    album.year?.toString(),
+    album.songCount?.let { if (it == 1) "1 song" else "$it songs" },
+    album.duration?.takeIf { it > 0 }?.let { "${it / 60} min" },
+).joinToString(" • ")
+
+private fun playlistMeta(playlist: Playlist): String = listOfNotNull(
+    playlist.songCount?.let { if (it == 1) "1 song" else "$it songs" },
+    playlist.duration?.takeIf { it > 0 }?.let { "${it / 60} min" },
+).joinToString(" • ")

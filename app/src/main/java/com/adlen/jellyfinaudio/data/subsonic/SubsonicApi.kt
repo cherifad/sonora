@@ -29,6 +29,11 @@ interface SubsonicApi {
         @Query("id") id: String,
     ): SubsonicEnvelope<AlbumDetailResponse>
 
+    @GET("rest/getArtist.view")
+    suspend fun getArtist(
+        @Query("id") id: String,
+    ): SubsonicEnvelope<ArtistDetailResponse>
+
     @GET("rest/getMusicDirectory.view")
     suspend fun getMusicDirectory(
         @Query("id") id: String,

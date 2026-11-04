@@ -1,33 +1,31 @@
 package com.adlen.jellyfinaudio.ui.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adlen.jellyfinaudio.data.subsonic.Album
@@ -35,9 +33,18 @@ import com.adlen.jellyfinaudio.data.subsonic.Artist
 import com.adlen.jellyfinaudio.data.subsonic.Genre
 import com.adlen.jellyfinaudio.data.subsonic.Playlist
 import com.adlen.jellyfinaudio.ui.MainUiState
-import com.adlen.jellyfinaudio.ui.components.AlbumArt
+import com.adlen.jellyfinaudio.ui.components.BrowseTile
+import com.adlen.jellyfinaudio.ui.components.FilterChipRow
+import com.adlen.jellyfinaudio.ui.components.MediaCard
+import com.adlen.jellyfinaudio.ui.components.QuickPickTile
+import com.adlen.jellyfinaudio.ui.theme.Dimens
 import com.adlen.jellyfinaudio.ui.theme.Negative
+import com.adlen.jellyfinaudio.ui.theme.Spacing
 import com.adlen.jellyfinaudio.ui.theme.TextSubdued
+import com.adlen.jellyfinaudio.ui.components.browseColorFor
+import java.time.LocalTime
+
+private val homeFilters = listOf("All", "Music", "Playlists")
 
 @Composable
 fun HomeScreen(
@@ -45,43 +52,62 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onOpenAlbum: (Album) -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
+    onOpenArtist: (Artist) -> Unit,
+    onSearch: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var filterIndex by rememberSaveable { mutableIntStateOf(0) }
+    val greeting = remember { greetingFor(LocalTime.now().hour) }
+
+    val quickPicks = remember(state.homeSections) {
+        state.homeSections
+            .filterIsInstance<HomeSection.Albums>()
+            .flatMap { it.albums }
+            .distinctBy { it.id }
+            .take(8)
+    }
+
+    val visibleSections = when (filterIndex) {
+        1 -> state.homeSections.filterNot { it is HomeSection.Playlists }
+        2 -> state.homeSections.filterIsInstance<HomeSection.Playlists>()
+        else -> state.homeSections
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(top = Spacing.m, bottom = Spacing.xxxl),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         item {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
                 Text(
-                    text = "Good evening",
-                    style = MaterialTheme.typography.headlineLarge,
+                    text = greeting,
+                    style = MaterialTheme.typography.headlineMedium,
+                    maxLines = 1,
                 )
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = true,
-                        onClick = {},
-                        label = { Text("All") },
-                    )
-                    FilterChip(
-                        selected = false,
-                        onClick = {},
-                        label = { Text("Music") },
-                    )
-                    FilterChip(
-                        selected = false,
-                        onClick = {},
-                        label = { Text("Playlists") },
-                    )
-                }
+                Spacer(Modifier.height(Spacing.l))
+                FilterChipRow(
+                    labels = homeFilters,
+                    selectedIndex = filterIndex,
+                    onSelect = { filterIndex = it },
+                )
+                Spacer(Modifier.height(Spacing.l))
+            }
+        }
+
+        if (quickPicks.isNotEmpty()) {
+            item {
+                QuickPickGrid(
+                    state = state,
+                    albums = quickPicks,
+                    onOpenAlbum = onOpenAlbum,
+                )
             }
         }
 
         if (state.error != null) {
             item {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.m)) {
                     Text(
                         text = state.error,
                         color = Negative,
@@ -97,10 +123,10 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(48.dp),
+                        .padding(Spacing.massive),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
         } else if (state.homeSections.isEmpty()) {
@@ -109,17 +135,48 @@ fun HomeScreen(
                     text = "No library content found. Check that your server has music.",
                     color = TextSubdued,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = Spacing.xl),
                 )
             }
         } else {
-            items(state.homeSections, key = { it.title }) { section ->
+            items(visibleSections, key = { it.title }) { section ->
                 HomeSectionView(
                     state = state,
                     section = section,
                     onOpenAlbum = onOpenAlbum,
                     onOpenPlaylist = onOpenPlaylist,
+                    onOpenArtist = onOpenArtist,
+                    onSearch = onSearch,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickPickGrid(
+    state: MainUiState,
+    albums: List<Album>,
+    onOpenAlbum: (Album) -> Unit,
+) {
+    Column(
+        modifier = Modifier.padding(horizontal = Spacing.xl),
+        verticalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
+        albums.chunked(2).forEach { rowAlbums ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                rowAlbums.forEach { album ->
+                    QuickPickTile(
+                        config = state.config,
+                        coverArtId = album.coverArt,
+                        title = album.name ?: "Unknown album",
+                        onClick = { onOpenAlbum(album) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowAlbums.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
             }
         }
     }
@@ -131,56 +188,74 @@ private fun HomeSectionView(
     section: HomeSection,
     onOpenAlbum: (Album) -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
+    onOpenArtist: (Artist) -> Unit,
+    onSearch: (String) -> Unit,
 ) {
-    Column {
+    Column(modifier = Modifier.padding(top = Spacing.l)) {
         Text(
             text = section.title,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+            modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.m),
         )
 
         when (section) {
             is HomeSection.Albums -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.xl),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.l),
             ) {
                 items(section.albums, key = { it.id }) { album ->
-                    AlbumCard(
-                        state = state,
-                        album = album,
+                    MediaCard(
+                        config = state.config,
+                        coverArtId = album.coverArt,
+                        title = album.name ?: "Unknown album",
+                        subtitle = album.artist,
                         onClick = { onOpenAlbum(album) },
                     )
                 }
             }
 
             is HomeSection.Playlists -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.xl),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.l),
             ) {
                 items(section.playlists, key = { it.id }) { playlist ->
-                    PlaylistCard(
-                        state = state,
-                        playlist = playlist,
+                    MediaCard(
+                        config = state.config,
+                        coverArtId = playlist.coverArt,
+                        title = playlist.name ?: "Playlist",
+                        subtitle = listOfNotNull(
+                            playlist.owner,
+                            playlist.songCount?.let { "$it songs" },
+                        ).joinToString(" • "),
                         onClick = { onOpenPlaylist(playlist) },
                     )
                 }
             }
 
             is HomeSection.Artists -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.xl),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.l),
             ) {
                 items(section.artists, key = { it.id }) { artist ->
-                    ArtistCard(state = state, artist = artist)
+                    ArtistCard(
+                        state = state,
+                        artist = artist,
+                        onClick = { onOpenArtist(artist) },
+                    )
                 }
             }
 
             is HomeSection.Genres -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.xl),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.l),
             ) {
                 items(section.genres, key = { it.value.orEmpty() }) { genre ->
-                    GenreChip(genre)
+                    BrowseTile(
+                        label = genre.value ?: "Genre",
+                        color = browseColorFor(genre.value),
+                        onClick = { genre.value?.let(onSearch) },
+                        modifier = Modifier.width(Dimens.cardWidth),
+                    )
                 }
             }
         }
@@ -188,112 +263,19 @@ private fun HomeSectionView(
 }
 
 @Composable
-private fun AlbumCard(
-    state: MainUiState,
-    album: Album,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(140.dp)
-            .clickable(onClick = onClick),
-    ) {
-        AlbumArt(
-            config = state.config,
-            coverArtId = album.coverArt,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            size = 400,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = album.name ?: "Unknown album",
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = album.artist.orEmpty(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSubdued,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun PlaylistCard(
-    state: MainUiState,
-    playlist: Playlist,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(140.dp)
-            .clickable(onClick = onClick),
-    ) {
-        AlbumArt(
-            config = state.config,
-            coverArtId = playlist.coverArt,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            size = 400,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = playlist.name ?: "Playlist",
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = listOfNotNull(playlist.owner, playlist.songCount?.let { "$it songs" })
-                .joinToString(" • "),
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSubdued,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun ArtistCard(state: MainUiState, artist: Artist) {
-    Column(
-        modifier = Modifier.width(140.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        AlbumArt(
-            config = state.config,
-            coverArtId = artist.coverArt,
-            modifier = Modifier.size(140.dp),
-            size = 400,
-            shape = CircleShape,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = artist.name ?: "Unknown artist",
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "Artist",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSubdued,
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun GenreChip(genre: Genre) {
-    AssistChip(
-        onClick = {},
-        label = { Text(genre.value ?: "Genre") },
+private fun ArtistCard(state: MainUiState, artist: Artist, onClick: () -> Unit) {
+    MediaCard(
+        config = state.config,
+        coverArtId = artist.coverArt,
+        title = artist.name ?: "Unknown artist",
+        subtitle = "Artist",
+        onClick = onClick,
+        circular = true,
     )
+}
+
+private fun greetingFor(hour: Int): String = when (hour) {
+    in 5..11 -> "Good morning"
+    in 12..17 -> "Good afternoon"
+    else -> "Good evening"
 }

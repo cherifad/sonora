@@ -60,6 +60,23 @@ data class Artist(
 )
 
 @Serializable
+data class ArtistWithAlbums(
+    val id: String,
+    val name: String? = null,
+    val coverArt: String? = null,
+    val albumCount: Int? = null,
+    val album: List<Album> = emptyList(),
+)
+
+@Serializable
+data class ArtistDetailResponse(
+    val status: String,
+    val version: String? = null,
+    val error: SubsonicError? = null,
+    val artist: ArtistWithAlbums? = null,
+)
+
+@Serializable
 data class ArtistIndex(
     val name: String? = null,
     val artist: List<Artist> = emptyList(),
