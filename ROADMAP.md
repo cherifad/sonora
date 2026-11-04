@@ -27,9 +27,9 @@ is the current focus.
       error model (`Auth`, `NotFound`, `Server`, `Network`).
 - [x] Remove the hard-coded `10.0.2.2:4533` / `admin` / `admin` defaults (the runtime
       starts with a placeholder only until setup is saved).
-- [x] Subsonic onboarding: server setup → look choice (Immersive/Classic) → permissions
-      (notifications/Bluetooth/battery); the Spotify intro, streaming-quality and extensions
-      steps are skipped.
+- [x] Subsonic onboarding, **one sequence**: server step (integrated, step 1 of the dots) →
+      look choice (Immersive/Classic) → permissions (notifications/Bluetooth/battery); the
+      Spotify intro, streaming-quality and extensions steps are skipped.
 - [ ] Trust-on-first-use for self-signed TLS, with an explicit warning for HTTP.
 
 **Done when:** a fresh install asks for a server, connects to Jellyfin + Subfin and

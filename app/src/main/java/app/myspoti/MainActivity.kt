@@ -47,10 +47,8 @@ import app.myspoti.host.android.LoginLoad
 import app.myspoti.host.android.Logbook
 import app.myspoti.host.android.MyspotiRuntime
 import app.myspoti.host.android.SessionWait
-import app.myspoti.subsonic.SubsonicSettings
 import com.music.spotui.App
 import com.music.spotui.di.AutoBrowser
-import com.music.spotui.ui.setup.SubsonicSetupScreen
 import com.music.spotui.ui.screens.WelcomeScreen
 import com.music.spotui.ui.theme.SpotuiTheme
 import kotlinx.coroutines.flow.combine
@@ -85,8 +83,6 @@ class MainActivity : AppCompatActivity() {
     private var setupNeeded by mutableStateOf(false)
     /** In the picture-in-picture window: only the music video is drawn. */
     private var inPip by mutableStateOf(false)
-    /** First run: no Subsonic server saved yet, so the setup screen is shown instead of the app. */
-    private var subsonicConfigured by mutableStateOf(true)
     /** Debug builds: `am start ... --ez showLook true` opens the look step alone, signed in or not. */
     private var showLook by mutableStateOf(false)
     /** The "new look" popup was already shown (or the onboarding look step covered it). */
@@ -106,7 +102,6 @@ class MainActivity : AppCompatActivity() {
         signedIn = MyspotiRuntime.isSubsonic || prefs.getBoolean("LoggedIn", false)
         setupNeeded = com.music.spotui.ui.screens.Setup.needed(this)
         lookOffered = if (MyspotiRuntime.isSubsonic) true else com.music.spotui.data.preferences.LookPref.isOffered(this)
-        subsonicConfigured = !MyspotiRuntime.isSubsonic || SubsonicSettings.load(this) != null
         root = FrameLayout(this)
         val compose = ComposeView(this).apply {
             setContent {
@@ -119,18 +114,15 @@ class MainActivity : AppCompatActivity() {
                     }
                     androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
                         when {
-                            MyspotiRuntime.isSubsonic && !subsonicConfigured -> SubsonicSetupScreen(
-                                onDone = {
-                                    subsonicConfigured = true
-                                    recreate()
-                                },
-                            )
                             showLook -> com.music.spotui.ui.look.LookStep(onNext = {
                                 com.music.spotui.data.preferences.LookPref.setChosen(this@MainActivity); showLook = false
                                 setupNeeded = com.music.spotui.ui.screens.Setup.needed(this@MainActivity)
                             })
                             signedIn && setupNeeded -> com.music.spotui.ui.screens.SetupScreen(
-                                onDone = { setupNeeded = false },
+                                onDone = {
+                                    setupNeeded = false
+                                    if (MyspotiRuntime.isSubsonic) recreate()
+                                },
                             )
                             signedIn -> App()
                             connecting -> ConnectingScreen()

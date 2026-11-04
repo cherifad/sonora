@@ -17,7 +17,7 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
 | Settings | Oui : serveur, apparence, à propos ; onglets Downloads/Extensions masqués |
 | Filtres Home | Oui : All / Music seulement (pas de podcasts/audiobooks) |
-| Onboarding | Oui : setup serveur Subsonic → look (Immersive/Classic) → permissions ; étapes Spotify (intro/qualité/extensions) sautées |
+| Onboarding | Oui, **une seule séquence** : serveur Subsonic (étape 1) → look (Immersive/Classic) → permissions ; étapes Spotify (intro/qualité/extensions) sautées |
 | Menu profil | Oui, Classic et Immersive : Settings / Server / About |
 | Sortie audio | Oui : « This phone » local ; plus de liste Connect ni de sonde qualité Spotify |
 | Look | Oui : **Immersive par défaut** (celui du README) ; Classic dans Settings → Display → Look |
@@ -98,9 +98,8 @@ Exemples d'URL :
 
 ## Captures
 
-> Les captures de `docs/screenshots/subsonic-spike/` montrent le look **Classic** avec la
-> bibliothèque de test. Le fork démarre en look **Immersive** (celui du README) ; le look se
-> change dans **Settings → Display → Look**.
+> Les captures montrent le look **Immersive** (celui du README) avec la bibliothèque de
+> test. Le look se change dans **Settings → Display → Look**.
 
 | Home | Search | Library |
 |:---:|:---:|:---:|
@@ -114,9 +113,9 @@ Exemples d'URL :
 |:---:|:---:|:---:|
 | ![](docs/screenshots/subsonic-spike/album.png) | ![](docs/screenshots/subsonic-spike/player.png) | ![](docs/screenshots/subsonic-spike/devices.png) |
 
-| Onboarding look | Onboarding permissions |
-|:---:|:---:|
-| ![](docs/screenshots/subsonic-spike/onboarding-look.png) | ![](docs/screenshots/subsonic-spike/onboarding-permissions.png) |
+| Onboarding server | Onboarding look | Onboarding permissions |
+|:---:|:---:|:---:|
+| ![](docs/screenshots/subsonic-spike/onboarding-server.png) | ![](docs/screenshots/subsonic-spike/onboarding-look.png) | ![](docs/screenshots/subsonic-spike/onboarding-permissions.png) |
 
 | Setup | Server dialog | Settings |
 |:---:|:---:|:---:|

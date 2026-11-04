@@ -94,7 +94,9 @@ object Setup {
     /** The permissions step, the sound quality one, the look one or the extensions one (each new step is shown once after the update too). */
     fun needed(context: Context): Boolean {
         if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) {
-            return !permissionsDone(context) || !com.music.spotui.data.preferences.LookPref.isChosen(context)
+            val server = app.myspoti.subsonic.SubsonicSettings.load(context) != null
+            return !server || !permissionsDone(context) ||
+                !com.music.spotui.data.preferences.LookPref.isChosen(context)
         }
         return !permissionsDone(context) || !com.music.spotui.data.preferences.isQualityChosen(context) ||
             !com.music.spotui.data.preferences.LookPref.isChosen(context) || !extensionsSeen(context)
@@ -124,11 +126,13 @@ fun SetupScreen(onDone: () -> Unit) {
     val needLook = remember { !com.music.spotui.data.preferences.LookPref.isChosen(context) }
     val needExtensions = remember { !subsonic && !Setup.extensionsSeen(context) }
     val needIntro = !subsonic && needPerms
+    val needServer = subsonic && app.myspoti.subsonic.SubsonicSettings.load(context) == null
     val order = remember {
         listOfNotNull(
-            STEP_INTRO.takeIf { needIntro }, STEP_LOOK.takeIf { needLook }, STEP_QUALITY.takeIf { needQuality },
-            STEP_PERMISSIONS.takeIf { needPerms }, STEP_EXTENSIONS.takeIf { needExtensions },
-        ).ifEmpty { listOf(STEP_LOOK, STEP_PERMISSIONS) }
+            STEP_SERVER.takeIf { needServer }, STEP_INTRO.takeIf { needIntro }, STEP_LOOK.takeIf { needLook },
+            STEP_QUALITY.takeIf { needQuality }, STEP_PERMISSIONS.takeIf { needPerms },
+            STEP_EXTENSIONS.takeIf { needExtensions },
+        ).ifEmpty { listOf(STEP_SERVER, STEP_LOOK, STEP_PERMISSIONS) }
     }
     var index by remember { mutableIntStateOf(0) }
     val steps = order.size
@@ -160,6 +164,7 @@ fun SetupScreen(onDone: () -> Unit) {
                 modifier = Modifier.weight(1f),
             ) { i ->
                 when (order[i]) {
+                    STEP_SERVER -> ServerStep(onNext = ::next)
                     STEP_INTRO -> IntroStep(onNext = ::next)
                     STEP_QUALITY -> QualityStep(onNext = {
                         com.music.spotui.data.preferences.setQualityChosen(context)
@@ -189,6 +194,7 @@ private const val STEP_LOOK = 1
 private const val STEP_QUALITY = 2
 private const val STEP_EXTENSIONS = 3
 private const val STEP_PERMISSIONS = 4
+private const val STEP_SERVER = 5
 
 /** Where the user is in the steps: the current one a longer green dash. */
 @Composable
@@ -211,6 +217,28 @@ private fun Modifier.riseIn(index: Int): Modifier {
     val reduce = com.music.spotui.ui.look.rememberReduceMotion()
     LaunchedEffect(Unit) { if (reduce) a.snapTo(1f) else { delay(80L + index * 70L); a.animateTo(1f, tween(450, easing = FastOutSlowInEasing)) } }
     return graphicsLayer { alpha = a.value; translationY = (1f - a.value) * 18.dp.toPx() }
+}
+
+/** First Subsonic step: the server, then the look, then the permissions. */
+@Composable
+private fun ServerStep(onNext: () -> Unit) {
+    val context = LocalContext.current
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        var row = 0
+        SetupTitle("Connect to your server", Modifier.riseIn(row++))
+        SetupSubtitle("Subsonic / OpenSubsonic — Jellyfin + Subfin or Navidrome.", Modifier.riseIn(row++))
+        Spacer(Modifier.height(8.dp))
+        Column(Modifier.riseIn(row++)) {
+            com.music.spotui.ui.setup.SubsonicServerForm(
+                initial = app.myspoti.subsonic.SubsonicSettings.load(context),
+                onCancel = null,
+                onSaved = onNext,
+            )
+        }
+    }
 }
 
 @Composable

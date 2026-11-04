@@ -89,7 +89,7 @@ fun SubsonicSetupScreen(onDone: () -> Unit) {
                 lineHeight = 20.sp,
             )
             Spacer(Modifier.height(24.dp))
-            ServerForm(
+            SubsonicServerForm(
                 initial = SubsonicSettings.load(LocalContext.current),
                 onCancel = null,
                 onSaved = { onDone() },
@@ -126,7 +126,7 @@ fun SubsonicSetupDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
                     fontSize = 22.sp,
                 )
                 Spacer(Modifier.height(16.dp))
-                ServerForm(
+                SubsonicServerForm(
                     initial = SubsonicSettings.load(LocalContext.current),
                     onCancel = onDismiss,
                     onSaved = { onSaved() },
@@ -137,7 +137,7 @@ fun SubsonicSetupDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
 }
 
 @Composable
-private fun ServerForm(
+internal fun SubsonicServerForm(
     initial: SubsonicConfig?,
     onCancel: (() -> Unit)?,
     onSaved: () -> Unit,
