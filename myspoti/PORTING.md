@@ -12,8 +12,9 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Surface | État |
 |---|---|
 | Démarrage sans login Spotify | Oui : `MyspotiRuntime.startSubsonic(...)`, le WebView n'est pas démarré |
-| Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings (icône nuage) |
+| Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings / menu profil |
 | Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s` |
+| Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
 | Home | Oui : nouveautés, souvent écoutés, playlists depuis Subsonic |
 | Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
 | Library | Oui : artistes, albums, playlists |
@@ -98,3 +99,7 @@ Exemples d'URL :
 | Setup | Server dialog |
 |:---:|:---:|
 | ![](docs/screenshots/subsonic-spike/setup.png) | ![](docs/screenshots/subsonic-spike/server-dialog.png) |
+
+| Profile menu |
+|:---:|
+| ![](docs/screenshots/subsonic-spike/profile.png) |

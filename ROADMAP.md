@@ -38,8 +38,10 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 
 ## M2 — Remove the Spotify-only surface
 
-- [ ] Hide/remove Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius, Spotify
-      Codes, Wrapped/recap, extensions, ad-blocking and DRM code paths.
+- [x] Profile sheet: Spotify account/recap/friends/extensions/logout replaced by
+      Settings / Server / About.
+- [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
+      Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.
 - [ ] Clean navigation: Home, Search, Library, Settings, Now Playing, Queue, Lyrics
       (when the server provides them).
