@@ -69,7 +69,11 @@ internal class SubsonicHome(private val client: SubsonicClient) : Home {
             val playlistItems = playlists.map { it.toCard() }
             if (playlistItems.isNotEmpty()) add(Shelf(null, "Vos playlists", playlistItems, playlistItems.size))
         }
-        return HomeFeed(greeting = greeting(), filters = HomeFilter.entries, shelves = shelves)
+        return HomeFeed(
+            greeting = greeting(),
+            filters = listOf(HomeFilter.ALL, HomeFilter.MUSIC),
+            shelves = shelves,
+        )
     }
 
     override suspend fun categories(): List<Category> =

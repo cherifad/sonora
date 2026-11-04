@@ -80,8 +80,7 @@ fun SettingsScreen(navController: NavController) {
         }
         // One tab per group, so the page is no longer one long list.
         var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
-        val tabs = listOf(R.string.settings_section_playback, R.string.settings_section_downloads, R.string.settings_tab_appearance,
-            R.string.extensions_title, R.string.settings_tab_about)
+        val tabs = listOf(R.string.settings_section_playback, R.string.settings_tab_appearance, R.string.settings_tab_about)
         androidx.compose.material3.ScrollableTabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = AppText, edgePadding = 12.dp,
             indicator = { positions ->
@@ -105,94 +104,16 @@ fun SettingsScreen(navController: NavController) {
             val session by com.music.spotui.extensions.Extensions.sessionSource.collectAsStateWithLifecycle()
             if (tab == 0) {
             Section(R.string.settings_section_playback)
-            // An extension above Spotify: its settings, and Spotify's quality (kept, still used for what Spotify plays) leaves.
-            val ext = remember(registry, session) { com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.PLAYBACK) }
-            ext?.let { ExtensionSectionSettings(it) }
-            if (ext?.hidesAppQuality != true) {
-                StreamingQualityPicker(title = R.string.quality_streaming_wifi_title)
-                StreamingQualityPicker(cellular = true, title = R.string.quality_streaming_cell_title)
-            }
-            var canvasWifiOnly by remember { mutableStateOf(com.music.spotui.data.preferences.isCanvasWifiOnly(ctx)) }
-            OptionRow(
-                label = stringResource(R.string.canvas_wifi_only),
-                detail = stringResource(R.string.canvas_wifi_only_detail),
-                checked = canvasWifiOnly,
-                onChecked = { canvasWifiOnly = it; com.music.spotui.data.preferences.setCanvasWifiOnly(ctx, it) },
-            )
-            OptionRow(
-                label = stringResource(R.string.settings_autoplay_title),
-                detail = stringResource(R.string.settings_autoplay_detail),
-                checked = com.music.spotui.data.preferences.AutoplayPref.on,
-                onChecked = { com.music.spotui.data.preferences.AutoplayPref.set(ctx, it) },
-            )
-            OptionRow(
-                label = stringResource(R.string.myspoti_shuffle_title),
-                detail = stringResource(R.string.myspoti_shuffle_detail),
-                checked = com.music.spotui.data.preferences.AppShufflePref.on,
-                onChecked = { com.music.spotui.data.preferences.AppShufflePref.set(ctx, it) },
-            )
-            CrossfadeRow()
-            // The local player's equalizer, speed and silence skipping (never Spotify's own songs).
+            // The Subsonic server: the same dialog as the cloud icon and the profile menu.
+            val serverConfig = app.myspoti.subsonic.SubsonicSettings.load(ctx)
             Column(
-                Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.Equalizer.route) }
+                Modifier.fillMaxWidth().clickable { showServer = true }
                     .padding(horizontal = 20.dp, vertical = 10.dp),
             ) {
-                Text(stringResource(R.string.equalizer_title), color = AppText, fontSize = 16.sp)
-                Text(stringResource(R.string.equalizer_settings_detail), color = AppMuted, fontSize = 12.sp)
-            }
-            var keepPlaying by remember { mutableStateOf(app.myspoti.host.android.PlaybackService.keepsPlayingOnClose(ctx)) }
-            OptionRow(
-                label = stringResource(R.string.settings_keep_playing_title),
-                detail = stringResource(R.string.settings_keep_playing_detail),
-                checked = keepPlaying,
-                onChecked = { keepPlaying = it; app.myspoti.host.android.PlaybackService.setKeepsPlayingOnClose(ctx, it) },
-            )
-            var headsetSkip by remember { mutableStateOf(app.myspoti.host.android.PlaybackService.skipsOnEpisodes(ctx)) }
-            OptionRow(
-                label = stringResource(R.string.settings_headset_skip_title),
-                detail = stringResource(R.string.settings_headset_skip_detail),
-                checked = headsetSkip,
-                onChecked = { headsetSkip = it; app.myspoti.host.android.PlaybackService.setSkipsOnEpisodes(ctx, it) },
-            )
-            // Lyrics: word by word (karaoke) first, or line by line with Spotify's first.
-            var wordSync by remember { mutableStateOf(com.music.spotui.data.preferences.isLyricsWordSync(ctx)) }
-            OptionRow(
-                label = stringResource(R.string.lyrics_word_sync_title),
-                detail = stringResource(if (wordSync) R.string.lyrics_word_sync_on else R.string.lyrics_word_sync_off),
-                checked = wordSync,
-                onChecked = {
-                    wordSync = it
-                    com.music.spotui.data.preferences.setLyricsWordSync(ctx, it)
-                    com.music.spotui.data.api.LyricsApi.wordSync = it
-                    com.music.spotui.data.api.LyricsApi.forgetAll()
-                },
-            )
-            // Songs an extension streams, played by Spotify too (unheard): counted there, seen by Connect.
-            if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.AUDIO_SOURCE).isNotEmpty())
-                OptionRow(
-                    label = stringResource(R.string.settings_connect_mirror_title),
-                    detail = stringResource(R.string.settings_connect_mirror_detail),
-                    checked = com.music.spotui.data.preferences.ConnectMirrorPref.on,
-                    onChecked = { com.music.spotui.data.preferences.ConnectMirrorPref.set(ctx, it) },
-                )
-            // Downloaded songs, played from their files online, played by Spotify too (unheard), as an extension's.
-            OptionRow(
-                label = stringResource(R.string.settings_download_sync_title),
-                detail = stringResource(R.string.settings_download_sync_detail),
-                checked = com.music.spotui.data.preferences.DownloadSyncPref.on,
-                onChecked = { com.music.spotui.data.preferences.DownloadSyncPref.set(ctx, it) },
-            )
-            // Songs marked "Not interested": skipped by lists, listed here to be shown again.
-            Column(
-                Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.HiddenSongs.route) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            ) {
-                Text(stringResource(R.string.hidden_songs_title), color = AppText, fontSize = 16.sp)
-                Text(stringResource(R.string.hidden_songs_detail), color = AppMuted, fontSize = 12.sp)
+                Text("Server", color = AppText, fontSize = 16.sp)
+                Text(serverConfig?.baseUrl ?: "No server configured", color = AppMuted, fontSize = 12.sp)
             }
             Divider()
-            SourcesBlock(app.myspoti.extensions.Action.AUDIO_SOURCE, navController)
-
             Section(R.string.settings_section_data)
             OptionRow(
                 label = stringResource(R.string.energy_saver_title),
@@ -229,7 +150,7 @@ fun SettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.background_playback_samsung), color = AppMuted, fontSize = 12.sp)
             }
             }
-            if (tab == 1) {
+            if (tab == 99) {
             Section(R.string.settings_section_downloads)
             // Its role quality takes the place of the app's (kept, and still passed to every extension as `quality`).
             val ext = remember(registry) { com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.DOWNLOADS) }
@@ -253,7 +174,7 @@ fun SettingsScreen(navController: NavController) {
             }
             if (com.music.spotui.data.offline.OfflineStore.tracks.isNotEmpty()) RemoveDownloadsRow()
             }
-            if (tab == 2) {
+            if (tab == 1) {
 
             Section(R.string.settings_section_display)
             OptionRow(
@@ -304,7 +225,7 @@ fun SettingsScreen(navController: NavController) {
             OrientationRow()
             LanguageRow()
             }
-            if (tab == 3) {
+            if (tab == 98) {
             ExtensionSettingsRows(navController)
             // Third-party extensions: lyrics, a song's audio, scripts reacting to the music.
             Column(
@@ -315,7 +236,7 @@ fun SettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.extensions_row_detail), color = AppMuted, fontSize = 12.sp)
             }
             }
-            if (tab == 4) {
+            if (tab == 2) {
             Section(R.string.settings_section_app)
             AboutRow()
             // A18: the launch check can be turned off; the manual check below keeps working.
@@ -325,18 +246,6 @@ fun SettingsScreen(navController: NavController) {
                 checked = com.music.spotui.data.preferences.AutoUpdateCheckPref.on,
                 onChecked = { com.music.spotui.data.preferences.AutoUpdateCheckPref.set(ctx, it) },
             )
-            // The hidden Web Player stuck or crashed: rebuild it without leaving the app.
-            Column(
-                Modifier.fillMaxWidth().clickable {
-                    app.myspoti.host.android.MyspotiRuntime.host.reload()
-                    // Reported: nothing said the restart happened.
-                    android.widget.Toast.makeText(ctx, ctx.getString(R.string.restart_player_done), android.widget.Toast.LENGTH_SHORT).show()
-                }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            ) {
-                Text(stringResource(R.string.restart_player_title), color = AppText, fontSize = 16.sp)
-                Text(stringResource(R.string.restart_player_detail), color = AppMuted, fontSize = 12.sp)
-            }
             // The report a tester hands us. The engine's log is otherwise reachable only through
             // adb logcat, which the person reporting the bug cannot run: the label is a literal
             // rather than a string resource so this change stays out of the shared string files.

@@ -15,6 +15,8 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings / menu profil |
 | Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s` |
 | Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
+| Settings | Oui : serveur, apparence, à propos ; onglets Downloads/Extensions masqués |
+| Filtres Home | Oui : All / Music seulement (pas de podcasts/audiobooks) |
 | Home | Oui : nouveautés, souvent écoutés, playlists depuis Subsonic |
 | Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
 | Library | Oui : artistes, albums, playlists |
