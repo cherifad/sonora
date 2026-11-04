@@ -46,7 +46,7 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
 
     suspend fun ping(): JSONObject = call("ping")
 
-    private fun endpoint(method: String, params: Map<String, String>): HttpUrl {
+    private fun endpoint(method: String, params: List<Pair<String, String>>): HttpUrl {
         val salt = randomSalt()
         val token = md5(config.password + salt)
         val builder = base.newBuilder()
@@ -55,13 +55,16 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
             .addQueryParameter("t", token)
             .addQueryParameter("s", salt)
             .addQueryParameter("v", "1.16.1")
-            .addQueryParameter("c", "MyspotiSubsonic")
+            .addQueryParameter("c", "JellyfinAudio")
             .addQueryParameter("f", "json")
         params.forEach { (key, value) -> builder.addQueryParameter(key, value) }
         return builder.build()
     }
 
     suspend fun call(method: String, params: Map<String, String> = emptyMap()): JSONObject =
+        callPairs(method, params.entries.map { it.key to it.value })
+
+    suspend fun callPairs(method: String, params: List<Pair<String, String>>): JSONObject =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(endpoint(method, params)).build()
             http.newCall(request).execute().use { response ->
@@ -76,11 +79,11 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
             }
         }
 
-    fun streamUrl(id: String): String = endpoint("stream", mapOf("id" to id)).toString()
+    fun streamUrl(id: String): String = endpoint("stream", listOf("id" to id)).toString()
 
     fun coverUrl(coverArt: String?, size: Int = 300): String? {
         val id = coverArt?.takeIf { it.isNotBlank() } ?: return null
-        return endpoint("getCoverArt", mapOf("id" to id, "size" to size.toString())).toString()
+        return endpoint("getCoverArt", listOf("id" to id, "size" to size.toString())).toString()
     }
 
     private fun randomSalt(): String =

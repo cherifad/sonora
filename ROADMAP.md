@@ -60,6 +60,11 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
       Downloads and Extensions tabs removed.
 - [x] Home quick-tile grid (the 2-column "shortcuts" of the Myspoti look): an untitled
       lead shelf of playlists/albums, with Liked Songs prepended by the UI.
+- [x] Share replaced in Subsonic mode: native Android share sheet (`title — artist`) instead
+      of `scannables.scdn.co` Spotify Codes and `open.spotify.com` links.
+- [x] Display / App settings cleaned in both looks: Canvas, Music video, Hide DJ, Player
+      source line and the WebView "Restart player" row removed; `GeniusMeaning` prefetch
+      disabled in Subsonic mode.
 - [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
       Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.
@@ -72,25 +77,32 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 **Done when:** no Spotify-only button dead-ends, and the app contains no Spotify
 branding or assets.
 
-## M3 — Playback platform
+## M3 — Playback platform (mostly done)
 
-- [ ] `MediaSessionService` + ExoPlayer with a real `MediaSession` (notification, lock
-      screen, headset, Bluetooth, audio focus, noisy handling).
-- [ ] Queue persistence (`savePlayQueue` / `getPlayQueue` when supported).
-- [ ] Gapless playback, shuffle/repeat semantics, previous/next behaviour.
-- [ ] Media notification with artwork and the transport actions.
-- [ ] Android Auto browse tree (`MediaLibraryService`) and voice search via `search3`.
+- [x] `PlaybackService` (`MediaBrowserServiceCompat` + `MediaSessionCompat`) + `ExoPlayer`
+      with audio focus (`USAGE_MEDIA`), becoming-noisy handling, network wake lock, media
+      notification, lock screen and headset/Bluetooth controls.
+- [x] Server queue persistence (`savePlayQueue` debounced + `getPlayQueue` restore on
+      startup) and local last-track restore.
+- [x] Subsonic scrobbling (`submission=false` on start, `submission=true` at 50% or 4 min).
+- [x] Gapless playback, shuffle/repeat semantics, previous (<3 s previous track, ≥3 s restart)
+      and next behaviour.
+- [x] Media notification with artwork and transport actions (Like, Shuffle, Prev, Play/Pause, Next).
+- [x] Android Auto browse tree (`AutoBrowser` over `Graph.api` → Subsonic).
 
 **Done when:** playback continues in the background, the notification and headset
 buttons work, and the queue survives process death.
 
-## M4 — Library and playlists
+## M4 — Library, playlists and lyrics (mostly done)
 
-- [ ] Favorites (`star`/`unstar`) for tracks, albums and artists.
-- [ ] Playlist CRUD: create, rename, delete, add/remove/reorder tracks.
-- [ ] Artist page: top tracks, discography, appears-on, related artists where the server
-      supports them.
-- [ ] Search filters and sorting; library grids/lists; empty and error states.
+- [x] Favorites (`star`/`unstar`) for tracks, albums and artists (`SubsonicLibrary`).
+- [x] Playlist CRUD (`SubsonicPlaylists`): `createPlaylist`, `updatePlaylist` (rename,
+      comment, public, `songIdToAdd`, `songIndexToRemove`), `deletePlaylist`.
+- [x] Artist page (`SubsonicCatalog`): `getTopSongs` (fallback to album tracks),
+      `getArtistInfo2` (biography, images, similar/related artists), discography.
+- [x] Lyrics (`SubsonicExtras.lyrics`): OpenSubsonic `getLyricsBySongId` (synced + plain)
+      with classic `getLyrics` fallback (plus LRCLIB fallback in `LyricsApi`).
+- [x] Recents (`SubsonicRecents`): `getAlbumList2?type=recent`.
 - [ ] Ratings (`setRating`) behind capability detection.
 
 **Done when:** all mutations round-trip against Jellyfin and Navidrome.

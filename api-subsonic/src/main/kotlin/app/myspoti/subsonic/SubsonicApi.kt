@@ -20,9 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * The porting spike's backend: Subsonic endpoints behind the same `MyspotiApi` contract the
- * Myspoti UI already speaks. Home, search, albums, library and playback are wired; the
- * Spotify-only surfaces (podcasts, Connect, Jam, Blends, extras) are empty stubs.
+ * The Subsonic backend behind the `MyspotiApi` contract.
+ * Home, search, albums, artists, library, playlists CRUD, lyrics, recents and playback
+ * are wired to Subsonic/OpenSubsonic; Spotify-only surfaces (podcasts, Connect, Jam, Blends)
+ * remain empty stubs.
  */
 class SubsonicApi(
     context: Context,
@@ -32,8 +33,9 @@ class SubsonicApi(
     private val client = SubsonicClient(config)
     private val catalogImpl = SubsonicCatalog(client)
     private val playlistsImpl = SubsonicPlaylists(client)
+    private val playerImpl = SubsonicPlayer(context.applicationContext, client, catalogImpl, playlistsImpl)
 
-    override val player: Player = SubsonicPlayer(context.applicationContext, client, catalogImpl, playlistsImpl)
+    override val player: Player = playerImpl
     override val catalog: Catalog = catalogImpl
     override val home: Home = SubsonicHome(client)
     override val search: Search = SubsonicSearch(client)
@@ -41,11 +43,11 @@ class SubsonicApi(
     override val playlists: Playlists = playlistsImpl
     override val users: Users = SubsonicUsers(config)
     override val podcasts: Podcasts = SubsonicPodcasts()
-    override val extras: TrackExtras = SubsonicExtras()
+    override val extras: TrackExtras = SubsonicExtras(client)
     override val devices: Devices = SubsonicDevices()
     override val jam: Jam = SubsonicJam()
     override val blends: Blends = SubsonicBlends()
-    override val recents: Recents = SubsonicRecents()
+    override val recents: Recents = SubsonicRecents(client)
 
     private val readyFlow = MutableStateFlow(true)
     override val ready: StateFlow<Boolean> = readyFlow
@@ -53,5 +55,6 @@ class SubsonicApi(
     /** The setup screen changed the server: the same client/player now talk to the new one. */
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
+        playerImpl.restoreServerQueueIfIdle()
     }
 }

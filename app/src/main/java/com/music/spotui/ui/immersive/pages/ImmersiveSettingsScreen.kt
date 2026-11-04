@@ -426,23 +426,11 @@ private fun DisplayPage(open: (SettingsPage) -> Unit, back: () -> Unit) {
                 ImmersiveSwitchRow(stringResource(R.string.settings_amoled_theme), checked = energy.blackPreference,
                     onChecked = app.myspoti.power.EnergySettings::setBlackBackground, detail = stringResource(R.string.settings_amoled_theme_subtitle))
             }
-            row {
-                ImmersiveSwitchRow(stringResource(R.string.settings_music_video_title), checked = com.music.spotui.data.preferences.MusicVideoPref.on,
-                    onChecked = { com.music.spotui.data.preferences.MusicVideoPref.set(ctx, it) }, detail = stringResource(R.string.settings_music_video_detail))
-            }
-            row {
-                ImmersiveSwitchRow(stringResource(R.string.settings_hide_dj_title), checked = com.music.spotui.data.preferences.HideDjPref.on,
-                    onChecked = { com.music.spotui.data.preferences.HideDjPref.set(ctx, it) }, detail = stringResource(R.string.settings_hide_dj_detail))
-            }
             if (look == com.music.spotui.data.preferences.Look.CLASSIC) {
                 row {
                     ImmersiveSwitchRow(stringResource(R.string.settings_player_lyrics_card_title), checked = com.music.spotui.data.preferences.PlayerLyricsCardPref.on,
                         onChecked = { com.music.spotui.data.preferences.PlayerLyricsCardPref.set(ctx, it) }, detail = stringResource(R.string.settings_player_lyrics_card_detail))
                 }
-            }
-            row {
-                ImmersiveSwitchRow(stringResource(R.string.settings_player_source_title), checked = com.music.spotui.data.preferences.PlayerSourceLinePref.on,
-                    onChecked = { com.music.spotui.data.preferences.PlayerSourceLinePref.set(ctx, it) }, detail = stringResource(R.string.settings_player_source_detail))
             }
             if (look == com.music.spotui.data.preferences.Look.IMMERSIVE) {
                 row {
@@ -609,16 +597,6 @@ private fun AppPage(navController: NavController, back: () -> Unit) {
             }
         }
         immersiveGroup("repair") {
-            // The hidden Web Player stuck or crashed: rebuild it without leaving the app.
-            row {
-                ImmersiveGroupRow(
-                    stringResource(R.string.restart_player_title), detail = stringResource(R.string.restart_player_detail),
-                    onClick = {
-                        app.myspoti.host.android.MyspotiRuntime.host.reload()
-                        android.widget.Toast.makeText(ctx, ctx.getString(R.string.restart_player_done), android.widget.Toast.LENGTH_SHORT).show()
-                    },
-                )
-            }
             row {
                 ImmersiveGroupRow(
                     stringResource(R.string.diagnostic_export_title), detail = stringResource(R.string.diagnostic_export_detail),

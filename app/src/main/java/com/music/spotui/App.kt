@@ -81,7 +81,7 @@ fun App() {
     val geniusLang = com.music.spotui.ui.components.readerLanguage()
     val playingUri = com.music.spotui.di.SongPlayer.nowPlaying.value.uri
     LaunchedEffect(playingUri) {
-        if (!playingUri.startsWith("spotify:track:")) return@LaunchedEffect
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic || !playingUri.startsWith("spotify:track:")) return@LaunchedEffect
         kotlinx.coroutines.delay(2_000) // the song's own loads first
         val st = com.music.spotui.di.Graph.currentSongState
         com.music.spotui.data.api.GeniusMeaning.prefetch(playingUri.substringAfterLast(':'), st.title.value, st.singer.value, geniusLang)

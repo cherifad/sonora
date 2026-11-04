@@ -19,6 +19,7 @@ import app.myspoti.api.Devices
 import app.myspoti.api.Home
 import app.myspoti.api.HomeFeed
 import app.myspoti.api.HomeFilter
+import app.myspoti.api.Image
 import app.myspoti.api.Jam
 import app.myspoti.api.JamAvailability
 import app.myspoti.api.JamSession
@@ -27,6 +28,7 @@ import app.myspoti.api.LibraryFilter
 import app.myspoti.api.LibraryItem
 import app.myspoti.api.LibrarySort
 import app.myspoti.api.Lyrics
+import app.myspoti.api.LyricsLine
 import app.myspoti.api.MediaCard
 import app.myspoti.api.MediaKind
 import app.myspoti.api.Page
@@ -36,6 +38,8 @@ import app.myspoti.api.PlaylistMember
 import app.myspoti.api.PlaylistSort
 import app.myspoti.api.Playlists
 import app.myspoti.api.Podcasts
+import app.myspoti.api.RecentEntry
+import app.myspoti.api.RecentItem
 import app.myspoti.api.Recents
 import app.myspoti.api.RowAdder
 import app.myspoti.api.SavedTrack
@@ -53,7 +57,6 @@ import app.myspoti.api.sortedFor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.LocalTime
-import kotlin.math.absoluteValue
 
 internal class SubsonicHome(private val client: SubsonicClient) : Home {
 
@@ -200,8 +203,17 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
 
     override suspend fun artistTopTracks(uri: Uri): List<Track> {
         val id = uri.substringAfterLast(':')
-        val artist = client.call("getArtist", mapOf("id" to id)).optJSONObject("artist") ?: return emptyList()
-        val album = artist.array("album").firstOrNull() ?: return emptyList()
+        val artistJson = client.call("getArtist", mapOf("id" to id)).optJSONObject("artist") ?: return emptyList()
+        val artistName = artistJson.optString("name").takeIf { it.isNotBlank() }
+        if (artistName != null) {
+            val top = runCatching {
+                client.call("getTopSongs", mapOf("artist" to artistName, "count" to "10"))
+                    .optJSONObject("topSongs")?.array("song").orEmpty()
+                    .map { client.trackOf(it) }
+            }.getOrDefault(emptyList())
+            if (top.isNotEmpty()) return top
+        }
+        val album = artistJson.array("album").firstOrNull() ?: return emptyList()
         return albumTracks(
             "spotify:album:${album.optString("id")}",
             0,
@@ -210,16 +222,27 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
     }
 
     override suspend fun artistPage(uri: Uri): ArtistPage {
+        val id = uri.substringAfterLast(':')
         val artist = artist(uri)
         val albums = discography(uri, 0, 50).items
+        val info = runCatching {
+            client.call("getArtistInfo2", mapOf("id" to id)).optJSONObject("artistInfo2")
+        }.getOrNull()
+        val bio = info?.optString("biography")?.takeIf { it.isNotBlank() }
+        val infoImages = listOfNotNull(
+            info?.optString("largeImageUrl")?.takeIf { it.isNotBlank() }?.let { Image(it) },
+            info?.optString("mediumImageUrl")?.takeIf { it.isNotBlank() }?.let { Image(it) },
+            info?.optString("smallImageUrl")?.takeIf { it.isNotBlank() }?.let { Image(it) },
+        )
+        val related = info?.array("similarArtist").orEmpty().map { client.artistOf(it) }
         return ArtistPage(
-            artist = artist,
-            biography = null,
-            headerImages = artist.images,
+            artist = if (artist.images.isEmpty() && infoImages.isNotEmpty()) artist.copy(images = infoImages) else artist,
+            biography = bio,
+            headerImages = infoImages.ifEmpty { artist.images },
             topTracks = artistTopTracks(uri).map { app.myspoti.api.TopTrack(it, null) },
             popularReleases = albums,
             appearsOn = emptyList(),
-            related = emptyList(),
+            related = related,
         )
     }
 
@@ -232,7 +255,13 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
         return pageOf(albums, offset, limit)
     }
 
-    override suspend fun relatedArtists(uri: Uri): List<Artist> = emptyList()
+    override suspend fun relatedArtists(uri: Uri): List<Artist> {
+        val id = uri.substringAfterLast(':')
+        val info = runCatching {
+            client.call("getArtistInfo2", mapOf("id" to id)).optJSONObject("artistInfo2")
+        }.getOrNull()
+        return info?.array("similarArtist").orEmpty().map { client.artistOf(it) }
+    }
 
     override suspend fun appearsOn(uri: Uri): List<Album> = emptyList()
 
@@ -255,10 +284,12 @@ internal class SubsonicLibrary(private val client: SubsonicClient) : Library {
 
     override suspend fun add(uris: List<Uri>) {
         uris.forEach { star(it, true) }
+        changeFlow.tryEmit(Unit)
     }
 
     override suspend fun remove(uris: List<Uri>) {
         uris.forEach { star(it, false) }
+        changeFlow.tryEmit(Unit)
     }
 
     private suspend fun star(uri: Uri, on: Boolean) {
@@ -345,6 +376,10 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
 
     override suspend fun playlist(uri: Uri): Playlist {
         val id = uri.substringAfterLast(':')
+        val detail = runCatching {
+            client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist")
+        }.getOrNull()
+        if (detail != null) return client.playlistOf(detail)
         return client.playlists().firstOrNull { it.uri.endsWith(":$id") } ?: error("Playlist not found")
     }
 
@@ -365,15 +400,31 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
 
     override suspend fun editable(): List<Playlist> = client.playlists()
 
-    override suspend fun create(name: String, folderUri: Uri?): Uri = error("Not supported in the Subsonic spike")
+    override suspend fun create(name: String, folderUri: Uri?): Uri {
+        val res = client.call("createPlaylist", mapOf("name" to name))
+        val createdId = res.optJSONObject("playlist")?.optString("id")?.takeIf { it.isNotBlank() }
+        if (createdId != null) return "spotify:playlist:$createdId"
+        val found = client.playlists().lastOrNull { it.name == name }?.uri
+        return found ?: error("Playlist created but id not returned")
+    }
 
-    override suspend fun rename(uri: Uri, name: String) = Unit
+    override suspend fun rename(uri: Uri, name: String) {
+        val id = uri.substringAfterLast(':')
+        client.call("updatePlaylist", mapOf("playlistId" to id, "name" to name))
+    }
 
-    override suspend fun setDescription(uri: Uri, description: String) = Unit
+    override suspend fun setDescription(uri: Uri, description: String) {
+        val id = uri.substringAfterLast(':')
+        client.call("updatePlaylist", mapOf("playlistId" to id, "comment" to description))
+    }
 
     override suspend fun access(uri: Uri): PlaylistAccess = PlaylistAccess.PUBLIC
 
-    override suspend fun setAccess(uri: Uri, access: PlaylistAccess) = Unit
+    override suspend fun setAccess(uri: Uri, access: PlaylistAccess) {
+        val id = uri.substringAfterLast(':')
+        val pub = access == PlaylistAccess.PUBLIC
+        runCatching { client.call("updatePlaylist", mapOf("playlistId" to id, "public" to pub.toString())) }
+    }
 
     override suspend fun published(uri: Uri): Boolean = false
 
@@ -381,11 +432,14 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
 
     override suspend fun setCover(uri: Uri, jpeg: ByteArray?) = Unit
 
-    override suspend fun delete(uri: Uri) = Unit
+    override suspend fun delete(uri: Uri) {
+        val id = uri.substringAfterLast(':')
+        client.call("deletePlaylist", mapOf("id" to id))
+    }
 
     override suspend fun follow(uri: Uri) = Unit
 
-    override suspend fun unfollow(uri: Uri) = Unit
+    override suspend fun unfollow(uri: Uri) = delete(uri)
 
     override suspend fun join(uri: Uri, invitationToken: String): PlaylistAccess = PlaylistAccess.PUBLIC
 
@@ -403,9 +457,33 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
 
     override suspend fun addedBy(uri: Uri): List<RowAdder> = emptyList()
 
-    override suspend fun addTracks(uri: Uri, trackUris: List<Uri>) = Unit
+    override suspend fun addTracks(uri: Uri, trackUris: List<Uri>) {
+        val id = uri.substringAfterLast(':')
+        val pairs = buildList {
+            add("playlistId" to id)
+            trackUris.forEach { trackUri ->
+                val songId = trackUri.substringAfterLast(':').substringBefore('|')
+                if (songId.isNotBlank()) add("songIdToAdd" to songId)
+            }
+        }
+        if (pairs.size > 1) client.callPairs("updatePlaylist", pairs)
+    }
 
-    override suspend fun removeTracks(uri: Uri, uids: List<String>) = Unit
+    override suspend fun removeTracks(uri: Uri, uids: List<String>) {
+        val id = uri.substringAfterLast(':')
+        val playlist = client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist") ?: return
+        val entries = playlist.array("entry")
+        val indices = entries.mapIndexedNotNull { idx, entry ->
+            val entryId = entry.optString("id")
+            if (entryId in uids || idx.toString() in uids) idx else null
+        }.sortedDescending()
+        if (indices.isEmpty()) return
+        val pairs = buildList {
+            add("playlistId" to id)
+            indices.forEach { idx -> add("songIndexToRemove" to idx.toString()) }
+        }
+        client.callPairs("updatePlaylist", pairs)
+    }
 
     override suspend fun moveTracks(uri: Uri, uids: List<String>, beforeUid: String?) = Unit
 
@@ -458,7 +536,7 @@ internal class SubsonicUsers(private val config: SubsonicConfig) : Users {
     override suspend fun setPrivateSession(on: Boolean) = Unit
 }
 
-// --- Not part of the Home/album/play spike -----------------------------------
+// --- Extras, Recents and unsupported Spotify-only surfaces -------------------
 
 internal class SubsonicPodcasts : Podcasts {
     override suspend fun show(uri: Uri): app.myspoti.api.Show = error("Podcasts are not supported yet")
@@ -471,8 +549,69 @@ internal class SubsonicPodcasts : Podcasts {
     override suspend fun setEpisodeSaved(uri: Uri, saved: Boolean) = Unit
 }
 
-internal class SubsonicExtras : TrackExtras {
-    override suspend fun lyrics(trackUri: Uri): Lyrics? = null
+internal class SubsonicExtras(private val client: SubsonicClient) : TrackExtras {
+    override suspend fun lyrics(trackUri: Uri): Lyrics? {
+        val id = trackUri.substringAfterLast(':').substringBefore('|')
+        if (id.isBlank()) return null
+
+        // 1. OpenSubsonic getLyricsBySongId (supports synced lines)
+        val structured = runCatching {
+            client.call("getLyricsBySongId", mapOf("id" to id))
+                .optJSONObject("lyricsList")?.array("structuredLyrics").orEmpty()
+                .firstOrNull { it.array("line").isNotEmpty() }
+        }.getOrNull()
+        if (structured != null) {
+            val synced = structured.optBoolean("synced", false)
+            val lines = structured.array("line").map { line ->
+                LyricsLine(
+                    startMs = line.optLong("start", 0L),
+                    endMs = null,
+                    text = line.optString("value"),
+                )
+            }
+            if (lines.isNotEmpty()) {
+                return Lyrics(
+                    lines = lines,
+                    synced = synced,
+                    language = structured.optString("lang").takeIf { it.isNotBlank() },
+                    provider = "OpenSubsonic",
+                    background = null,
+                    text = null,
+                    highlight = null,
+                )
+            }
+        }
+
+        // 2. Classic Subsonic getLyrics (plain text by artist + title)
+        val song = runCatching {
+            client.call("getSong", mapOf("id" to id)).optJSONObject("song")
+        }.getOrNull()
+        val artist = song?.optString("artist")?.takeIf { it.isNotBlank() }
+        val title = song?.optString("title")?.takeIf { it.isNotBlank() }
+        if (artist != null || title != null) {
+            val params = buildMap {
+                if (artist != null) put("artist", artist)
+                if (title != null) put("title", title)
+            }
+            val plain = runCatching {
+                client.call("getLyrics", params).optJSONObject("lyrics")?.optString("value")
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+            if (plain != null) {
+                val lines = plain.lines().map { LyricsLine(startMs = 0L, endMs = null, text = it) }
+                return Lyrics(
+                    lines = lines,
+                    synced = false,
+                    language = null,
+                    provider = "Subsonic",
+                    background = null,
+                    text = null,
+                    highlight = null,
+                )
+            }
+        }
+        return null
+    }
+
     override suspend fun canvas(trackUri: Uri): Canvas? = null
     override suspend fun credits(trackUri: Uri): Credits = Credits(emptyList())
     override suspend fun radio(seedUri: Uri): Uri? = null
@@ -513,8 +652,27 @@ internal class SubsonicBlends : app.myspoti.api.Blends {
     override suspend fun leave(playlist: Uri) = Unit
 }
 
-internal class SubsonicRecents : Recents {
-    override suspend fun recentEntries(offset: Int, limit: Int): Page<app.myspoti.api.RecentEntry> = emptyPage()
+internal class SubsonicRecents(private val client: SubsonicClient) : Recents {
+    override suspend fun recentEntries(offset: Int, limit: Int): Page<RecentEntry> {
+        val recentAlbums = runCatching { client.albums("recent", 50) }.getOrDefault(emptyList())
+        val entries = recentAlbums.map { album ->
+            RecentEntry(
+                item = RecentItem(
+                    uri = album.uri,
+                    kind = MediaKind.ALBUM,
+                    title = album.name,
+                    subtitle = album.artists.joinToString(", ") { it.name },
+                    images = album.images,
+                    typeLabel = "Album",
+                ),
+                childrenGroup = album.uri,
+                groupCount = album.trackCount.takeIf { it > 0 } ?: 1,
+                saved = false,
+                music = true,
+            )
+        }
+        return pageOf(entries, offset, limit)
+    }
 }
 
 private suspend fun SubsonicClient.albums(type: String, size: Int): List<Album> {

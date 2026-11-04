@@ -87,7 +87,16 @@ data class ShareTarget(val uri: String, val title: String, val subtitle: String 
 object SpotifyCode {
     val request = MutableStateFlow<ShareTarget?>(null)
 
-    fun show(target: ShareTarget) { request.value = target }
+    fun show(target: ShareTarget) {
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) {
+            val ctx = com.music.spotui.di.Graph.app
+            val text = if (target.subtitle.isNotBlank()) "${target.title} — ${target.subtitle}" else target.title
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+            ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.action_share_label)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        }
+        request.value = target
+    }
 
     /**
      * Spotify's own image of the code of [uri]: its logo and bars, [bars] ("white" or "black") on

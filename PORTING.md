@@ -26,9 +26,13 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Library | Oui : artistes, albums, playlists |
 | Album | Oui : `getAlbum`, gradient, liste des morceaux |
 | Artist | Partiel : `getArtist`, albums, top morceaux approximatif |
-| Lecture | Oui : ExoPlayer + `stream.view`, file d'attente, pause/reprise/seek/next/previous |
-| Playlists | Lecture oui ; création/édition non |
-| Podcasts, Connect, Jam, Blends, Genius, Canvas, paroles, extensions, pubs/DRM | **Stubs / non portés** |
+| Lecture & MediaSession | Oui : ExoPlayer (audio focus, noisy, wake lock réseau) + `PlaybackService` (`MediaSession`, notification, écran verrouillé, boutons casque) |
+| Persistance file & Scrobble | Oui : `savePlayQueue` / `getPlayQueue` + `scrobble` (`nowPlaying` et `submission=true` à 50% / 4 min) |
+| Playlists (CRUD) | Oui : lecture, création (`createPlaylist`), renommage/description (`updatePlaylist`), ajout/retrait de titres (`songIdToAdd`/`songIndexToRemove`), suppression (`deletePlaylist`) |
+| Artiste | Oui : `getArtist`, `getTopSongs`, `getArtistInfo2` (biographie, images, artistes similaires) |
+| Paroles | Oui : OpenSubsonic `getLyricsBySongId` (synchronisées ou texte) + fallback `getLyrics` + fallback LRCLIB |
+| Partage | Oui : feuille de partage Android native (`titre — artiste`), sans Spotify Code ni lien `open.spotify.com` |
+| Podcasts, Connect, Jam, Blends, Canvas, Genius, extensions, pubs/DRM | **Désactivés / stubs** |
 
 Le lecteur est un simple `ExoPlayer` dans le module `:api-subsonic` ; il n'y a plus de
 WebView, de DRM Widevine ni de blocage de pubs.

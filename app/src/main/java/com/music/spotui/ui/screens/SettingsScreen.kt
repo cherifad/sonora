@@ -184,41 +184,16 @@ fun SettingsScreen(navController: NavController) {
                 onChecked = app.myspoti.power.EnergySettings::setBlackBackground,
             )
             OptionRow(
-                label = stringResource(R.string.settings_item_canvas_title),
-                detail = stringResource(if (energy.policy.saverEnabled) R.string.energy_saver_summary else R.string.video_settings_canvas_subtitle),
-                checked = energy.canvasEnabled && !energy.policy.saverEnabled,
-                enabled = !energy.policy.saverEnabled,
-                onChecked = app.myspoti.power.EnergySettings::setCanvasEnabled,
-            )
-            OptionRow(
-                label = stringResource(R.string.settings_music_video_title),
-                detail = stringResource(R.string.settings_music_video_detail),
-                checked = com.music.spotui.data.preferences.MusicVideoPref.on,
-                onChecked = { com.music.spotui.data.preferences.MusicVideoPref.set(ctx, it) },
-            )
-            OptionRow(
                 label = stringResource(R.string.settings_player_lyrics_card_title),
                 detail = stringResource(R.string.settings_player_lyrics_card_detail),
                 checked = com.music.spotui.data.preferences.PlayerLyricsCardPref.on,
                 onChecked = { com.music.spotui.data.preferences.PlayerLyricsCardPref.set(ctx, it) },
             )
             OptionRow(
-                label = stringResource(R.string.settings_player_source_title),
-                detail = stringResource(R.string.settings_player_source_detail),
-                checked = com.music.spotui.data.preferences.PlayerSourceLinePref.on,
-                onChecked = { com.music.spotui.data.preferences.PlayerSourceLinePref.set(ctx, it) },
-            )
-            OptionRow(
                 label = stringResource(R.string.settings_solid_nav_title),
                 detail = stringResource(R.string.settings_solid_nav_detail),
                 checked = com.music.spotui.data.preferences.SolidNavBar.on,
                 onChecked = { com.music.spotui.data.preferences.SolidNavBar.set(ctx, it) },
-            )
-            OptionRow(
-                label = stringResource(R.string.settings_hide_dj_title),
-                detail = stringResource(R.string.settings_hide_dj_detail),
-                checked = com.music.spotui.data.preferences.HideDjPref.on,
-                onChecked = { com.music.spotui.data.preferences.HideDjPref.set(ctx, it) },
             )
             AccentRow(com.music.spotui.data.preferences.Look.CLASSIC)
             LookRow()
