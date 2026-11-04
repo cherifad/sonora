@@ -26,8 +26,8 @@ android {
     // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
-        applicationId = if (beta) "app.myspoti" else "app.myspoti.stable"
-        manifestPlaceholders["appLabel"] = if (beta) "Jellyfin Audio" else "Jellyfin Audio"
+        applicationId = if (beta) "com.adlen.jellyfinaudio" else "com.adlen.jellyfinaudio.stable"
+        manifestPlaceholders["appLabel"] = "Jellyfin Audio"
         // The adb command line (com.music.spotui.cli): betas and debug builds only.
         manifestPlaceholders["cliEnabled"] = beta.toString()
         minSdk = 29

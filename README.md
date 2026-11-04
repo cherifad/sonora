@@ -31,9 +31,9 @@ printf 'sdk.dir=/path/to/android-sdk\n' > local.properties
 ./gradlew :app:assembleDebug
 
 # Debug APK: app/build/outputs/apk/debug/app-debug.apk
-# Debug package: app.myspoti.dev
+# Debug package: com.adlen.jellyfinaudio.dev
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n app.myspoti.dev/app.myspoti.MainActivity
+adb shell am start -n com.adlen.jellyfinaudio.dev/app.myspoti.MainActivity
 ```
 
 On first launch, enter the server URL and credentials:

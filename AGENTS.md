@@ -25,7 +25,7 @@ Myspoti, Spotui, BitChord and the other upstream projects.
 ./gradlew :app:assembleDebug
 ```
 
-JDK 17 and Android SDK 37. The debug package is `app.myspoti.dev`.
+JDK 17 and Android SDK 37. The debug package is `com.adlen.jellyfinaudio.dev`.
 
 ## Docs
 
