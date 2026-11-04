@@ -8,8 +8,8 @@ The repository now contains two clients:
   Spotify backend has been replaced with Subsonic/OpenSubsonic. It is the feature-rich
   UI path.
 
-The milestones below track the **`myspoti/` fork**. `M0` is done; `M1` is the current
-focus.
+The milestones below track the **`myspoti/` fork**. `M0` is done and the core of `M1` is
+done; `M2` is the current focus.
 
 ## M0 — Consolidation and licensing ✅
 
@@ -20,7 +20,7 @@ focus.
 - [x] Subsonic spike verified on an emulator against Navidrome: Home, Search, Library,
       Album, Player, playback.
 
-## M1 — Server setup and authentication (current)
+## M1 — Server setup and authentication (mostly done)
 
 - [x] `SubsonicSettings` store (SharedPreferences): URL, username, password.
 - [x] Native setup screen shown on first run (and reachable from Settings → cloud icon):
@@ -36,7 +36,7 @@ focus.
 **Done when:** a fresh install asks for a server, connects to Jellyfin + Subfin and
 Navidrome, shows a useful error on bad credentials, and no credential is hard-coded.
 
-## M2 — Remove the Spotify-only surface
+## M2 — Remove the Spotify-only surface (current)
 
 - [x] Profile sheet: Spotify account/recap/friends/extensions/logout replaced by
       Settings / Server / About.
