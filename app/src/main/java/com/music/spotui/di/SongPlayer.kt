@@ -687,7 +687,7 @@ object SongPlayer {
         // Started or moved on without Myspoti asking (another device, a transfer back here): the
         // Connect mirror sends it back through the extensions. After this state's own follow-ups.
         val moved = trackChanged || (!wasPlaying && playing)
-        if (moved || ConnectMirror.waitsBack) {
+        if (!MyspotiRuntime.isSubsonic && (moved || ConnectMirror.waitsBack)) {
             val intended = engineIntended()
             main.post { if (!LocalPlayer.active.value && !routing) ConnectMirror.onEngine(s, moved, intended) }
         }
@@ -748,11 +748,11 @@ object SongPlayer {
         // Clip lookup only where it can pay off: video wanted, or the player screen
         // is up (toggle then is instant). Looking up every track by default cost
         // searches and full-audio alignment downloads for users who never watch.
-        if (clipsShown && !isBuffering && playing && mv.inForeground && (mv.wantVideo || mv.hasPlayerScreen) && song.spotifyTrackId.isNotBlank())
+        if (!MyspotiRuntime.isSubsonic && clipsShown && !isBuffering && playing && mv.inForeground && (mv.wantVideo || mv.hasPlayerScreen) && song.spotifyTrackId.isNotBlank())
             com.music.spotui.video.MusicVideoController.prepare(song.spotifyTrackId, song.title, song.singer, durationMs)
         val lookups = app.myspoti.power.EnergySettings.state.value.policy.allowBackgroundLookups
         // Lyrics are warmed in the background too (the next song's are there when it starts), but not on a metered network.
-        if (!isBuffering && playing && lookups && (mv.inForeground || !com.music.spotui.data.DataSaver.metered)) {
+        if (!MyspotiRuntime.isSubsonic && !isBuffering && playing && lookups && (mv.inForeground || !com.music.spotui.data.DataSaver.metered)) {
             com.music.spotui.data.api.LyricsApi.prefetch(lyricsTrack(song))
             _nowPlaying.value.next?.let { com.music.spotui.data.api.LyricsApi.prefetch(lyricsTrack(it)) }
         }
@@ -762,7 +762,7 @@ object SongPlayer {
             // it holds every other request. Only for someone who has the player open or wants
             // the clip: a lookup downloads ~145 s of audio, too much data and battery to spend on
             // every song for a user who never looks at the player.
-            if (clipsShown && (mv.wantVideo || mv.hasPlayerScreen) && !MyspotiRuntime.host.licenseLimited()) _nowPlaying.value.next?.takeIf { it.spotifyTrackId.isNotBlank() && it.durationMs > 0 }?.let {
+            if (!MyspotiRuntime.isSubsonic && clipsShown && (mv.wantVideo || mv.hasPlayerScreen) && !MyspotiRuntime.host.licenseLimited()) _nowPlaying.value.next?.takeIf { it.spotifyTrackId.isNotBlank() && it.durationMs > 0 }?.let {
                 // Without the song's length the match could not be checked, so nothing is cached for it.
                 mv.prefetch(it.spotifyTrackId, it.title, it.singer, it.durationMs.toLong())
             }
@@ -1546,7 +1546,7 @@ object SongPlayer {
         // Spotify is refusing licences: every skip asks for one more and makes the limit last
         // (a tester's log: 183 refusals in 8 min of fast skipping, the page then skipping on its
         // own through songs it could not play). Nothing is sent until the limit is over.
-        if (MyspotiRuntime.host.licenseLimited()) {
+        if (MyspotiRuntime.isStarted && MyspotiRuntime.host.licenseLimited()) {
             android.widget.Toast.makeText(Graph.app, app.myspoti.engine.R.string.spotify_limited, android.widget.Toast.LENGTH_SHORT).show()
             return
         }
@@ -1914,7 +1914,7 @@ object SongPlayer {
         val mode = p.getInt("repeat", 0).coerceIn(0, 3)
         _repeatMode.value = mode
         state.repeat.value = mode != 0
-        MyspotiRuntime.spotify.player.restoreRepeat(Repeat.entries[LocalRepeat.pageMode(mode)])
+        if (!MyspotiRuntime.isSubsonic) MyspotiRuntime.spotify.player.restoreRepeat(Repeat.entries[LocalRepeat.pageMode(mode)])
     }
 
     /** Off, the queue, the song for good, the song once, off. */
@@ -2352,7 +2352,7 @@ object SongPlayer {
         if (pulled == null) {
             Log.w(TAG, "pull here hangs: player page reloaded")
             app.myspoti.host.android.Logbook.log("pull here hangs (no answer in ${PULL_BACK_WAIT_MS / 1000} s): player page reloaded")
-            MyspotiRuntime.spotify.player.reloadPage()
+            if (!MyspotiRuntime.isSubsonic) MyspotiRuntime.spotify.player.reloadPage()
         }
         _activeDevice.value = null
         PlaybackService.setPlaybackDevice(false, remoteVolume)

@@ -17,8 +17,11 @@ data class SubsonicConfig(
     val username: String,
     val password: String,
 ) {
-    fun normalized(): SubsonicConfig =
-        copy(baseUrl = baseUrl.trim().trimEnd('/') + "/")
+    fun normalized(): SubsonicConfig {
+        var url = baseUrl.trim().trimEnd('/')
+        if (!url.startsWith("http://") && !url.startsWith("https://")) url = "http://$url"
+        return copy(baseUrl = "$url/")
+    }
 }
 
 /**

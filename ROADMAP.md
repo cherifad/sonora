@@ -42,6 +42,12 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 - [x] Immersive profile sheet: Spotify entries replaced by Settings / Server / About.
 - [x] Player output sheet: local "This phone" only (no Connect list, no Spotify quality probe).
 - [x] Own profile: listening-stats/extensions buttons hidden.
+- [x] Podcasts/audiobooks disabled (`Features.PODCASTS = false`): chips, sections and
+      search filters gone.
+- [x] URL without a scheme is normalized to `http://` (autofill-friendly).
+- [x] Guarded the remaining Spotify host accesses in `SongPlayer` (clips, Connect mirror,
+      repeat restore, page reload); the output sheet is local-only.
+- [x] Runtime-verified on a OnePlus CPH2207 (Android 13) over wireless ADB + `adb reverse`.
 - [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
       Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.

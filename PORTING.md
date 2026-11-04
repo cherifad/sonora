@@ -31,6 +31,11 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 Le lecteur est un simple `ExoPlayer` dans le module `:api-subsonic` ; il n'y a plus de
 WebView, de DRM Widevine ni de blocage de pubs.
 
+Vérifié sur appareil réel : **OnePlus CPH2207, Android 13**, via ADB sans fil et
+`adb reverse` vers Navidrome. Home, profil, Settings, album, lecture, player et feuille de
+sortie locale fonctionnent sans crash. Podcasts/audiobooks sont désactivés
+(`Features.PODCASTS = false`) et une URL sans schéma est normalisée en `http://`.
+
 ## Architecture du portage
 
 - `api-subsonic/` : module Android du backend.
@@ -99,9 +104,13 @@ Exemples d'URL :
 |:---:|:---:|
 | ![](docs/screenshots/subsonic-spike/album.png) | ![](docs/screenshots/subsonic-spike/player.png) |
 
-| Setup | Server dialog |
-|:---:|:---:|
-| ![](docs/screenshots/subsonic-spike/setup.png) | ![](docs/screenshots/subsonic-spike/server-dialog.png) |
+| Album | Player | Output |
+|:---:|:---:|:---:|
+| ![](docs/screenshots/subsonic-spike/album.png) | ![](docs/screenshots/subsonic-spike/player.png) | ![](docs/screenshots/subsonic-spike/devices.png) |
+
+| Setup | Server dialog | Settings |
+|:---:|:---:|:---:|
+| ![](docs/screenshots/subsonic-spike/setup.png) | ![](docs/screenshots/subsonic-spike/server-dialog.png) | ![](docs/screenshots/subsonic-spike/settings.png) |
 
 | Profile menu |
 |:---:|
