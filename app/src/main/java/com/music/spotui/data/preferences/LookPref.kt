@@ -9,12 +9,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-/** The two looks. [CLASSIC] is the default, so nothing changes for anyone who has not chosen. */
+/** The two looks. This Subsonic fork defaults to [IMMERSIVE], the look of the Myspoti README. */
 enum class Look {
     CLASSIC, IMMERSIVE;
 
     companion object {
-        fun of(name: String?): Look = entries.firstOrNull { it.name == name } ?: CLASSIC
+        fun of(name: String?): Look = entries.firstOrNull { it.name == name } ?: IMMERSIVE
     }
 }
 

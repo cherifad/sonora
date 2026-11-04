@@ -51,6 +51,10 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 - [x] Application id renamed to `com.adlen.jellyfinaudio` (debug `…dev`); label
       "Jellyfin Audio". The internal Kotlin namespace (`app.myspoti.*`) is a later mechanical
       rename.
+- [x] Default look switched to **Immersive** (the look of the Myspoti README); Classic is
+      still selectable in Settings → Display → Look.
+- [x] Immersive Settings cleaned: Server / Playback (Server) / Data / Display / App;
+      Downloads and Extensions tabs removed.
 - [ ] Hide/remove the rest: Connect, Jam, Blends, podcasts/audiobooks, Canvas, Genius,
       Spotify Codes, Wrapped, extensions, ad-blocking and DRM code paths.
 - [ ] Remove Spotify strings/assets/branding; rename the package and app label.

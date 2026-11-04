@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Refresh
@@ -146,37 +147,33 @@ fun ImmersiveSettingsScreen(navController: NavController) {
 
 @Composable
 private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> Unit, back: () -> Unit) {
-    val registry by com.music.spotui.extensions.Extensions.registry.collectAsStateWithLifecycle()
-    val withSettings = registry.extensions.mapNotNull { e ->
-        com.music.spotui.extensions.Extensions.manifest(e.id)?.settings?.takeIf { it.isNotEmpty() }?.let { e to it }
+    val context = LocalContext.current
+    val config = app.myspoti.subsonic.SubsonicSettings.load(context)
+    var showServer by remember { mutableStateOf(false) }
+    if (showServer) {
+        com.music.spotui.ui.setup.SubsonicSetupDialog(
+            onDismiss = { showServer = false },
+            onSaved = {
+                showServer = false
+                (context as? android.app.Activity)?.recreate()
+            },
+        )
     }
     ImmersivePage(title = stringResource(R.string.settings_title), onBack = back) {
         immersiveGroup("root") {
+            row {
+                ImmersiveGroupRow(
+                    "Server",
+                    detail = config?.baseUrl ?: "No server configured",
+                    icon = Icons.Rounded.Cloud,
+                    chevron = true,
+                    onClick = { showServer = true },
+                )
+            }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_playback), icon = Icons.Rounded.PlayArrow, chevron = true, onClick = { open(SettingsPage.Playback) }) }
-            row { ImmersiveGroupRow(stringResource(R.string.settings_section_downloads), icon = Icons.Rounded.Download, chevron = true, onClick = { open(SettingsPage.Downloads) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_data), icon = Icons.Rounded.SignalCellularAlt, chevron = true, onClick = { open(SettingsPage.Data) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_display), icon = Icons.Rounded.Palette, chevron = true, onClick = { open(SettingsPage.Display) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_app), icon = Icons.Rounded.Info, chevron = true, onClick = { open(SettingsPage.App) }) }
-        }
-        immersiveGroup("extensions") {
-            row {
-                ImmersiveGroupRow(
-                    stringResource(R.string.extensions_title), detail = stringResource(R.string.extensions_row_detail),
-                    icon = Icons.Rounded.Extension, chevron = true,
-                    onClick = { navController.navigate(Routes.Extensions.route) },
-                )
-            }
-        }
-        // The installed extensions that declare settings, each opening its page.
-        immersiveGroup("extension-settings", headerRes = if (withSettings.isEmpty()) null else R.string.extensions_title) {
-            withSettings.forEach { (e, settings) ->
-                row {
-                    ImmersiveGroupRow(
-                        e.name, detail = settings.joinToString { it.label }, chevron = true,
-                        onClick = { navController.navigate(installedRoute(e.id)) },
-                    )
-                }
-            }
         }
     }
 }
@@ -203,112 +200,27 @@ private fun androidx.compose.foundation.lazy.LazyListScope.sourcesGroup(action: 
 
 @Composable
 private fun PlaybackPage(navController: NavController, open: (SettingsPage) -> Unit, back: () -> Unit) {
-    val ctx = LocalContext.current
-    val wifi = getStreamingQuality(ctx, false)
-    val cell = getStreamingQuality(ctx, true)
-    val label = { q: StreamingQuality -> StreamingChoices.first { it.first == q }.second }
-    var headsetSkip by remember { mutableStateOf(app.myspoti.host.android.PlaybackService.skipsOnEpisodes(ctx)) }
-    var keepPlaying by remember { mutableStateOf(app.myspoti.host.android.PlaybackService.keepsPlayingOnClose(ctx)) }
-    var wordSync by remember { mutableStateOf(com.music.spotui.data.preferences.isLyricsWordSync(ctx)) }
-    val crossfade = com.music.spotui.data.preferences.CrossfadePref.seconds
-    // The first source of the audio order, when it is an extension announcing settings here:
-    // they show, and Spotify's quality (kept, still used for what Spotify plays) leaves the screen.
-    val registry by com.music.spotui.extensions.Extensions.registry.collectAsStateWithLifecycle()
-    // A source picked in the player for this session leads too ([com.music.spotui.extensions.SessionSource]).
-    val session by com.music.spotui.extensions.Extensions.sessionSource.collectAsStateWithLifecycle()
-    val ext = remember(registry, session) { com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.PLAYBACK) }
-    val extHeader = ext?.let { stringResource(R.string.ext_section_settings, it.name) }
+    val context = LocalContext.current
+    val config = app.myspoti.subsonic.SubsonicSettings.load(context)
+    var showServer by remember { mutableStateOf(false) }
+    if (showServer) {
+        com.music.spotui.ui.setup.SubsonicSetupDialog(
+            onDismiss = { showServer = false },
+            onSaved = {
+                showServer = false
+                (context as? android.app.Activity)?.recreate()
+            },
+        )
+    }
     ImmersivePage(title = stringResource(R.string.settings_section_playback), onBack = back) {
-        if (ext != null && extHeader != null) extensionSectionGroup(ext, extHeader)
-        if (ext?.hidesAppQuality != true) immersiveGroup("quality", footerRes = R.string.quality_streaming_detail) {
-            row { ImmersiveGroupRow(stringResource(R.string.quality_streaming_wifi_title), value = stringResource(label(wifi)), chevron = true, onClick = { open(SettingsPage.StreamingWifi) }) }
-            row { ImmersiveGroupRow(stringResource(R.string.quality_streaming_cell_title), value = stringResource(label(cell)), chevron = true, onClick = { open(SettingsPage.StreamingCell) }) }
-        }
-        immersiveGroup("playback") {
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.settings_autoplay_title),
-                    checked = com.music.spotui.data.preferences.AutoplayPref.on,
-                    onChecked = { com.music.spotui.data.preferences.AutoplayPref.set(ctx, it) },
-                    detail = stringResource(R.string.settings_autoplay_detail),
-                )
-            }
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.myspoti_shuffle_title),
-                    checked = com.music.spotui.data.preferences.AppShufflePref.on,
-                    onChecked = { com.music.spotui.data.preferences.AppShufflePref.set(ctx, it) },
-                    detail = stringResource(R.string.myspoti_shuffle_detail),
-                )
-            }
+        immersiveGroup("server") {
             row {
                 ImmersiveGroupRow(
-                    stringResource(R.string.settings_crossfade_title), detail = stringResource(R.string.settings_crossfade_detail),
-                    value = if (crossfade == 0) stringResource(R.string.settings_crossfade_off) else stringResource(R.string.settings_crossfade_seconds, crossfade),
-                    chevron = true, onClick = { open(SettingsPage.Crossfade) },
-                )
-            }
-            // The local player's equalizer, speed and silence skipping (never Spotify's own songs).
-            row {
-                ImmersiveGroupRow(
-                    stringResource(R.string.equalizer_title), detail = stringResource(R.string.equalizer_settings_detail),
-                    value = if (com.music.spotui.data.preferences.EqualizerPref.enabled) stringResource(com.music.spotui.ui.screens.eqPresetLabel(com.music.spotui.data.preferences.EqualizerPref.preset)) else null,
-                    chevron = true, onClick = { navController.navigate(Routes.Equalizer.route) },
-                )
-            }
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.settings_keep_playing_title), checked = keepPlaying,
-                    onChecked = { keepPlaying = it; app.myspoti.host.android.PlaybackService.setKeepsPlayingOnClose(ctx, it) },
-                    detail = stringResource(R.string.settings_keep_playing_detail),
-                )
-            }
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.settings_headset_skip_title), checked = headsetSkip,
-                    onChecked = { headsetSkip = it; app.myspoti.host.android.PlaybackService.setSkipsOnEpisodes(ctx, it) },
-                    detail = stringResource(R.string.settings_headset_skip_detail),
-                )
-            }
-            // Songs an extension streams, played by Spotify too (unheard): counted there, seen by Connect.
-            if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.AUDIO_SOURCE).isNotEmpty()) row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.settings_connect_mirror_title),
-                    checked = com.music.spotui.data.preferences.ConnectMirrorPref.on,
-                    onChecked = { com.music.spotui.data.preferences.ConnectMirrorPref.set(ctx, it) },
-                    detail = stringResource(R.string.settings_connect_mirror_detail),
-                )
-            }
-            // Downloaded songs, played from their files online, played by Spotify too (unheard), as an extension's.
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.settings_download_sync_title),
-                    checked = com.music.spotui.data.preferences.DownloadSyncPref.on,
-                    onChecked = { com.music.spotui.data.preferences.DownloadSyncPref.set(ctx, it) },
-                    detail = stringResource(R.string.settings_download_sync_detail),
-                )
-            }
-            // Songs marked "Not interested": skipped by lists, listed here to be shown again.
-            row {
-                ImmersiveGroupRow(
-                    stringResource(R.string.hidden_songs_title), detail = stringResource(R.string.hidden_songs_detail),
-                    chevron = true, onClick = { navController.navigate(Routes.HiddenSongs.route) },
-                )
-            }
-        }
-        sourcesGroup(app.myspoti.extensions.Action.AUDIO_SOURCE, navController)
-        immersiveGroup("visuals") {
-            // Lyrics: word by word (karaoke) first, or line by line with Spotify's first.
-            row {
-                ImmersiveSwitchRow(
-                    stringResource(R.string.lyrics_word_sync_title), checked = wordSync,
-                    onChecked = {
-                        wordSync = it
-                        com.music.spotui.data.preferences.setLyricsWordSync(ctx, it)
-                        com.music.spotui.data.api.LyricsApi.wordSync = it
-                        com.music.spotui.data.api.LyricsApi.forgetAll()
-                    },
-                    detail = stringResource(if (wordSync) R.string.lyrics_word_sync_on else R.string.lyrics_word_sync_off),
+                    "Server",
+                    detail = config?.baseUrl ?: "No server configured",
+                    icon = Icons.Rounded.Cloud,
+                    chevron = true,
+                    onClick = { showServer = true },
                 )
             }
         }
