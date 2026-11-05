@@ -28,7 +28,7 @@ Myspoti, Spotui, BitChord and the other upstream projects.
 ```
 
 JDK 17 and Android SDK 37. Two flavors share the code: **mobile** (debug package
-`com.adlen.jellyfinaudio.dev`, APK in `app/build/outputs/apk/mobile/debug/`) and
+`com.adlen.sonora.dev`, APK in `app/build/outputs/apk/mobile/debug/`) and
 **automotive** (no launcher activity, `.car` id — `…/apk/automotive/debug/`, used on the car
 emulator; see `docs/TESTING.md`).
 

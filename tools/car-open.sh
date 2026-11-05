@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Opens the Android Automotive OS media app on Jellyfin Audio's media browser service.
+# Opens the Android Automotive OS media app on Sonora's media browser service.
 # Run it with the car emulator (jellyfin_car) booted and the automotive APK installed:
 #
 #   tools/emulator.sh jellyfin_car
@@ -13,7 +13,7 @@ set -euo pipefail
 SDK=${ANDROID_HOME:-$HOME/android-sdk}
 ADB=$SDK/platform-tools/adb
 SERIAL=${SERIAL:-emulator-5554}
-PKG=${CAR_PKG:-com.adlen.jellyfinaudio.car.dev}
+PKG=${CAR_PKG:-com.adlen.sonora.car.dev}
 COMPONENT="$PKG/app.myspoti.host.android.PlaybackService"
 
 # The app must not be in the "stopped" state (a package with no launcher starts that way, and

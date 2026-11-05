@@ -71,7 +71,7 @@ des identifiants opaques pour l'UI Myspoti. Un nettoyage ultérieur peut les pas
 printf 'sdk.dir=/home/adlen/android-sdk\n' > local.properties
 JAVA_HOME=/home/adlen/tools/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.adlen.jellyfinaudio.dev/app.myspoti.MainActivity
+adb shell am start -n com.adlen.sonora.dev/app.myspoti.MainActivity
 ```
 
 Le serveur se configure dans l'app :

@@ -217,7 +217,7 @@ Deux pièges connus :
 - `run-as` écrit dans les données de l'utilisateur 0 alors que la voiture tourne en
   utilisateur 10 : pour configurer le serveur, le test instrumenté (`AutoBrowserTest`) le fait
   dans le bon contexte — `adb shell am instrument -w --user 10 -e class
-  com.myspoti.auto.AutoBrowserTest com.adlen.jellyfinaudio.car.dev.test/androidx.test.runner.AndroidJUnitRunner`.
+  com.myspoti.auto.AutoBrowserTest com.adlen.sonora.car.dev.test/androidx.test.runner.AndroidJUnitRunner`.
 
 ## Tablette sans émulateur (sur le téléphone)
 

@@ -200,7 +200,7 @@
     <string name="track_sort_artist">Wykonawca</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Czas trwania</string>
-    <string name="setup_title">Konfiguracja Jellyfin Audio</string>
+    <string name="setup_title">Konfiguracja Sonora</string>
     <string name="setup_subtitle">Zezwól na to, co chcesz; możesz to zmienić później w ustawieniach telefonu.</string>
     <string name="setup_notifications_title">Powiadomienia</string>
     <string name="setup_notifications_detail">Sterowanie na ekranie blokady i w panelu powiadomień</string>

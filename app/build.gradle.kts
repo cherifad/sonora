@@ -26,8 +26,8 @@ android {
     // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
-        applicationId = "com.adlen.jellyfinaudio"
-        manifestPlaceholders["appLabel"] = "Jellyfin Audio"
+        applicationId = "com.adlen.sonora"
+        manifestPlaceholders["appLabel"] = "Sonora"
         // The adb command line (com.music.spotui.cli): betas and debug builds only.
         manifestPlaceholders["cliEnabled"] = "false"
         minSdk = 29
@@ -93,7 +93,7 @@ android {
         debug {
             // Installs next to the release apps (own data, own sign-in).
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appLabel"] = "Jellyfin Audio dev"
+            manifestPlaceholders["appLabel"] = "Sonora dev"
             manifestPlaceholders["cliEnabled"] = "true"
         }
         release {
@@ -104,7 +104,7 @@ android {
             // beta on the test phone without replacing the signed beta installed there.
             if (findProperty("overDev") != null) {
                 applicationIdSuffix = ".dev"
-                manifestPlaceholders["appLabel"] = "Jellyfin Audio dev"
+                manifestPlaceholders["appLabel"] = "Sonora dev"
             }
             isMinifyEnabled = true
             isShrinkResources = true

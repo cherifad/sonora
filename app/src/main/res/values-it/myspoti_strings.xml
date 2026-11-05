@@ -176,7 +176,7 @@
     <string name="track_sort_artist">Artista</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Durata</string>
-    <string name="setup_title">Configura Jellyfin Audio</string>
+    <string name="setup_title">Configura Sonora</string>
     <string name="setup_subtitle">Consenti ciò che vuoi; potrai cambiarlo più tardi nelle impostazioni del telefono.</string>
     <string name="setup_notifications_title">Notifiche</string>
     <string name="setup_notifications_detail">Controlli sulla schermata di blocco e nel pannello delle notifiche</string>

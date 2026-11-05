@@ -96,7 +96,7 @@ class SetupFlowTest {
         compose.onNodeWithText("Connect").performClick()
 
         // Step 2: permissions (the look and storage steps are marked seen above), then Home.
-        waitFor("Set up Jellyfin Audio", 60_000)
+        waitFor("Set up Sonora", 60_000)
         compose.onAllNodesWithText("Continue").onFirst().performScrollTo().performClick()
         waitFor("Liked Songs", 60_000)
     }

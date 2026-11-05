@@ -56,7 +56,7 @@
     <string name="background_playback_title">Background playback</string>
     <string name="background_playback_on">Battery optimization is off: music keeps playing with the screen off.</string>
     <string name="background_playback_off">Turn off battery optimization so Android does not pause the app in the background.</string>
-    <string name="background_playback_samsung">Samsung can still put Jellyfin Audio to sleep with the screen off. Add it to Never sleeping apps: Settings &gt; Battery &gt; Background usage limits.</string>
+    <string name="background_playback_samsung">Samsung can still put Sonora to sleep with the screen off. Add it to Never sleeping apps: Settings &gt; Battery &gt; Background usage limits.</string>
     <string name="background_playback_open">Open app settings</string>
     <plurals name="local_files_count">
         <item quantity="one">%d track</item>
@@ -204,7 +204,7 @@
     <string name="track_sort_artist">Artist</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Duration</string>
-    <string name="setup_title">Set up Jellyfin Audio</string>
+    <string name="setup_title">Set up Sonora</string>
     <string name="setup_subtitle">Allow what you want; you can change it later in the phone settings.</string>
     <string name="setup_notifications_title">Notifications</string>
     <string name="setup_notifications_detail">Controls on the lock screen and in the notification shade</string>
@@ -310,7 +310,7 @@
     <string name="quality_now_unknown">Not known yet: start a song</string>
     <string name="update_downloading">Downloading… %1$d%%</string>
     <string name="update_installing">Installing…</string>
-    <string name="update_needs_permission">To update, allow Jellyfin Audio to install apps, then come back here.</string>
+    <string name="update_needs_permission">To update, allow Sonora to install apps, then come back here.</string>
     <string name="update_allow">Allow</string>
     <string name="update_failed">The update failed: %1$s</string>
     <string name="update_retry">Try again</string>
@@ -320,7 +320,7 @@
     <string name="settings_check_update_title">Check for updates now</string>
     <string name="settings_check_update_detail">Looks for a newer version and offers to install it</string>
     <string name="settings_update_checking">Checking…</string>
-    <string name="settings_update_check_latest">Jellyfin Audio is up to date</string>
+    <string name="settings_update_check_latest">Sonora is up to date</string>
     <string name="settings_update_refresh">Check for updates</string>
     <string name="settings_update_uptodate_now">Up to date (checked just now)</string>
     <string name="settings_update_last_checked">Last checked: %1$s</string>
