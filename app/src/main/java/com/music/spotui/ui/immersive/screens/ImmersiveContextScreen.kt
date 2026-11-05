@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -147,6 +151,9 @@ private const val SLEEVE_MAX_HEIGHT = 0.5f
 /** On a wide window the sleeve stops growing: the header must leave room for the songs. */
 private val WIDE_SLEEVE_MAX = 300.dp
 
+/** How far down the header's wash runs (full width), past the sleeve and the buttons. */
+private val CTX_WASH_HEIGHT = 560.dp
+
 private val SleeveShape = RoundedCornerShape(12.dp)
 private val SleeveShadow = 18.dp
 
@@ -176,7 +183,8 @@ fun ImmersiveContextScreen(navController: NavController, type: String, id: Strin
     BoxWithConstraints(Modifier.fillMaxSize().background(Immersive.Page)) {
         // A tablet/landscape window: a smaller sleeve, so the track list is on screen at once
         // instead of below a cover that fills the display.
-        val sleeve = albumSleeve(maxWidth, maxHeight, wide = maxWidth >= 840.dp)
+        val wide = maxWidth >= 840.dp
+        val sleeve = albumSleeve(maxWidth, maxHeight, wide = wide)
         when (val r = resp) {
             is Response.Loading -> ContextLoading(navController, sleeve)
             is Response.Error -> {
@@ -190,7 +198,7 @@ fun ImmersiveContextScreen(navController: NavController, type: String, id: Strin
                     ImmersiveTopBar(title = "", collapse = { 0f }, onBack = { navController.navigateUp() })
                 }
             }
-            is Response.Success -> ImmersiveContextContent(navController, vm, r.data, sleeve)
+            is Response.Success -> ImmersiveContextContent(navController, vm, r.data, sleeve, wide)
         }
     }
 }
@@ -227,7 +235,7 @@ internal fun ContextLoading(navController: NavController, sleeve: Dp) {
 }
 
 @Composable
-private fun ImmersiveContextContent(navController: NavController, vm: ContextViewModel, p: ContextPageModel, sleeve: Dp) {
+private fun ImmersiveContextContent(navController: NavController, vm: ContextViewModel, p: ContextPageModel, sleeve: Dp, wide: Boolean) {
     val context = LocalContext.current
     val playerVm: PlayerViewModel = viewModel()
     val currentSongId = playerVm.currentSongId.value
@@ -439,6 +447,12 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
 
     val refreshing by vm.refreshing
     Box(Modifier.fillMaxSize()) {
+      // The header's wash, full-bleed: on a wide window the page is capped and centred (1040 dp),
+      // and the wash must run under that cap or two black bars appear beside it.
+      Box(
+          Modifier.fillMaxWidth().height(CTX_WASH_HEIGHT)
+              .background(Brush.verticalGradient(listOf(lerp(tint, Color.Black, 0.3f), Immersive.Page))),
+      )
       // Pull down to read the page again, as in the Classic look.
       androidx.compose.material3.pulltorefresh.PullToRefreshBox(
         isRefreshing = refreshing,
@@ -448,7 +462,12 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(bottom = Immersive.BottomChrome),
-            modifier = Modifier.fillMaxSize().immersiveHazeSource().immersiveChromeScroll(),
+            // A wide window: the column of rows keeps a readable width, centred, while the wash
+            // behind it (drawn above, full width) runs edge to edge.
+            modifier = Modifier.fillMaxHeight().fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = com.music.spotui.ui.components.WindowSize.MaxPageWidth)
+                .immersiveHazeSource().immersiveChromeScroll(),
         ) {
             item(key = "header") {
                 ContextHeader(
@@ -469,6 +488,7 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
                     onAskRemoveDownloads = { askRemoveDownloads = true },
                     members = crew,
                     onMembers = { showMembers = true },
+                    wide = wide,
                 )
             }
             // Someone else's collaborative playlist this account was never invited to.
@@ -649,15 +669,11 @@ private fun ContextHeader(
     onAskRemoveDownloads: () -> Unit,
     members: List<app.myspoti.api.PlaylistMember> = emptyList(),
     onMembers: () -> Unit = {},
+    wide: Boolean = false,
 ) {
     val context = LocalContext.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(lerp(tint, Color.Black, 0.3f), Immersive.Page)))
-            .padding(top = immersiveTopContentPadding(), bottom = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    // The sleeve and the text block, laid out side by side on a wide window and stacked otherwise.
+    val sleeveBox: @Composable () -> Unit = {
         Box(Modifier.size(sleeve).shadow(SleeveShadow, SleeveShape)) {
             if (isLiked) LikedSleeve(Modifier.matchParentSize())
             else ImmersiveCover(
@@ -667,6 +683,8 @@ private fun ContextHeader(
                 placeholderIcon = if (p.type == "album") Icons.Rounded.Album else Icons.Rounded.QueueMusic,
             )
         }
+    }
+    val body: @Composable ColumnScope.() -> Unit = {
         Spacer(Modifier.height(20.dp))
         Text(
             text = p.name,
@@ -810,6 +828,28 @@ private fun ContextHeader(
                     tint = if (smart) Immersive.Accent else Immersive.Text,
                 )
             }
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = immersiveTopContentPadding(), bottom = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (wide) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                sleeveBox()
+                Column(
+                    modifier = Modifier.weight(1f).padding(start = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) { body() }
+            }
+        } else {
+            sleeveBox()
+            body()
         }
     }
 }

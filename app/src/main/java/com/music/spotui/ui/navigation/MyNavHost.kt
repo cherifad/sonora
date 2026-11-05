@@ -525,6 +525,9 @@ private fun NavGraphBuilder.page(
 private val FullWidthRoutes = setOf(
     Routes.Home.route, Routes.Search.route, Routes.Library.route, Routes.Player.route, Routes.Queue.route,
     Routes.Category.route, Routes.NewReleases.route,
+    // Context pages cap their own column (see ImmersiveContextScreen) so their wash can run
+    // full-bleed; a page-wide cap showed black bars beside the header on a tablet.
+    Routes.Album.route, Routes.Playlist.route, Routes.Liked.route, LIKED_BY_ARTIST_ROUTE,
 )
 
 /**
