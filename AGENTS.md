@@ -22,10 +22,15 @@ Myspoti, Spotui, BitChord and the other upstream projects.
 ## Build
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew :app:assembleDebug            # both variants
+./gradlew :app:assembleMobileDebug      # phone + Android Auto projection
+./gradlew :app:assembleAutomotiveDebug -Pabis=x86_64   # Android Automotive OS
 ```
 
-JDK 17 and Android SDK 37. The debug package is `com.adlen.jellyfinaudio.dev`.
+JDK 17 and Android SDK 37. Two flavors share the code: **mobile** (debug package
+`com.adlen.jellyfinaudio.dev`, APK in `app/build/outputs/apk/mobile/debug/`) and
+**automotive** (no launcher activity, `.car` id — `…/apk/automotive/debug/`, used on the car
+emulator; see `docs/TESTING.md`).
 
 ## Test device: the emulator
 
