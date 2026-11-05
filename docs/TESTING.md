@@ -125,10 +125,10 @@ Aucun émulateur : le téléphone projette vers une « autoradio » logicielle.
    développeur (10 taps sur la version), puis **Démarrer le serveur d'unité
    centrale** dans son menu.
 2. Sur le PC, téléphone en USB (ou ADB sans fil) :
-   ```powershell
-   adb forward tcp:5277 tcp:5277
-   & "$env:ANDROID_HOME\extras\google\auto\desktop-head-unit.exe"
+   ```bash
+   tools/dhu.sh            # WSL/Linux ; ou desktop-head-unit.exe sous Windows
    ```
+   (le script fait l'`adb forward tcp:5277` et pose `LD_LIBRARY_PATH`).
 3. L'app expose déjà son arbre de navigation (`AutoBrowser` → `MediaBrowserService`) :
    elle apparaît dans « Média » du DHU.
 
@@ -146,6 +146,10 @@ se lie au service et parcourt les dossiers (avec Navidrome sur `10.0.2.2:4533`) 
 Il vérifie que `PlaybackService` répond à `android.media.browse.MediaBrowserService`, que la
 racine donne Home / Library / Downloads, que Library liste les collections, qu'un album rend
 un « Start radio » et des morceaux jouables, et que la recherche répond.
+
+Le DHU lui-même est installé (`extras;google;auto`) et se lance avec `tools/dhu.sh` ; il
+demande l'app Android Auto **sur l'appareil**, absente de l'image `google_apis` de
+l'émulateur — d'où le test ci-dessus, qui couvre l'arbre sans elle.
 Une app *Android Automotive* (écran embarqué) se teste à part, dans l'AVD
 `car` — ce n'est pas le même modèle.
 
