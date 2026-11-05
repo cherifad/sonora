@@ -147,9 +147,18 @@ Il vérifie que `PlaybackService` répond à `android.media.browse.MediaBrowserS
 racine donne Home / Library / Downloads, que Library liste les collections, qu'un album rend
 un « Start radio » et des morceaux jouables, et que la recherche répond.
 
-Les écrans du téléphone ont leur test Compose (`MainFlowTest`) : Home, Library, puis un album
-de la bibliothèque ouvert et lancé. Il se configure lui-même sur `10.0.2.2:4533` et se saute si
-le serveur ne répond pas.
+Les écrans du téléphone ont leurs tests Compose :
+
+- `MainFlowTest` : Home, Library, **Search** (une requête sur la bibliothèque de test) et un
+  album de la bibliothèque ouvert et lancé ;
+- `SetupFlowTest` : le formulaire serveur de l'onboarding se connecte, puis l'étape permissions
+  et Home. L'étape du look n'est pas automatisée : son aperçu anime en boucle, ce sur quoi un
+  test Compose ne peut pas « idler » ; le test la marque vue et couvre le reste.
+
+```bash
+./gradlew :app:connectedMobileDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.package=com.myspoti.ui
+```
 
 ```bash
 ./gradlew :app:connectedMobileDebugAndroidTest \

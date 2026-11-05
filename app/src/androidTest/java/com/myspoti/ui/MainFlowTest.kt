@@ -8,7 +8,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.myspoti.MainActivity
@@ -86,6 +88,16 @@ class MainFlowTest {
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithText("Albums").fetchSemanticsNodes().isNotEmpty() }
         compose.onAllNodesWithText("Albums").onFirst().assertExists()
         assertTrue(compose.onAllNodesWithText("Artists").fetchSemanticsNodes().isNotEmpty())
+    }
+
+    @Test
+    fun searchFindsTheTestLibrary() {
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodesWithContentDescription("Search").fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodesWithContentDescription("Search").onFirst().performClick()
+        compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodes(hasSetTextAction()).onFirst().performTextInput("mira")
+        // The server answers with the artist of the test library (and/or its songs).
+        waitFor("Mira Sol", 30_000)
     }
 
     @Test
