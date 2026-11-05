@@ -41,7 +41,9 @@ WebView, de DRM Widevine ni de blocage de pubs.
 
 Vérifié sur appareil réel : **OnePlus CPH2207, Android 13**, via ADB sans fil et
 `adb reverse` vers Navidrome. Home, profil, Settings, album, lecture, player et feuille de
-sortie locale fonctionnent sans crash. Podcasts/audiobooks sont désactivés
+sortie locale fonctionnent sans crash. Les téléchargements (file + WorkManager), la
+reprise après redémarrage, la lecture hors ligne (serveur injoignable), le bandeau
+« Offline » et l'écran Stockage ont aussi été vérifiés. Podcasts/audiobooks sont désactivés
 (`Features.PODCASTS = false`) et une URL sans schéma est normalisée en `http://`.
 
 ## Architecture du portage
