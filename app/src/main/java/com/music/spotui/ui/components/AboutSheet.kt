@@ -68,7 +68,7 @@ fun AboutSheet(onDismiss: () -> Unit) {
                     modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(tone(0xFF121212)),
                 )
                 Column(Modifier.padding(start = 14.dp)) {
-                    Text("Myspoti", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.app_name), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text("${stringResource(R.string.settings_item_version_title)} ${BuildConfig.VERSION_NAME}",
                         color = AppMuted, fontSize = 13.sp)
                 }

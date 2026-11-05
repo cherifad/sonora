@@ -143,8 +143,12 @@ is correct.
 - [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
+      Started: `app_name`, the update/language/battery strings and the About title say
+      "Jellyfin Audio"; the Settings rows no longer mention Spotify Connect or Myspoti.
+      Remaining: the Spotify-only screens' strings and the upstream Discord/Support links.
 - [ ] GPL-3.0 compliance: source publication, notices, Myspoti credit.
-- [ ] CI: build + tests.
+- [x] CI: `.github/workflows/ci.yml` — JDK 17 + Android SDK, the JVM tests of `api-subsonic`
+      and `app`, then the debug APK, uploaded as an artifact.
 
 **Done when:** a signed release builds from CI, installs on a clean device, and passes
 the manual matrix (phone/tablet, HTTP/HTTPS, Jellyfin/Navidrome, offline).

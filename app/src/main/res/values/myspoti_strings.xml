@@ -54,9 +54,9 @@
     <string name="library_error">Couldn\'t load your Library</string>
     <string name="library_empty">Your Library is empty</string>
     <string name="background_playback_title">Background playback</string>
-    <string name="background_playback_on">Battery optimization is off: music and Spotify Connect keep going with the screen off.</string>
+    <string name="background_playback_on">Battery optimization is off: music keeps playing with the screen off.</string>
     <string name="background_playback_off">Turn off battery optimization so Android does not pause the app in the background.</string>
-    <string name="background_playback_samsung">Samsung can still put Myspoti to sleep with the screen off. Add it to Never sleeping apps: Settings &gt; Battery &gt; Background usage limits.</string>
+    <string name="background_playback_samsung">Samsung can still put Jellyfin Audio to sleep with the screen off. Add it to Never sleeping apps: Settings &gt; Battery &gt; Background usage limits.</string>
     <string name="background_playback_open">Open app settings</string>
     <plurals name="local_files_count">
         <item quantity="one">%d track</item>
@@ -85,7 +85,7 @@
     <string name="browse_new_releases">New releases</string>
     <string name="language_auto">Automatic</string>
     <string name="language_auto_detail">Your phone\'s language when Myspoti has it (English, Chinese, French, German, Greek, Italian, Polish, Portuguese, Russian, Spanish), English otherwise</string>
-    <string name="language_partial_note">Other languages: Spotify\'s own labels are translated, Myspoti\'s texts stay in English.</string>
+    <string name="language_partial_note">Other languages: some labels stay in English.</string>
     <string name="restart_player_title">Restart the player</string>
     <string name="restart_player_detail">If the music stops responding: reloads Spotify\'s player</string>
     <string name="ad_playing">Advertisement</string>
@@ -141,7 +141,7 @@
     <string name="song_radio_name">%1$s Radio</string>
     <string name="local_files_find_hint">Find in Local Files</string>
     <string name="data_saver_title">Data saver</string>
-    <string name="data_saver_summary">On mobile data, Myspoti uses no data: only downloaded songs and Local Files play</string>
+    <string name="data_saver_summary">On mobile data, the app uses no data: only downloaded songs play.</string>
     <string name="data_saver_blocked">Data saver: on mobile data, only downloaded songs and Local Files play</string>
     <string name="new_releases_followed">From artists you follow</string>
     <string name="new_releases_latest">Latest releases</string>
@@ -176,7 +176,7 @@
     <string name="recap_top_tracks">Top tracks</string>
     <string name="recap_top_artists">Top artists</string>
     <string name="recap_top_albums">Top albums</string>
-    <string name="recap_private_note">Counts everything played in Myspoti (Spotify, downloads, local files). It stays on this phone and is never sent to Spotify.</string>
+    <string name="recap_private_note">Counts everything played in the app (downloads and local files). It stays on this phone and is never sent anywhere.</string>
     <string name="recap_detail">Your listening, downloads and local files included</string>
     <string name="track_credits">Credits</string>
     <string name="exclude_taste">Exclude from your taste profile</string>
@@ -308,7 +308,7 @@
     <string name="quality_now_unknown">Not known yet: start a song</string>
     <string name="update_downloading">Downloading… %1$d%%</string>
     <string name="update_installing">Installing…</string>
-    <string name="update_needs_permission">To update, allow Myspoti to install apps, then come back here.</string>
+    <string name="update_needs_permission">To update, allow Jellyfin Audio to install apps, then come back here.</string>
     <string name="update_allow">Allow</string>
     <string name="update_failed">The update failed: %1$s</string>
     <string name="update_retry">Try again</string>
@@ -318,7 +318,7 @@
     <string name="settings_check_update_title">Check for updates now</string>
     <string name="settings_check_update_detail">Looks for a newer version and offers to install it</string>
     <string name="settings_update_checking">Checking…</string>
-    <string name="settings_update_check_latest">Myspoti is up to date</string>
+    <string name="settings_update_check_latest">Jellyfin Audio is up to date</string>
     <string name="settings_update_refresh">Check for updates</string>
     <string name="settings_update_uptodate_now">Up to date (checked just now)</string>
     <string name="settings_update_last_checked">Last checked: %1$s</string>
@@ -482,7 +482,7 @@
     <string name="playlist_invite_join">Join</string>
     <string name="playlist_invite_joined">You are now a collaborator</string>
     <string name="settings_keep_playing_title">Keep playing after closing the app</string>
-    <string name="settings_keep_playing_detail">When off, closing Myspoti from the recent apps stops the music</string>
+    <string name="settings_keep_playing_detail">When off, closing the app from the recent apps stops the music</string>
     <string name="recommended_songs_from_name">Based on this playlist\'s name</string>
     <string name="recommended_songs_from_songs">Based on what\'s in this playlist</string>
     <string name="recommended_songs_refresh">Refresh</string>

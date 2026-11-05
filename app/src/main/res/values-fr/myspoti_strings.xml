@@ -54,9 +54,9 @@
     <string name="library_error">Impossible de charger votre bibliothèque</string>
     <string name="library_empty">Votre bibliothèque est vide</string>
     <string name="background_playback_title">Lecture en arrière-plan</string>
-    <string name="background_playback_on">L\'optimisation de la batterie est désactivée : la musique et Spotify Connect continuent écran éteint.</string>
+    <string name="background_playback_on">L\'optimisation de la batterie est désactivée : la musique continue écran éteint.</string>
     <string name="background_playback_off">Désactive l\'optimisation de la batterie pour qu\'Android ne mette pas l\'app en pause en arrière-plan.</string>
-    <string name="background_playback_samsung">Samsung peut encore mettre Myspoti en veille écran éteint. Ajoutez-le aux « Applications jamais en veille » : Réglages &gt; Batterie &gt; Limites d\'utilisation en arrière-plan.</string>
+    <string name="background_playback_samsung">Samsung peut encore mettre Jellyfin Audio en veille écran éteint. Ajoutez-le aux « Applications jamais en veille » : Réglages &gt; Batterie &gt; Limites d\'utilisation en arrière-plan.</string>
     <string name="background_playback_open">Ouvrir les réglages de l\'app</string>
     <plurals name="local_files_count">
         <item quantity="one">%d titre</item>
@@ -85,7 +85,7 @@
     <string name="browse_new_releases">Nouveautés</string>
     <string name="language_auto">Automatique</string>
     <string name="language_auto_detail">La langue du téléphone quand Myspoti l\'a (allemand, anglais, chinois, espagnol, français, grec, italien, polonais, portugais, russe), sinon l\'anglais</string>
-    <string name="language_partial_note">Autres langues : les libellés de Spotify sont traduits, les textes de Myspoti restent en anglais.</string>
+    <string name="language_partial_note">Autres langues : certains libellés restent en anglais.</string>
     <string name="restart_player_title">Redémarrer le lecteur</string>
     <string name="restart_player_detail">Si la musique ne répond plus : recharge le lecteur Spotify</string>
     <string name="ad_playing">Publicité</string>
@@ -141,7 +141,7 @@
     <string name="song_radio_name">Radio de %1$s</string>
     <string name="local_files_find_hint">Rechercher dans les fichiers locaux</string>
     <string name="data_saver_title">Économiseur de données</string>
-    <string name="data_saver_summary">En données mobiles, Myspoti n\'utilise aucune donnée : seuls les sons téléchargés et les fichiers locaux sont lus</string>
+    <string name="data_saver_summary">En données mobiles, l\'application n\'utilise aucune donnée : seuls les sons téléchargés sont lus.</string>
     <string name="data_saver_blocked">Économiseur de données : en données mobiles, seuls les sons téléchargés et les fichiers locaux sont lus</string>
     <string name="new_releases_followed">Des artistes que vous suivez</string>
     <string name="new_releases_latest">Dernières sorties</string>
@@ -176,7 +176,7 @@
     <string name="recap_top_tracks">Titres les plus écoutés</string>
     <string name="recap_top_artists">Artistes les plus écoutés</string>
     <string name="recap_top_albums">Albums les plus écoutés</string>
-    <string name="recap_private_note">Compte tout ce qui est joué dans Myspoti (Spotify, téléchargements, fichiers locaux). Reste sur ce téléphone et n\'est jamais envoyé à Spotify.</string>
+    <string name="recap_private_note">Compte tout ce qui est joué dans l\'application (téléchargements et fichiers locaux). Reste sur ce téléphone et n\'est jamais envoyé.</string>
     <string name="recap_detail">Vos écoutes, téléchargements et fichiers locaux compris</string>
     <string name="track_credits">Crédits</string>
     <string name="exclude_taste">Exclure de votre profil d\'écoute</string>
@@ -303,7 +303,7 @@
     <string name="quality_now_unknown">Pas encore connue : lancez un titre</string>
     <string name="update_downloading">Téléchargement… %1$d%%</string>
     <string name="update_installing">Installation…</string>
-    <string name="update_needs_permission">Pour mettre à jour, autorisez Myspoti à installer des applications, puis revenez ici.</string>
+    <string name="update_needs_permission">Pour mettre à jour, autorisez Jellyfin Audio à installer des applications, puis revenez ici.</string>
     <string name="update_allow">Autoriser</string>
     <string name="update_failed">La mise à jour a échoué : %1$s</string>
     <string name="update_retry">Réessayer</string>
@@ -313,7 +313,7 @@
     <string name="settings_check_update_title">Vérifier les mises à jour maintenant</string>
     <string name="settings_check_update_detail">Cherche une version plus récente et propose de l\'installer</string>
     <string name="settings_update_checking">Vérification…</string>
-    <string name="settings_update_check_latest">Myspoti est à jour</string>
+    <string name="settings_update_check_latest">Jellyfin Audio est à jour</string>
     <string name="settings_update_refresh">Vérifier les mises à jour</string>
     <string name="settings_update_uptodate_now">À jour (vérifié à l\'instant)</string>
     <string name="settings_update_last_checked">Dernière vérification : %1$s</string>
@@ -472,7 +472,7 @@
     <string name="playlist_invite_join">Rejoindre</string>
     <string name="playlist_invite_joined">Vous collaborez maintenant à cette playlist</string>
     <string name="settings_keep_playing_title">Continuer la lecture après fermeture</string>
-    <string name="settings_keep_playing_detail">Désactivé : fermer Myspoti depuis les apps récentes arrête la musique</string>
+    <string name="settings_keep_playing_detail">Désactivé : fermer l\'application depuis les apps récentes arrête la musique</string>
     <string name="recommended_songs_from_name">Selon le nom de cette playlist</string>
     <string name="recommended_songs_from_songs">Selon le contenu de cette playlist</string>
     <string name="recommended_songs_refresh">Actualiser</string>
