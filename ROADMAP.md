@@ -107,7 +107,7 @@ buttons work, and the queue survives process death.
 
 **Done when:** all mutations round-trip against Jellyfin and Navidrome.
 
-## M5 — Downloads and offline (code done, device check in progress)
+## M5 — Downloads and offline ✅
 
 - [x] Download manager: the existing `OfflineDownloader` queue, fed in Subsonic mode by the
       server's own `stream` endpoint (no download-source extension), with WorkManager
@@ -127,7 +127,8 @@ buttons work, and the queue survives process death.
       (Immersive Settings → Downloads, Classic Settings → Data).
 - [x] Device pass: downloads land and resume after a restart, offline playback (server out of
       reach) with the banner and the remote-only message, storage numbers and cache clearing.
-- [ ] Device pass on the release build (R8).
+- [x] Device pass on the release build (R8): a whole album downloaded (27 → 53 songs,
+      219 → 490 MB), local playback, storage numbers; "remove all downloads" returns to 0.
 
 **Done when:** airplane-mode playback of downloaded content works and storage accounting
 is correct.
@@ -136,7 +137,10 @@ is correct.
 
 - [ ] Onboarding (server, quality, storage) and a permissions pass.
 - [ ] Tablet/two-pane layout; responsive player; large-screen polish.
-- [ ] Unit tests: Subsonic contract, mapping, URL/auth, player queue.
+- [x] Unit tests: the Subsonic contract — URL shape + salted token (never the password), error
+      messages, HTTP failures, reachability reporting, JSON → model mapping, album track paging,
+      download quality parameters (23 tests in `api-subsonic`).
+- [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
 - [ ] GPL-3.0 compliance: source publication, notices, Myspoti credit.

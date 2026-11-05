@@ -56,10 +56,9 @@ class SubsonicApi(
      * Where to fetch [trackId] for offline listening. [quality] is a DownloadQuality name
      * ("SMALL", "CD", "HI_RES"); anything else keeps the original file.
      */
-    fun downloadUrl(trackId: String, quality: String?): String = when (quality) {
-        "SMALL" -> client.downloadUrl(trackId, format = "mp3", maxBitRateKbps = 128)
-        "CD" -> client.downloadUrl(trackId, maxBitRateKbps = 320)
-        else -> client.downloadUrl(trackId)
+    fun downloadUrl(trackId: String, quality: String?): String {
+        val (format, maxBitRate) = DownloadParams.of(quality)
+        return client.downloadUrl(trackId, format, maxBitRate)
     }
 
     /** Cover art for a song, album or artist id (the `getCoverArt` id the server gave). */

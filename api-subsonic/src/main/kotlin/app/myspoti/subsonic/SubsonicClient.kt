@@ -28,9 +28,10 @@ data class SubsonicConfig(
  * A small Subsonic client: JSON only, token auth (`u`/`t`/`s`), one call per endpoint.
  * The server can be changed at runtime (setup screen) through [updateConfig].
  */
-class SubsonicClient(initialConfig: SubsonicConfig) {
-
-    private val http = OkHttpClient.Builder().build()
+class SubsonicClient(
+    initialConfig: SubsonicConfig,
+    private val http: OkHttpClient = OkHttpClient.Builder().build(),
+) {
 
     @Volatile
     var config: SubsonicConfig = initialConfig.normalized()
