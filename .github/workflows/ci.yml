@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop, main ]
   pull_request:
 
 # One run per branch: a new push cancels the previous, still-running build.
@@ -31,14 +31,14 @@ jobs:
       - name: Unit tests
         run: ./gradlew :api-subsonic:testDebugUnitTest :app:testMobileDebugUnitTest --console=plain
 
-      # The same APK a developer installs: the UI and the whole graph have to compile.
-      - name: Build the debug APK
-        run: ./gradlew :app:assembleDebug --console=plain
+      # The same APKs a developer installs: the UI and the whole graph have to compile.
+      - name: Build the debug APKs
+        run: ./gradlew :app:assembleMobileDebug :app:assembleAutomotiveDebug --console=plain
 
-      - name: Upload the APK
+      - name: Upload the phone APK
         uses: actions/upload-artifact@v4
         with:
           name: jellyfin-audio-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/mobile/debug/app-mobile-debug.apk
           if-no-files-found: error
           retention-days: 14

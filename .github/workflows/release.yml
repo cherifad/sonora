@@ -1,0 +1,105 @@
+name: Release
+
+# A release is cut from main only: push a tag vX.Y.Z on a commit of main (or run this
+# workflow by hand with the version). The tag must be an ancestor of origin/main.
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 1.2.0 (the tag will be v1.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      # Secrets cannot be read in a job's `if`: the first step decides whether there is
+      # anything to sign, and every step below is skipped without it.
+      - name: Is the release keystore configured?
+        id: check
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MYSPOTI_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "ok=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+            echo "::warning::MYSPOTI_KEYSTORE_BASE64 is not set: the release is skipped."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ok == '1'
+        with:
+          fetch-depth: 0
+
+      - name: The tag must be on main
+        if: steps.check.outputs.ok == '1' && github.ref_type == 'tag'
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "::error::Release tags must point to a commit on main (merge develop into main first)."
+            exit 1
+          }
+
+      - uses: actions/setup-java@v4
+        if: steps.check.outputs.ok == '1'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+        if: steps.check.outputs.ok == '1'
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.check.outputs.ok == '1'
+
+      - name: Version
+        if: steps.check.outputs.ok == '1'
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          CODE=$(echo "$VERSION" | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Keystore
+        if: steps.check.outputs.ok == '1'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MYSPOTI_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build the signed APKs
+        if: steps.check.outputs.ok == '1'
+        env:
+          MYSPOTI_KEYSTORE: ${{ runner.temp }}/release.jks
+          MYSPOTI_KEYSTORE_PASSWORD: ${{ secrets.MYSPOTI_KEYSTORE_PASSWORD }}
+          MYSPOTI_KEY_ALIAS: ${{ secrets.MYSPOTI_KEY_ALIAS }}
+          MYSPOTI_KEY_PASSWORD: ${{ secrets.MYSPOTI_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:assembleMobileRelease :app:assembleAutomotiveRelease \
+            -PappVersionName="${{ steps.version.outputs.name }}" \
+            -PappVersionCode="${{ steps.version.outputs.code }}" \
+            -PupdateRepo="${{ github.repository }}" \
+            --console=plain
+
+      - name: Publish the GitHub release
+        if: steps.check.outputs.ok == '1'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}
+          name: Jellyfin Audio ${{ steps.version.outputs.name }}
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/mobile/release/app-mobile-release.apk
+            app/build/outputs/apk/automotive/release/app-automotive-release.apk
