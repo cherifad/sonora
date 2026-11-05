@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Jellyfin Audio: the app's pink-to-amber backdrop (the Immersive look's accent). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#121212" android:pathData="M0,0h108v108h-108z" />
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="10" android:startY="6"
+                android:endX="98" android:endY="102">
+                <item android:offset="0" android:color="#FFFF5A8C" />
+                <item android:offset="0.55" android:color="#FFFF4F7B" />
+                <item android:offset="1" android:color="#FFFF9A5C" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

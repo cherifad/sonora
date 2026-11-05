@@ -145,6 +145,8 @@ is correct.
 - [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
+      Icon done: a pink-to-amber adaptive icon with five white level bars (plus the themed
+      monochrome layer and `app_mark` for the About sheet), replacing Myspoti's green wave.
       Done for every reachable screen: app name, About, update/language/battery texts, Local
       Files, library order, speed/silences, lyrics summary, shuffle and the Settings rows say
       "Jellyfin Audio" / "your server", with no Spotify Connect or Myspoti left. Remaining:
