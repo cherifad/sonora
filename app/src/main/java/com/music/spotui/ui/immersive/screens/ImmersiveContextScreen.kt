@@ -144,6 +144,9 @@ private const val SLEEVE_FRACTION = 0.76f
 /** ...and of its height, so a landscape window still shows the title under it. */
 private const val SLEEVE_MAX_HEIGHT = 0.5f
 
+/** On a wide window the sleeve stops growing: the header must leave room for the songs. */
+private val WIDE_SLEEVE_MAX = 300.dp
+
 private val SleeveShape = RoundedCornerShape(12.dp)
 private val SleeveShadow = 18.dp
 
@@ -171,7 +174,9 @@ fun ImmersiveContextScreen(navController: NavController, type: String, id: Strin
     remember(type, id) { vm.load(type, id) }
     val resp by vm.page.collectAsState()
     BoxWithConstraints(Modifier.fillMaxSize().background(Immersive.Page)) {
-        val sleeve = albumSleeve(maxWidth, maxHeight)
+        // A tablet/landscape window: a smaller sleeve, so the track list is on screen at once
+        // instead of below a cover that fills the display.
+        val sleeve = albumSleeve(maxWidth, maxHeight, wide = maxWidth >= 840.dp)
         when (val r = resp) {
             is Response.Loading -> ContextLoading(navController, sleeve)
             is Response.Error -> {
@@ -191,7 +196,9 @@ fun ImmersiveContextScreen(navController: NavController, type: String, id: Strin
 }
 
 /** The sleeve's side on a page of this size. */
-internal fun albumSleeve(maxWidth: Dp, maxHeight: Dp): Dp = (maxWidth * SLEEVE_FRACTION).coerceAtMost(maxHeight * SLEEVE_MAX_HEIGHT)
+internal fun albumSleeve(maxWidth: Dp, maxHeight: Dp, wide: Boolean = false): Dp =
+    (maxWidth * SLEEVE_FRACTION).coerceAtMost(maxHeight * SLEEVE_MAX_HEIGHT)
+        .coerceAtMost(if (wide) WIDE_SLEEVE_MAX else Dp.Infinity)
 
 /** Nothing is known of the page yet: the sleeve and the track list stand as shimmer. */
 @Composable

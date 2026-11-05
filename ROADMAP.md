@@ -144,10 +144,9 @@ is correct.
       audio) runs on the car emulator — the car's media app browses Home / Library / Downloads
       and plays from the Subsonic server. The phone build is unchanged (`assembleDebug` still
       builds both variants).
-      Audited on the 2560×1600 tablet AVD: Home, the quick tiles and the shelves already
-      reflow (4 columns); an album page is a single column whose cover and buttons fill the
-      first screen and can sit under the bottom chrome until it scrolls. Next: a width-aware
-      context page (capped column or cover-left / tracks-right).
+      Audited on the 2560×1600 tablet AVD: Home, the quick tiles and the shelves reflow
+      (4 columns); the album page keeps a 300 dp sleeve on wide windows, so the songs show on
+      the first screen. Next: the full two-pane page (cover-left / list-right).
 - [x] Unit tests: the Subsonic contract — URL shape + salted token (never the password), error
       messages, HTTP failures, reachability reporting, JSON → model mapping, album track paging,
       download quality parameters (23 tests in `api-subsonic`).
