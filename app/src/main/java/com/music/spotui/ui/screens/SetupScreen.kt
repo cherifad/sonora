@@ -312,30 +312,33 @@ private fun StorageStep(onNext: () -> Unit) {
     val count = com.music.spotui.data.offline.OfflineStore.tracks.size
     val used = android.text.format.Formatter.formatShortFileSize(context, com.music.spotui.data.offline.OfflineStore.totalBytes())
     val free = android.text.format.Formatter.formatShortFileSize(context, com.music.spotui.data.offline.StorageInfo.freeBytes(context))
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        SetupTitle(stringResource(R.string.setup_storage_title), Modifier.padding(horizontal = 20.dp).riseIn(0))
-        SetupSubtitle(stringResource(R.string.setup_storage_subtitle), Modifier.padding(horizontal = 20.dp).riseIn(1))
-        Box(Modifier.riseIn(2)) {
-            com.music.spotui.ui.components.DownloadQualityPicker(Modifier.padding(top = 8.dp))
+    Column(Modifier.fillMaxSize().padding(top = 24.dp)) {
+        // The choices scroll; Continue stays at the bottom, in reach on a short screen too.
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SetupTitle(stringResource(R.string.setup_storage_title), Modifier.padding(horizontal = 20.dp).riseIn(0))
+            SetupSubtitle(stringResource(R.string.setup_storage_subtitle), Modifier.padding(horizontal = 20.dp).riseIn(1))
+            Box(Modifier.riseIn(2)) {
+                com.music.spotui.ui.components.DownloadQualityPicker(Modifier.padding(top = 8.dp))
+            }
+            InfoRow(
+                Icons.Rounded.Download,
+                stringResource(R.string.settings_storage_downloads_title),
+                stringResource(R.string.settings_storage_downloads_detail, count, used),
+                Modifier.padding(horizontal = 20.dp).riseIn(3),
+            )
+            InfoRow(
+                Icons.Rounded.SdStorage,
+                stringResource(R.string.settings_storage_free_title),
+                free,
+                Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp).riseIn(4),
+            )
         }
-        InfoRow(
-            Icons.Rounded.Download,
-            stringResource(R.string.settings_storage_downloads_title),
-            stringResource(R.string.settings_storage_downloads_detail, count, used),
-            Modifier.padding(horizontal = 20.dp).riseIn(3),
-        )
-        InfoRow(
-            Icons.Rounded.SdStorage,
-            stringResource(R.string.settings_storage_free_title),
-            free,
-            Modifier.padding(horizontal = 20.dp).riseIn(4),
-        )
         SetupButton(
             stringResource(R.string.setup_continue), onNext,
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(50.dp).riseIn(5),
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).height(50.dp).riseIn(5),
         )
     }
 }
