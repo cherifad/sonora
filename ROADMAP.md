@@ -157,6 +157,9 @@ is correct.
       with every release.
 - [x] CI: `.github/workflows/ci.yml` — JDK 17 + Android SDK, the JVM tests of `api-subsonic`
       and `app`, then the debug APK, uploaded as an artifact.
+- [x] Test harness: the official emulator replaces the phone (phone + tablet AVDs, window on
+      the Windows desktop, Navidrome at `10.0.2.2:4533`, airplane mode for the offline checks);
+      scripts in `tools/`, notes in `docs/TESTING.md`.
 
 **Done when:** a signed release builds from CI, installs on a clean device, and passes
 the manual matrix (phone/tablet, HTTP/HTTPS, Jellyfin/Navidrome, offline).
