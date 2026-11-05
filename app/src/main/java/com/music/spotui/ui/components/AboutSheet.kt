@@ -41,7 +41,9 @@ import com.music.spotui.data.api.SupportReminder
 import com.music.spotui.ui.theme.AppAccent
 
 const val DISCORD_URL = "https://discord.gg/jXKnGVFnGS"
-private val repo get() = BuildConfig.UPDATE_REPO.ifBlank { "kota-zo/myspoti" }
+// The fork's own source, so the GPL's "corresponding source" is one tap away (a build
+// with -PupdateRepo points both this and the update check at another repository).
+private val repo get() = BuildConfig.UPDATE_REPO.ifBlank { "cherifad/jellyfin-audio" }
 
 private fun openUrl(context: Context, url: String) {
     runCatching {

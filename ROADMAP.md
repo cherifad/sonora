@@ -152,6 +152,9 @@ is correct.
       "Jellyfin Audio" / "your server", with no Spotify Connect or Myspoti left. Remaining:
       the dead Spotify-only screens' strings and the upstream Discord/Support links.
 - [ ] GPL-3.0 compliance: source publication, notices, Myspoti credit.
+      In the app: About credits "a fork of Myspoti, under GPL-3.0" and its Source code row opens
+      this fork's repository. Left: publish the source, keep `LICENSE`/`THIRD_PARTY_NOTICES.md`
+      with every release.
 - [x] CI: `.github/workflows/ci.yml` — JDK 17 + Android SDK, the JVM tests of `api-subsonic`
       and `app`, then the debug APK, uploaded as an artifact.
 
