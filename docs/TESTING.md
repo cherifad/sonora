@@ -160,6 +160,18 @@ le serveur ne répond pas.
 d'onboarding partent avec). Pour la garder après le run :
 `-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true`.
 
+Le parcours « album + lecture » a besoin que l'app soit **déjà onboardée au lancement du
+processus** (les pages lisent le serveur dès leur première composition ; un test ne peut pas
+reconfigurer une session déjà démarrée). Onboarde une fois (émulateur), puis lance :
+
+```bash
+./gradlew :app:connectedMobileDebugAndroidTest \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.ui.MainFlowTest
+```
+
+Sans onboarding préalable, Home et Library sont testés et le parcours album est sauté.
+
 Le DHU lui-même est installé (`extras;google;auto`) et se lance avec `tools/dhu.sh` ; il
 demande l'app Android Auto **sur l'appareil**, absente de l'image `google_apis` de
 l'émulateur — d'où le test ci-dessus, qui couvre l'arbre sans elle.

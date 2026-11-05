@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.AddCircleOutline
@@ -459,17 +462,8 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
         onRefresh = { vm.refresh() },
         modifier = Modifier.fillMaxSize(),
       ) {
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(bottom = Immersive.BottomChrome),
-            // A wide window: the column of rows keeps a readable width, centred, while the wash
-            // behind it (drawn above, full width) runs edge to edge.
-            modifier = Modifier.fillMaxHeight().fillMaxWidth()
-                .wrapContentWidth(Alignment.CenterHorizontally)
-                .widthIn(max = com.music.spotui.ui.components.WindowSize.MaxPageWidth)
-                .immersiveHazeSource().immersiveChromeScroll(),
-        ) {
-            item(key = "header") {
+        // The header (both layouts share it) and the rows of the list.
+        val pageHeader: @Composable () -> Unit = {
                 ContextHeader(
                     navController = navController,
                     p = p,
@@ -488,9 +482,10 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
                     onAskRemoveDownloads = { askRemoveDownloads = true },
                     members = crew,
                     onMembers = { showMembers = true },
-                    wide = wide,
                 )
-            }
+        }
+        fun LazyListScope.pageRows() {
+
             // Someone else's collaborative playlist this account was never invited to.
             if (vm.collabLocked.value && !vm.editableContext.value) item(key = "collab-locked") {
                 Row(
@@ -587,6 +582,34 @@ private fun ImmersiveContextContent(navController: NavController, vm: ContextVie
             if (p.type == "album") item(key = "similar") {
                 SimilarAlbums(navController, p.tracks.firstOrNull()?.spotifyTrackId.orEmpty(), p.uri)
             }
+        
+        }
+        if (wide) {
+          // Two panes: the sleeve and the page's own controls stay in view on the left, the
+          // songs scroll on the right.
+          Row(Modifier.fillMaxSize()) {
+            Column(
+              Modifier.width(380.dp).fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = Immersive.BottomChrome),
+            ) { pageHeader() }
+            LazyColumn(
+              state = listState,
+              // The floating bar is above the list here (the header sits in the other pane).
+              contentPadding = PaddingValues(top = immersiveTopContentPadding(), bottom = Immersive.BottomChrome),
+              modifier = Modifier.weight(1f).fillMaxHeight()
+                .immersiveHazeSource().immersiveChromeScroll(),
+            ) { pageRows() }
+          }
+        } else {
+          LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(bottom = Immersive.BottomChrome),
+            modifier = Modifier.fillMaxSize().immersiveHazeSource().immersiveChromeScroll(),
+          ) {
+            item(key = "header") { pageHeader() }
+            pageRows()
+          }
         }
       }
         FastScrollbar(listState, Modifier.align(Alignment.CenterEnd))
@@ -669,7 +692,6 @@ private fun ContextHeader(
     onAskRemoveDownloads: () -> Unit,
     members: List<app.myspoti.api.PlaylistMember> = emptyList(),
     onMembers: () -> Unit = {},
-    wide: Boolean = false,
 ) {
     val context = LocalContext.current
     // The sleeve and the text block, laid out side by side on a wide window and stacked otherwise.
@@ -836,21 +858,8 @@ private fun ContextHeader(
             .padding(top = immersiveTopContentPadding(), bottom = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (wide) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                sleeveBox()
-                Column(
-                    modifier = Modifier.weight(1f).padding(start = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) { body() }
-            }
-        } else {
-            sleeveBox()
-            body()
-        }
+        sleeveBox()
+        body()
     }
 }
 
