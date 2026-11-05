@@ -34,7 +34,6 @@ sealed class Routes(
     object NewEpisodes : Routes(0, "NewEpisodes", "newepisodes")
     object Recap : Routes(0, "Recap", "recap")
     object Recent : Routes(0, "Recent", "recent")
-    object Friends : Routes(0, "Friends", "friends")
     object Settings : Routes(0, "Settings", "settings")
     object Extensions : Routes(0, "Extensions", "extensions")
     object Extension : Routes(0, "Extension", "extension")

@@ -97,38 +97,6 @@ import kotlinx.coroutines.launch
 
 // ---------------------------------------------------------------- Friends
 
-/**
- * Friend activity of the Immersive look: each followed person sharing their listening, with the
- * latest track and where it was played from. Tap the person for their profile, the row to play.
- */
-@Composable
-fun ImmersiveFriendsScreen(navController: NavController) {
-    var attempt by remember { mutableIntStateOf(0) }
-    var state by remember { mutableStateOf<Result<List<FriendActivity>>?>(null) }
-    LaunchedEffect(attempt) { state = runCatching { MyspotiRuntime.api.users.friendActivity() } }
-    val now = remember(state) { System.currentTimeMillis() }
-    ImmersivePage(
-        title = stringResource(R.string.friends_title),
-        onBack = { navController.popBackStack() },
-        actions = {
-            ImmersiveBarAction(Icons.Rounded.Refresh, stringResource(R.string.friends_refresh), onClick = { state = null; attempt++ })
-        },
-    ) {
-        val s = state
-        val friends = s?.getOrNull()
-        when {
-            s == null -> immersiveSongListSkeleton(count = 6, circular = true)
-            friends == null -> item(key = "failed") {
-                ImmersiveMessageState(stringResource(R.string.friends_failed), actionLabel = stringResource(R.string.retry_button),
-                    onAction = { state = null; attempt++ })
-            }
-            friends.isEmpty() -> item(key = "empty") { ImmersiveMessageState(stringResource(R.string.friends_empty)) }
-            else -> items(friends, key = { it.user.uri }) { f ->
-                Column(immersiveItemPlacement()) { ImmersiveFriendRow(f, now, navController) }
-            }
-        }
-    }
-}
 
 @Composable
 private fun ImmersiveFriendRow(f: FriendActivity, now: Long, navController: NavController) {

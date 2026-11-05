@@ -1491,14 +1491,13 @@ fun PlayerConnectRow(
                         text = { Text(stringResource(R.string.share_link)) },
                         onClick = {
                             shareMenu = false
-                            // Songs and episodes alike: the link follows what plays (spotify:<kind>:<id>).
-                            val parts = SongPlayer.nowPlaying.value.uri.split(':')
-                            val link = if (parts.size == 3 && parts[0] == "spotify") "https://open.spotify.com/${parts[1]}/${parts[2]}"
-                                else SongPlayer.currentTrackId.takeIf { it.isNotBlank() }?.let { "https://open.spotify.com/track/$it" }
-                            if (link != null) com.music.spotui.ui.components.SpotifyCode.show(com.music.spotui.ui.components.ShareTarget(
-                                "spotify:" + link.removePrefix("https://open.spotify.com/").replace('/', ':'),
-                                title, artist, coverUri,
-                            ))
+                            // What plays, as text: the app has no public links of its own.
+                            val send = android.content.Intent(android.content.Intent.ACTION_SEND)
+                                .setType("text/plain")
+                                .putExtra(android.content.Intent.EXTRA_TEXT, "$title — $artist")
+                            context.startActivity(
+                                android.content.Intent.createChooser(send, context.getString(R.string.share_link)),
+                            )
                         },
                     )
                     androidx.compose.material3.DropdownMenuItem(

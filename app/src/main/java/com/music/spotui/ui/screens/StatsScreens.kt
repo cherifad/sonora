@@ -255,45 +255,6 @@ fun ArtistTopBadge(artistId: String, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Friend activity, as the official feed shows it: each followed person sharing their listening,
- * their latest track and where it was played from, "Now" for the past 15 minutes. Tapping the
- * person opens their profile, tapping the row plays the track in its context.
- */
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun FriendActivityScreen(navController: NavController) {
-    var attempt by remember { mutableIntStateOf(0) }
-    var state by remember { mutableStateOf<Result<List<FriendActivity>>?>(null) }
-    LaunchedEffect(attempt) {
-        state = runCatching { MyspotiRuntime.api.users.friendActivity() }
-    }
-    val now = remember(state) { System.currentTimeMillis() }
-    Column(Modifier.fillMaxSize().background(AppBackground).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(8.dp, 12.dp, 8.dp, 8.dp)) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.accessibility_navigate_back), tint = AppText,
-                modifier = Modifier.wideClickable(horizontal = 8.dp, vertical = 10.dp) { navController.popBackStack() }.size(40.dp).padding(8.dp))
-            Text(stringResource(R.string.friends_title), fontWeight = FontWeight.Bold, color = AppText, fontSize = 22.sp, maxLines = 1,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp).weight(1f))
-            Icon(Icons.Filled.Refresh, stringResource(R.string.friends_refresh), tint = AppText,
-                modifier = Modifier.size(40.dp).clip(CircleShape).clickable { state = null; attempt++ }.padding(8.dp))
-        }
-        val s = state
-        val friends = s?.getOrNull()
-        LazyColumn(contentPadding = PaddingValues(bottom = com.music.spotui.ui.components.bottomBarsSpace())) {
-            when {
-                s == null -> item { com.music.spotui.ui.components.SkeletonList(count = 6, round = true) }
-                friends == null -> item {
-                    com.music.spotui.ui.components.ErrorRetry(stringResource(R.string.friends_failed)) { state = null; attempt++ }
-                }
-                friends.isEmpty() -> item {
-                    Text(stringResource(R.string.friends_empty), color = StatsSubtle, fontSize = 14.sp, modifier = Modifier.padding(16.dp))
-                }
-                else -> items(friends, key = { it.user.uri }) { f -> FriendRow(f, now, navController) }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable

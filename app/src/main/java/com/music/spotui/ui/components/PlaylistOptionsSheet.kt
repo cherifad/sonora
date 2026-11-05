@@ -166,24 +166,15 @@ fun PlaylistOptionsSheet(
             }
             androidx.compose.material3.HorizontalDivider(color = AppText.copy(alpha = 0.08f))
             Spacer(Modifier.height(6.dp))
-            val share = { SpotifyCode.show(ShareTarget(page.uri, page.name, page.ownerName, page.coverUri)); onDismiss() }
+            val share: () -> Unit = {
+                onDismiss()
+                app.myspoti.host.android.MyspotiRuntime.scope.launch { ShareCard.share(context, page.name, page.ownerName, page.coverUri, context.getString(R.string.context_menu_share)) }
+            }
             // The whole playlist into the queue, in its order (a long one is read to its end first).
             QueueListRows(page.uri, page, onDismiss)
             // Every song of this playlist into another one of yours (Web Player: "Add playlist to other playlist").
             if (page.uri.startsWith("spotify:playlist:")) OptionRow(Icons.Outlined.AddCircleOutline, stringResource(R.string.add_playlist_to_playlist)) { mergingInto = true }
-            if (page.isBlend) {
-                // A Blend is Spotify's: renamed, shared and left through its own service.
-                OptionRow(Icons.Outlined.Edit, stringResource(R.string.blend_rename)) { renamingBlend = true }
-                OptionRow(Icons.Outlined.Share, stringResource(R.string.blend_invite_more)) {
-                    scope.launch {
-                        val link = BlendInfo.recent[page.uri]?.group?.link
-                            ?: runCatching { MyspotiRuntime.api.blends.group(page.uri).link }.getOrNull()
-                        if (link == null) android.widget.Toast.makeText(context, R.string.blend_failed, android.widget.Toast.LENGTH_SHORT).show()
-                        else { BlendInfo.share(context, link); onDismiss() }
-                    }
-                }
-                OptionRow(Icons.AutoMirrored.Outlined.Logout, stringResource(R.string.blend_leave)) { leavingBlend = true }
-            } else if (mine) {
+            if (mine) {
                 onAddSongs?.let { add -> OptionRow(Icons.Outlined.AddCircleOutline, stringResource(R.string.add_songs_title)) { onDismiss(); add() } }
                 OptionRow(Icons.Outlined.Edit, stringResource(R.string.playlist_edit_details)) { editing = true }
                 // Collaborative is not enough: only those who open its invitation link can add songs
@@ -273,24 +264,6 @@ fun PlaylistOptionsSheet(
             write = { MyspotiRuntime.api.blends.rename(page.uri, name) },
             onDone = { ok -> if (!ok) onChanged() })
     }
-
-    if (leavingBlend) AlertDialog(
-        onDismissRequest = { leavingBlend = false },
-        containerColor = tone(0xFF282828),
-        title = { Text(stringResource(R.string.blend_leave), color = AppText) },
-        text = { Text(stringResource(R.string.blend_leave_confirm, page.name), color = AppMuted) },
-        confirmButton = {
-            TextButton(onClick = {
-                leavingBlend = false
-                // The Blend leaves the library and the page closes now; a refusal brings it back.
-                BlendInfo.recent.remove(page.uri)
-                com.music.spotui.data.api.LibraryEdits.run(context, com.music.spotui.data.api.LibraryEdits.Remove(page.uri),
-                    write = { MyspotiRuntime.api.blends.leave(page.uri) })
-                onDismiss(); onDeleted()
-            }) { Text(stringResource(R.string.blend_leave_button), color = AppDestructive) }
-        },
-        dismissButton = { TextButton(onClick = { leavingBlend = false }) { Text(stringResource(R.string.cancel), color = AppText) } },
-    )
 
     if (stoppingCollab) {
         // Public (listed on the profile): collaborators are removed; private: they become listeners.

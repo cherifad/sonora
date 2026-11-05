@@ -193,14 +193,6 @@ fun MyNavHost(
             if (isImmersive()) com.music.spotui.ui.immersive.pages.ImmersiveRecapScreen(navHostController) else com.music.spotui.ui.screens.RecapScreen(navHostController)
         }
 
-        page(Routes.Friends.route) {
-            LaunchedEffect(playerState) {
-                bottomBarState.value = true
-                bottomBarPlayerState.value = playerState != ""
-            }
-            if (isImmersive()) com.music.spotui.ui.immersive.pages.ImmersiveFriendsScreen(navHostController) else com.music.spotui.ui.screens.FriendActivityScreen(navHostController)
-        }
-
         // Spotify's own list for the account (every device), not this phone's counter.
         page(Routes.Recent.route) {
             LaunchedEffect(playerState) {

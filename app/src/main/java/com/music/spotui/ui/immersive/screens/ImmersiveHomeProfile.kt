@@ -51,7 +51,6 @@ import com.music.spotui.ui.immersive.components.ImmersiveCover
 import com.music.spotui.ui.immersive.components.immersiveClickable
 import com.music.spotui.ui.navigation.Routes
 import com.music.spotui.ui.navigation.profileRoute
-import com.music.spotui.ui.screens.AccountBrowser
 
 /**
  * The profile picture as a disc (the first letter of the name until it loads), opening [onClick];

@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 fun ArtistOptionsSheet(artistId: String, artistName: String, artistImage: String = "", onDismiss: () -> Unit) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     val uri = "spotify:artist:$artistId"
     // null = not known yet (or the call failed): the ban row stays disabled rather than lying.
     val banned by produceState<Boolean?>(null, uri) {
@@ -71,8 +72,8 @@ fun ArtistOptionsSheet(artistId: String, artistName: String, artistImage: String
             HorizontalDivider(color = tone(0xFF3E3E3E), thickness = 0.5.dp)
             Spacer(Modifier.height(8.dp))
             ArtistMenuRow(Icons.Default.Share, stringResource(R.string.share_link), enabled = artistId.isNotBlank()) {
-                SpotifyCode.show(ShareTarget("spotify:artist:$artistId", artistName, coverUri = artistImage))
                 onDismiss()
+                shareScope.launch { ShareCard.share(context, artistName, "", artistImage, context.getString(R.string.share_link)) }
             }
             ArtistMenuRow(
                 Icons.Default.Block,

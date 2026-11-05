@@ -336,8 +336,8 @@ fun SongOptionsSheet(
                 }
             }
             MenuRow(Icons.Outlined.Share, stringResource(R.string.context_menu_share), enabled = hasId) {
-                SpotifyCode.show(ShareTarget("spotify:track:${song.spotifyTrackId}", song.title, song.singer, song.coverUri))
                 onDismiss()
+                app.myspoti.host.android.MyspotiRuntime.scope.launch { ShareCard.share(context, song.title, song.singer, song.coverUri, context.getString(R.string.context_menu_share)) }
             }
             if (nowPlaying) {
                 val active = SongPlayer.sleepEndsAt.value != null

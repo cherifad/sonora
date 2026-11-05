@@ -962,11 +962,6 @@ private fun ContextContent(navController: NavController, vm: ContextViewModel, p
                     color = AppMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
             }
         }
-        if (p.isBlend) item(key = "blend") {
-            androidx.compose.animation.AnimatedVisibility(extrasShown, enter = UnfoldIn, exit = FoldOut) {
-                com.music.spotui.ui.components.BlendPanel(p.uri)
-            }
-        }
         if (findable && all.isNotEmpty()) item(key = "find") {
             androidx.compose.animation.AnimatedVisibility(extrasShown || find.isNotBlank(), enter = UnfoldIn, exit = FoldOut) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {

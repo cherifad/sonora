@@ -38,7 +38,6 @@ import com.music.spotui.di.Graph
 import com.music.spotui.ui.immersive.Immersive
 import com.music.spotui.ui.navigation.Routes
 import com.music.spotui.ui.navigation.profileRoute
-import com.music.spotui.ui.screens.AccountBrowser
 
 /** The label of a library sort order. */
 internal fun libraryOrderLabel(sort: LibraryOrder.Sort): Int = when (sort) {
@@ -146,10 +145,6 @@ internal fun ImmersiveAccountSheet(
             AccountRow(stringResource(R.string.settings_title)) {
                 onDismiss()
                 navController.navigate(Routes.Settings.route)
-            }
-            AccountRow(stringResource(R.string.immersive_screens_account_page) + "  ↗") {
-                onDismiss()
-                AccountBrowser.open(Graph.app, AccountBrowser.ACCOUNT_URL)
             }
             HorizontalDivider(color = Immersive.Separator)
             Spacer(Modifier.height(8.dp))

@@ -102,9 +102,6 @@ fun App() {
             })
         }
     }
-    val shareTarget by com.music.spotui.ui.components.SpotifyCode.request.collectAsState()
-    shareTarget?.let { t -> com.music.spotui.ui.components.SpotifyCodeSheet(t) { com.music.spotui.ui.components.SpotifyCode.request.value = null } }
-
     // The look (Settings > Display) switches the shell live. The nav host keeps one place in the
     // tree in both looks, so a switch keeps the back stack, the pages' state and the playback.
     val immersive = com.music.spotui.ui.navigation.isImmersive()

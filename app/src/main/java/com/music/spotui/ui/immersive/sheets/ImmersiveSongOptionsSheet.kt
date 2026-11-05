@@ -54,10 +54,9 @@ import com.music.spotui.ui.components.AddToPlaylistSheet
 import com.music.spotui.ui.components.CreditsSheet
 import com.music.spotui.ui.components.DownloadBadge
 import com.music.spotui.ui.components.SavedInSheet
-import com.music.spotui.ui.components.ShareTarget
+import com.music.spotui.ui.components.ShareCard
 import com.music.spotui.ui.immersive.sheets.ImmersiveSleepTimerSheet as SleepTimerSheet
 import com.music.spotui.ui.components.SpeedSheet
-import com.music.spotui.ui.components.SpotifyCode
 import com.music.spotui.ui.immersive.Immersive
 import com.music.spotui.ui.navigation.albumRoute
 import kotlinx.coroutines.launch
@@ -317,8 +316,8 @@ fun ImmersiveSongOptionsSheet(
             }
         }
         ImmersiveSheetRow(Icons.Rounded.Share, stringResource(R.string.context_menu_share), enabled = hasId) {
-            SpotifyCode.show(ShareTarget("spotify:track:${song.spotifyTrackId}", song.title, song.singer, song.coverUri))
             onDismiss()
+            app.myspoti.host.android.MyspotiRuntime.scope.launch { ShareCard.share(context, song.title, song.singer, song.coverUri, context.getString(R.string.context_menu_share)) }
         }
         if (nowPlaying) {
             ImmersiveSheetRow(
