@@ -471,10 +471,11 @@ class ContextViewModel(
         // from its file when the whole list is downloaded (it used to stream anyway).
         val app = Graph.app
         val store = com.music.spotui.data.offline.OfflineStore
-        val limited = com.music.spotui.data.DataSaver.active || !store.isOnline(app)
+        val unavailable = com.music.spotui.data.offline.OfflineMode.offline
+        val limited = com.music.spotui.data.DataSaver.active || unavailable
         val ids = com.music.spotui.data.offline.LocalPlayPlan.localIds(
             sort.apply(p.tracks).map { it.spotifyTrackId }, song.spotifyTrackId, p.complete,
-            offline = !store.isOnline(app), dataSaver = com.music.spotui.data.DataSaver.active, isDownloaded = store::isDownloaded,
+            offline = unavailable, dataSaver = com.music.spotui.data.DataSaver.active, isDownloaded = store::isDownloaded,
         )
         if (ids != null) {
             val local = ids.mapNotNull { store.tracks[it] }

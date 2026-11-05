@@ -66,6 +66,7 @@
     <string name="downloads_empty_title">Download to listen offline</string>
     <string name="downloads_empty_subtitle">Tap Download in a song\'s menu, or the download button of an album or playlist.</string>
     <string name="downloads_source">From your download-source extension, checked against the original recording. Kept inside Myspoti only.</string>
+    <string name="downloads_source_server">Downloaded from your server. Kept inside the app only.</string>
     <string name="downloads_size">%1$s on this phone</string>
     <string name="downloads_lists">Albums and playlists</string>
     <string name="downloads_singles">Songs</string>

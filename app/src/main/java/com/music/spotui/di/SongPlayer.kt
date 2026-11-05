@@ -1092,11 +1092,13 @@ object SongPlayer {
             val id = if (song.startsWith("episode:")) null else spotifyTrackIdForPlayback(song)
             val download = id?.let { com.music.spotui.data.offline.OfflineStore.tracks[it] }
             if (download != null) {
+                app.myspoti.host.android.Logbook.log("offline: playing downloaded ${download.trackId}")
                 com.music.spotui.di.LocalPlayer.play(
                     listOf(com.music.spotui.data.offline.OfflineStore.toLocalTrack(download)), 0,
                     context = download.album.ifBlank { download.artist },
                 )
             } else {
+                app.myspoti.host.android.Logbook.log("offline: $song is not downloaded")
                 main.post {
                     android.widget.Toast.makeText(Graph.app, app.myspoti.engine.R.string.offline_track_unavailable, android.widget.Toast.LENGTH_SHORT).show()
                 }
@@ -2863,8 +2865,12 @@ object SongPlayer {
             }
             pushNotification(song.copy(coverUri = cover), liked)
             if (songChanged) refreshCurrentLiked()
-            com.music.spotui.extensions.Extensions.mirrorTick(isPlaying, uri)
-            ConnectMirror.onLocal(t, isPlaying, pos, dur)
+            // Connect (Spotify's own playback) and its extensions do not exist in Subsonic mode:
+            // a local song there must not reach for the (never started) Spotify session.
+            if (!app.myspoti.host.android.MyspotiRuntime.isSubsonic) {
+                com.music.spotui.extensions.Extensions.mirrorTick(isPlaying, uri)
+                ConnectMirror.onLocal(t, isPlaying, pos, dur)
+            }
             val source = if (t.uri.scheme == "file") com.music.spotui.data.local.ListenHistory.Source.DOWNLOAD
                 else com.music.spotui.data.local.ListenHistory.Source.LOCAL
             trackListen("local:${t.id}", song, source, isPlaying)

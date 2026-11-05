@@ -144,7 +144,13 @@ fun DownloadsScreen(navController: NavController) {
                     val size = Formatter.formatShortFileSize(context, OfflineStore.totalBytes())
                     Text(pluralStringResource(R.plurals.local_files_count, n, n) + " · " + stringResource(R.string.downloads_size, size),
                         color = AppMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
-                    Text(stringResource(R.string.downloads_source), color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    Text(
+                        stringResource(
+                            if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) R.string.downloads_source_server
+                            else R.string.downloads_source,
+                        ),
+                        color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp),
+                    )
                     Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Spacer(Modifier.weight(1f))
                         Icon(painterResource(R.drawable.ic_player_shuffle), stringResource(R.string.play_mode_item_shuffle_title), tint = AppText,

@@ -136,7 +136,10 @@ fun ImmersiveDownloadsScreen(navController: NavController) {
                             stringResource(R.string.downloads_size, size),
                     )
                     Text(
-                        stringResource(R.string.downloads_source),
+                        stringResource(
+                            if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) R.string.downloads_source_server
+                            else R.string.downloads_source,
+                        ),
                         style = Immersive.Caption,
                         modifier = Modifier.padding(horizontal = Immersive.Gutter).padding(bottom = 14.dp),
                     )

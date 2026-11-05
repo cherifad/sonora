@@ -66,6 +66,7 @@
     <string name="downloads_empty_title">Téléchargez pour écouter hors connexion</string>
     <string name="downloads_empty_subtitle">Touchez Télécharger dans le menu d\'un titre, ou le bouton de téléchargement d\'un album ou d\'une playlist.</string>
     <string name="downloads_source">Depuis votre extension de source de téléchargement, vérifié avec l\'enregistrement original. Gardé dans Myspoti uniquement.</string>
+    <string name="downloads_source_server">Téléchargé depuis votre serveur. Conservé dans l\'application uniquement.</string>
     <string name="downloads_size">%1$s sur ce téléphone</string>
     <string name="downloads_lists">Albums et playlists</string>
     <string name="downloads_singles">Titres</string>

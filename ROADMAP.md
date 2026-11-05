@@ -119,12 +119,15 @@ buttons work, and the queue survives process death.
 - [x] Per-track/album/playlist download state and progress (existing badges, queue screen,
       "stop all", retry/cancel); the "install a download extension" cards and prompts are
       hidden in Subsonic mode.
-- [x] Offline mode (`OfflineMode`): a single online/offline state from the network callback
-      plus the data saver; a downloaded song plays from its file, anything else says
-      "download this song to play it"; an offline banner heads Home in both looks.
+- [x] Offline mode (`OfflineMode`): one state from the network callback, the server's own answers
+      (a LAN server is out of reach away from home even with mobile data on) and the data saver;
+      a downloaded song plays from its file, anything else says "download this song to play it";
+      an offline banner heads Home in both looks; a ping brings it back when the server returns.
 - [x] Storage screen: downloads count/size, cache size + clear, free space, remove all
       (Immersive Settings → Downloads, Classic Settings → Data).
-- [ ] Device pass: airplane-mode playback, resume after force-stop, storage numbers.
+- [x] Device pass: downloads land and resume after a restart, offline playback (server out of
+      reach) with the banner and the remote-only message, storage numbers and cache clearing.
+- [ ] Device pass on the release build (R8).
 
 **Done when:** airplane-mode playback of downloaded content works and storage accounting
 is correct.

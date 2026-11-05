@@ -67,7 +67,15 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
     suspend fun callPairs(method: String, params: List<Pair<String, String>>): JSONObject =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(endpoint(method, params)).build()
-            http.newCall(request).execute().use { response ->
+            val response = try {
+                http.newCall(request).execute()
+            } catch (e: java.io.IOException) {
+                // The network refused the server: the app shows its downloads until it is back.
+                onReachable?.invoke(false)
+                throw e
+            }
+            response.use { response ->
+                onReachable?.invoke(true)
                 val text = response.body?.string().orEmpty()
                 if (!response.isSuccessful) error("Subsonic HTTP ${response.code}")
                 val root = JSONObject(text).optJSONObject("subsonic-response")
@@ -107,8 +115,15 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
             .digest(value.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
-    private companion object {
-        const val ALPHANUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    companion object Reach {
+        private const val ALPHANUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+        /**
+         * Told when a request could not reach the server (false) or the server answered (true).
+         * The app's offline mode listens: a server out of reach plays downloads, like no network.
+         */
+        @Volatile
+        var onReachable: ((Boolean) -> Unit)? = null
     }
 }
 

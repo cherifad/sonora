@@ -65,6 +65,9 @@ class SubsonicApi(
     /** Cover art for a song, album or artist id (the `getCoverArt` id the server gave). */
     fun coverUrl(id: String, size: Int = 600): String? = client.coverUrl(id, size)
 
+    /** True when the server answers: detects it coming back while the app is offline. */
+    suspend fun ping(): Boolean = runCatching { client.call("ping") }.isSuccess
+
     /** The setup screen changed the server: the same client/player now talk to the new one. */
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
