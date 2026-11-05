@@ -54,6 +54,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.SdStorage
 import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Widgets
@@ -123,6 +124,9 @@ fun SetupScreen(onDone: () -> Unit) {
     val subsonic = app.myspoti.host.android.MyspotiRuntime.isSubsonic
     val needPerms = remember { !Setup.permissionsDone(context) }
     val needQuality = remember { !subsonic && !com.music.spotui.data.preferences.isQualityChosen(context) }
+    // Subsonic: downloads and storage are the quality the user cares about (the server sends
+    // the file, the phone only decides what to keep and how much room it takes).
+    val needStorage = remember { subsonic && !com.music.spotui.data.preferences.isQualityChosen(context) }
     val needLook = remember { !com.music.spotui.data.preferences.LookPref.isChosen(context) }
     val needExtensions = remember { !subsonic && !Setup.extensionsSeen(context) }
     val needIntro = !subsonic && needPerms
@@ -130,7 +134,8 @@ fun SetupScreen(onDone: () -> Unit) {
     val order = remember {
         listOfNotNull(
             STEP_SERVER.takeIf { needServer }, STEP_INTRO.takeIf { needIntro }, STEP_LOOK.takeIf { needLook },
-            STEP_QUALITY.takeIf { needQuality }, STEP_PERMISSIONS.takeIf { needPerms },
+            STEP_QUALITY.takeIf { needQuality }, STEP_STORAGE.takeIf { needStorage },
+            STEP_PERMISSIONS.takeIf { needPerms },
             STEP_EXTENSIONS.takeIf { needExtensions },
         ).ifEmpty { listOf(STEP_SERVER, STEP_LOOK, STEP_PERMISSIONS) }
     }
@@ -174,6 +179,10 @@ fun SetupScreen(onDone: () -> Unit) {
                         com.music.spotui.data.preferences.LookPref.setChosen(context)
                         next()
                     })
+                    STEP_STORAGE -> StorageStep(onNext = {
+                        com.music.spotui.data.preferences.setQualityChosen(context)
+                        next()
+                    })
                     STEP_EXTENSIONS -> ExtensionsStep(
                         onBrowse = {
                             Setup.setExtensionsSeen(context)
@@ -195,6 +204,7 @@ private const val STEP_QUALITY = 2
 private const val STEP_EXTENSIONS = 3
 private const val STEP_PERMISSIONS = 4
 private const val STEP_SERVER = 5
+private const val STEP_STORAGE = 6
 
 /** Where the user is in the steps: the current one a longer green dash. */
 @Composable
@@ -292,6 +302,41 @@ private fun QualityStep(onNext: () -> Unit) {
         Box(Modifier.riseIn(2)) { com.music.spotui.ui.components.StreamingQualityPicker(Modifier.padding(top = 8.dp)) }
         Box(Modifier.riseIn(3)) { com.music.spotui.ui.components.DownloadQualityPicker() }
         SetupButton(stringResource(R.string.setup_continue), onNext, Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(50.dp).riseIn(4))
+    }
+}
+
+/** Onboarding (Subsonic): how downloads are saved, and the room left on the phone. */
+@Composable
+private fun StorageStep(onNext: () -> Unit) {
+    val context = LocalContext.current
+    val count = com.music.spotui.data.offline.OfflineStore.tracks.size
+    val used = android.text.format.Formatter.formatShortFileSize(context, com.music.spotui.data.offline.OfflineStore.totalBytes())
+    val free = android.text.format.Formatter.formatShortFileSize(context, com.music.spotui.data.offline.StorageInfo.freeBytes(context))
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SetupTitle(stringResource(R.string.setup_storage_title), Modifier.padding(horizontal = 20.dp).riseIn(0))
+        SetupSubtitle(stringResource(R.string.setup_storage_subtitle), Modifier.padding(horizontal = 20.dp).riseIn(1))
+        Box(Modifier.riseIn(2)) {
+            com.music.spotui.ui.components.DownloadQualityPicker(Modifier.padding(top = 8.dp))
+        }
+        InfoRow(
+            Icons.Rounded.Download,
+            stringResource(R.string.settings_storage_downloads_title),
+            stringResource(R.string.settings_storage_downloads_detail, count, used),
+            Modifier.padding(horizontal = 20.dp).riseIn(3),
+        )
+        InfoRow(
+            Icons.Rounded.SdStorage,
+            stringResource(R.string.settings_storage_free_title),
+            free,
+            Modifier.padding(horizontal = 20.dp).riseIn(4),
+        )
+        SetupButton(
+            stringResource(R.string.setup_continue), onNext,
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(50.dp).riseIn(5),
+        )
     }
 }
 

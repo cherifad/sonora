@@ -32,7 +32,7 @@
     <string name="verified_artist">Verified Artist</string>
     <string name="lyrics_share">Share lyrics</string>
     <string name="lyrics_extra_title">More lyrics sources</string>
-    <string name="lyrics_extra_summary">NetEase and Genius, when Spotify has no lyrics</string>
+    <string name="lyrics_extra_summary">NetEase and Genius, when the server has no lyrics</string>
     <string name="lyrics_reload">Reload lyrics</string>
     <string name="lyrics_select_hint">Tap lines to pick what to share</string>
     <string name="lyrics_select_max">You can share up to %d lines</string>
@@ -96,7 +96,7 @@
     <string name="local_playlist_subtitle">On this device</string>
     <string name="local_playlist_new">Playlist on this device</string>
     <string name="local_added_section">Added on this device</string>
-    <string name="local_add_note">Phone files stay on this phone: Spotify can\'t receive them.</string>
+    <string name="local_add_note">Phone files stay on this phone: they are never sent to your server.</string>
     <string name="local_rename">Rename</string>
     <string name="local_delete_playlist">Delete playlist</string>
     <string name="local_added_to">Added to %1$s</string>
@@ -134,9 +134,9 @@
     <string name="about_discord_detail">News, help and ideas: join the community</string>
     <string name="about_github">Source code</string>
     <string name="about_github_detail">Releases, issues and code on GitHub</string>
-    <string name="about_free">Free, open source and without ads. Not affiliated with Spotify.</string>
+    <string name="about_free">Free, open source and without ads. A fork of Myspoti, under GPL-3.0.</string>
     <string name="library_reorder_hint">Hold a playlist, then drag it to move it</string>
-    <string name="library_reorder_reset">Back to Spotify\'s order</string>
+    <string name="library_reorder_reset">Back to the server\'s order</string>
     <string name="song_radio_failed">Couldn\'t open this song\'s radio</string>
     <string name="song_radio_name">%1$s Radio</string>
     <string name="local_files_find_hint">Find in Local Files</string>
@@ -278,6 +278,8 @@
     <string name="quality_download_hires">FLAC Hi-Res</string>
     <string name="quality_download_hires_detail">24-bit when it exists, files about three times bigger</string>
     <string name="setup_quality_title">Sound quality</string>
+    <string name="setup_storage_title">Downloads and storage</string>
+    <string name="setup_storage_subtitle">Songs are saved from your server, on this phone. Choose how they are saved; downloaded music plays offline.</string>
     <string name="setup_quality_subtitle">Choose how Myspoti plays and saves your music. You can change it later in Settings.</string>
     <string name="setup_look_title">Choose your look</string>
     <string name="setup_look_subtitle">Watch the preview, then pick the one you like.</string>
@@ -399,7 +401,7 @@
     <string name="settings_autoplay_title">Autoplay</string>
     <string name="settings_autoplay_detail">When your music ends, keep playing similar songs</string>
     <string name="myspoti_shuffle_title">Myspoti shuffle</string>
-    <string name="myspoti_shuffle_detail">With shuffle on, a playlist, album or Liked Songs plays every song once, in a random order, before starting over. Off: Spotify\'s shuffle. A free account may keep Spotify\'s shuffle on some lists.</string>
+    <string name="myspoti_shuffle_detail">With shuffle on, a playlist, album or Liked Songs plays every song once, in a random order, before starting over. Off: the list\'s own order.</string>
     <string name="myspoti_shuffle_imposed">Spotify keeps its own shuffle on this list for your account: Myspoti shuffle is off for it.</string>
     <string name="settings_crossfade_title">Crossfade</string>
     <string name="settings_crossfade_detail">Songs from extensions, downloads and local files overlap: the end of one fades out while the next fades in. Spotify streams cannot overlap (one audio stream): they only fade out and in.</string>
@@ -512,7 +514,7 @@
     <string name="lyrics_meaning_source_short" translatable="false">Genius ↗</string>
     <string name="lyrics_word_sync_title">Word by word</string>
     <string name="lyrics_word_sync_on">Karaoke timing first (LyricsPlus, lrc.red, Kugou)</string>
-    <string name="lyrics_word_sync_off">Line by line, Spotify first</string>
+    <string name="lyrics_word_sync_off">Line by line</string>
     <string name="playlist_invite_collaborators">Invite collaborators</string>
     <string name="playlist_invite_message">Join my playlist “%1$s” on Spotify, you can add songs to it: %2$s</string>
     <string name="playlist_invite_failed">Couldn’t make the invitation link</string>
@@ -661,7 +663,7 @@
     <string name="eq_preset_custom">Custom</string>
     <string name="equalizer_section_playback">Speed and silences</string>
     <string name="equalizer_speed">Speed</string>
-    <string name="equalizer_speed_detail">Everything the app plays itself, music and downloaded episodes alike. Episodes streamed by Spotify keep the podcast player\'s speed. At any speed but 1×, Spotify does not play the song along (it is not counted there and your other devices do not see it): Spotify plays music at 1× only.</string>
+    <string name="equalizer_speed_detail">Playback speed and silence skipping apply to everything the app plays, music and downloaded episodes alike.</string>
     <string name="equalizer_skip_silence">Skip silences</string>
     <string name="equalizer_skip_silence_detail">Silent stretches are skipped (long pauses in an episode, a silence before a hidden track).</string>
     <plurals name="download_notification_count">

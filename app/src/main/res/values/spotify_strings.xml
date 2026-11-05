@@ -105,7 +105,7 @@
     <string name="song_dna_search_chip_followed_artists" formatted="false">Followed artists</string>
     <string name="local_files_title" formatted="false">Local Files</string>
     <string name="local_files_empty_section_title" formatted="false">Add your own audio files to Your Library</string>
-    <string name="local_files_empty_section_subtitle" formatted="false">Got a song or personal podcast that\'s not on Spotify?</string>
+    <string name="local_files_empty_section_subtitle" formatted="false">Got a song or personal podcast that\'s not on your server?</string>
     <string name="local_files_empty_section_no_files_title" formatted="false">Your audio files will appear here</string>
     <string name="local_files_empty_section_dialog_permission_rationale_accept" formatted="false">Give access</string>
     <string name="local_files_empty_section_button_go_to_settings" formatted="false">Go to Settings</string>

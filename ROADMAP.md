@@ -135,7 +135,9 @@ is correct.
 
 ## M6 — Polish, tests, release
 
-- [ ] Onboarding (server, quality, storage) and a permissions pass.
+- [x] Onboarding (Subsonic): server → look → **downloads and storage** (quality, songs/size,
+      free space) → permissions (notifications, Bluetooth, battery); the local-files permission
+      is asked when Local Files is opened. The steps are remembered, so updates skip them.
 - [ ] Tablet/two-pane layout; responsive player; large-screen polish.
 - [x] Unit tests: the Subsonic contract — URL shape + salted token (never the password), error
       messages, HTTP failures, reachability reporting, JSON → model mapping, album track paging,
@@ -143,9 +145,10 @@ is correct.
 - [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
-      Started: `app_name`, the update/language/battery strings and the About title say
-      "Jellyfin Audio"; the Settings rows no longer mention Spotify Connect or Myspoti.
-      Remaining: the Spotify-only screens' strings and the upstream Discord/Support links.
+      Done for every reachable screen: app name, About, update/language/battery texts, Local
+      Files, library order, speed/silences, lyrics summary, shuffle and the Settings rows say
+      "Jellyfin Audio" / "your server", with no Spotify Connect or Myspoti left. Remaining:
+      the dead Spotify-only screens' strings and the upstream Discord/Support links.
 - [ ] GPL-3.0 compliance: source publication, notices, Myspoti credit.
 - [x] CI: `.github/workflows/ci.yml` — JDK 17 + Android SDK, the JVM tests of `api-subsonic`
       and `app`, then the debug APK, uploaded as an artifact.

@@ -32,7 +32,7 @@
     <string name="verified_artist">Artiste vérifié</string>
     <string name="lyrics_share">Partager des paroles</string>
     <string name="lyrics_extra_title">Plus de sources de paroles</string>
-    <string name="lyrics_extra_summary">NetEase et Genius, quand Spotify n\'a pas les paroles</string>
+    <string name="lyrics_extra_summary">NetEase et Genius, quand le serveur n\'a pas de paroles</string>
     <string name="lyrics_reload">Recharger les paroles</string>
     <string name="lyrics_select_hint">Touchez des lignes pour choisir ce que vous partagez</string>
     <string name="lyrics_select_max">Vous pouvez partager jusqu\'à %d lignes</string>
@@ -96,7 +96,7 @@
     <string name="local_playlist_subtitle">Sur cet appareil</string>
     <string name="local_playlist_new">Playlist sur cet appareil</string>
     <string name="local_added_section">Ajoutés sur cet appareil</string>
-    <string name="local_add_note">Les fichiers du téléphone restent sur ce téléphone : Spotify ne peut pas les recevoir.</string>
+    <string name="local_add_note">Les fichiers du téléphone restent sur ce téléphone : ils ne sont jamais envoyés à votre serveur.</string>
     <string name="local_rename">Renommer</string>
     <string name="local_delete_playlist">Supprimer la playlist</string>
     <string name="local_added_to">Ajouté à %1$s</string>
@@ -134,9 +134,9 @@
     <string name="about_discord_detail">Nouveautés, aide et idées : rejoignez la communauté</string>
     <string name="about_github">Code source</string>
     <string name="about_github_detail">Versions, signalements et code sur GitHub</string>
-    <string name="about_free">Gratuit, open source et sans pub. Non affilié à Spotify.</string>
+    <string name="about_free">Gratuit, open source et sans publicité. Un fork de Myspoti, sous GPL-3.0.</string>
     <string name="library_reorder_hint">Maintenez une playlist, puis faites-la glisser pour la déplacer</string>
-    <string name="library_reorder_reset">Revenir à l\'ordre de Spotify</string>
+    <string name="library_reorder_reset">Revenir à l\'ordre du serveur</string>
     <string name="song_radio_failed">Impossible d\'ouvrir la radio de ce titre</string>
     <string name="song_radio_name">Radio de %1$s</string>
     <string name="local_files_find_hint">Rechercher dans les fichiers locaux</string>
@@ -273,6 +273,8 @@
     <string name="quality_download_hires">FLAC Hi-Res</string>
     <string name="quality_download_hires_detail">24 bits quand il existe, fichiers environ trois fois plus lourds</string>
     <string name="setup_quality_title">Qualité du son</string>
+    <string name="setup_storage_title">Téléchargements et stockage</string>
+    <string name="setup_storage_subtitle">Les morceaux sont enregistrés depuis votre serveur, sur ce téléphone. Choisissez la qualité des téléchargements ; la musique téléchargée se lit hors ligne.</string>
     <string name="setup_quality_subtitle">Choisissez comment Myspoti lit et enregistre votre musique. Vous pourrez le changer plus tard dans les Réglages.</string>
     <string name="setup_look_title">Choisissez votre style</string>
     <string name="setup_look_subtitle">Regardez l\'aperçu, puis choisissez celui qui vous plaît.</string>
@@ -394,7 +396,7 @@
     <string name="settings_autoplay_title">Lecture automatique</string>
     <string name="settings_autoplay_detail">Quand votre musique se termine, continuer avec des titres similaires</string>
     <string name="myspoti_shuffle_title">Lecture aléatoire Myspoti</string>
-    <string name="myspoti_shuffle_detail">Avec la lecture aléatoire activée, une playlist, un album ou les titres likés jouent chaque titre une fois, dans un ordre aléatoire, avant de recommencer. Désactivée : la lecture aléatoire de Spotify. Un compte gratuit peut garder celle de Spotify sur certaines listes.</string>
+    <string name="myspoti_shuffle_detail">Aléatoire activé : une playlist, un album ou les Titres likés lit chaque morceau une fois, dans un ordre aléatoire, avant de recommencer. Désactivé : l\'ordre de la liste.</string>
     <string name="myspoti_shuffle_imposed">Spotify garde sa propre lecture aléatoire sur cette liste pour votre compte : la lecture aléatoire Myspoti y est désactivée.</string>
     <string name="settings_crossfade_title">Fondu enchaîné</string>
     <string name="settings_crossfade_detail">Les morceaux issus d\'extensions, de téléchargements et de fichiers locaux se chevauchent : la fin de l\'un s\'efface pendant que le suivant monte. Les flux Spotify ne peuvent pas se chevaucher (un seul flux audio) : ils s\'effacent puis remontent seulement.</string>
@@ -501,7 +503,7 @@
     <string name="clip_sound_off_hint">Tu entends de nouveau le morceau Spotify.</string>
     <string name="lyrics_word_sync_title">Mot par mot</string>
     <string name="lyrics_word_sync_on">Synchro karaoké d’abord (LyricsPlus, lrc.red, Kugou)</string>
-    <string name="lyrics_word_sync_off">Ligne par ligne, Spotify d’abord</string>
+    <string name="lyrics_word_sync_off">Ligne par ligne</string>
     <string name="playlist_invite_collaborators">Inviter des collaborateurs</string>
     <string name="playlist_invite_message">Rejoins ma playlist « %1$s » sur Spotify, tu pourras y ajouter des titres : %2$s</string>
     <string name="playlist_invite_failed">Impossible de créer le lien d’invitation</string>
@@ -660,7 +662,7 @@
     <string name="eq_preset_custom">Personnalisé</string>
     <string name="equalizer_section_playback">Vitesse et silences</string>
     <string name="equalizer_speed">Vitesse</string>
-    <string name="equalizer_speed_detail">Tout ce que l’appli joue elle-même, musique et épisodes téléchargés. Les épisodes diffusés par Spotify gardent la vitesse du lecteur de podcasts. À toute vitesse autre que 1×, Spotify ne joue pas le titre en parallèle (il n’y est pas compté et vos autres appareils ne le voient pas) : Spotify ne joue la musique qu’à 1×.</string>
+    <string name="equalizer_speed_detail">La vitesse et le saut des silences s\'appliquent à tout ce que l\'application lit, musique et épisodes téléchargés.</string>
     <string name="equalizer_skip_silence">Sauter les silences</string>
     <string name="equalizer_skip_silence_detail">Les passages silencieux sont sautés (longues pauses dans un épisode, silence avant un titre caché).</string>
     <plurals name="download_notification_count">
