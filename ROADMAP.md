@@ -51,8 +51,8 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
 - [x] Guarded the remaining Spotify host accesses in `SongPlayer` (clips, Connect mirror,
       repeat restore, page reload); the output sheet is local-only.
 - [x] Runtime-verified on a OnePlus CPH2207 (Android 13) over wireless ADB + `adb reverse`.
-- [x] Application id renamed to `com.adlen.jellyfinaudio` (debug `…dev`); label
-      "Jellyfin Audio". The internal Kotlin namespace (`app.myspoti.*`) is a later mechanical
+- [x] Application id renamed to `com.adlen.sonora` (debug `…dev`); label
+      "Sonora". The internal Kotlin namespace (`app.myspoti.*`) is a later mechanical
       rename.
 - [x] Default look switched to **Immersive** (the look of the Myspoti README); Classic is
       still selectable in Settings → Display → Look.
@@ -161,7 +161,7 @@ is correct.
       monochrome layer and `app_mark` for the About sheet), replacing Myspoti's green wave.
       Done for every reachable screen: app name, About, update/language/battery texts, Local
       Files, library order, speed/silences, lyrics summary, shuffle and the Settings rows say
-      "Jellyfin Audio" / "your server", with no Spotify Connect or Myspoti left. Remaining:
+      "Sonora" / "your server", with no Spotify Connect or Myspoti left. Remaining:
       the dead Spotify-only screens' strings and the upstream Discord/Support links.
 - [ ] GPL-3.0 compliance: source publication, notices, Myspoti credit.
       In the app: About credits "a fork of Myspoti, under GPL-3.0" and its Source code row opens

@@ -42,9 +42,19 @@ Le workflow :
 1. vérifie que le tag est bien sur `main` ;
 2. calcule `versionName = 1.2.0` et `versionCode = 10200` (majeur × 10000 + mineur × 100 + correctif) ;
 3. signe avec le keystore des secrets ;
-4. publie `app-mobile-release.apk` (téléphone + Android Auto) et
-   `app-automotive-release.apk` (Android Automotive) dans la GitHub Release, avec les notes
-   générées depuis les commits.
+4. publie **`app-mobile-release.apk`** dans la GitHub Release, avec les notes générées depuis les
+   commits.
+
+### Android Auto et Android Automotive OS, deux choses différentes
+
+- **Android Auto** : l'app tourne **sur le téléphone** et l'écran de la voiture l'affiche par
+  projection. Rien ne s'installe dans la voiture : c'est l'APK du téléphone (`app-mobile-release.apk`)
+  qui suffit.
+- **Android Automotive OS** : la voiture fait tourner Android elle-même ; les apps s'installent
+  dans la voiture via la piste « automotive » du Play Store (ou un sideload pour le développement).
+  C'est un autre produit, rare, et un APK séparé (`flavor automotive`). Le workflow
+  **`Automotive APK`** le construit à la demande (`workflow_dispatch`) ; il n'est pas publié avec
+  les releases normales.
 
 On peut aussi lancer `Release` à la main (`workflow_dispatch`) avec un numéro de version : la
 release est alors publiée sous le tag correspondant.

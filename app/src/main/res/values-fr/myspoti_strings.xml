@@ -56,7 +56,7 @@
     <string name="background_playback_title">Lecture en arrière-plan</string>
     <string name="background_playback_on">L\'optimisation de la batterie est désactivée : la musique continue écran éteint.</string>
     <string name="background_playback_off">Désactive l\'optimisation de la batterie pour qu\'Android ne mette pas l\'app en pause en arrière-plan.</string>
-    <string name="background_playback_samsung">Samsung peut encore mettre Jellyfin Audio en veille écran éteint. Ajoutez-le aux « Applications jamais en veille » : Réglages &gt; Batterie &gt; Limites d\'utilisation en arrière-plan.</string>
+    <string name="background_playback_samsung">Samsung peut encore mettre Sonora en veille écran éteint. Ajoutez-le aux « Applications jamais en veille » : Réglages &gt; Batterie &gt; Limites d\'utilisation en arrière-plan.</string>
     <string name="background_playback_open">Ouvrir les réglages de l\'app</string>
     <plurals name="local_files_count">
         <item quantity="one">%d titre</item>
@@ -204,7 +204,7 @@
     <string name="track_sort_artist">Artiste</string>
     <string name="track_sort_album">Album</string>
     <string name="track_sort_duration">Durée</string>
-    <string name="setup_title">Configurer Jellyfin Audio</string>
+    <string name="setup_title">Configurer Sonora</string>
     <string name="setup_subtitle">Autorisez ce que vous voulez ; vous pourrez changer plus tard dans les réglages du téléphone.</string>
     <string name="setup_notifications_title">Notifications</string>
     <string name="setup_notifications_detail">Contrôles sur l\'écran verrouillé et dans les notifications</string>
@@ -305,7 +305,7 @@
     <string name="quality_now_unknown">Pas encore connue : lancez un titre</string>
     <string name="update_downloading">Téléchargement… %1$d%%</string>
     <string name="update_installing">Installation…</string>
-    <string name="update_needs_permission">Pour mettre à jour, autorisez Jellyfin Audio à installer des applications, puis revenez ici.</string>
+    <string name="update_needs_permission">Pour mettre à jour, autorisez Sonora à installer des applications, puis revenez ici.</string>
     <string name="update_allow">Autoriser</string>
     <string name="update_failed">La mise à jour a échoué : %1$s</string>
     <string name="update_retry">Réessayer</string>
@@ -315,7 +315,7 @@
     <string name="settings_check_update_title">Vérifier les mises à jour maintenant</string>
     <string name="settings_check_update_detail">Cherche une version plus récente et propose de l\'installer</string>
     <string name="settings_update_checking">Vérification…</string>
-    <string name="settings_update_check_latest">Jellyfin Audio est à jour</string>
+    <string name="settings_update_check_latest">Sonora est à jour</string>
     <string name="settings_update_refresh">Vérifier les mises à jour</string>
     <string name="settings_update_uptodate_now">À jour (vérifié à l\'instant)</string>
     <string name="settings_update_last_checked">Dernière vérification : %1$s</string>
