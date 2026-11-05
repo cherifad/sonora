@@ -147,6 +147,19 @@ Il vérifie que `PlaybackService` répond à `android.media.browse.MediaBrowserS
 racine donne Home / Library / Downloads, que Library liste les collections, qu'un album rend
 un « Start radio » et des morceaux jouables, et que la recherche répond.
 
+Les écrans du téléphone ont leur test Compose (`MainFlowTest`) : Home, Library, puis un album
+de la bibliothèque ouvert et lancé. Il se configure lui-même sur `10.0.2.2:4533` et se saute si
+le serveur ne répond pas.
+
+```bash
+./gradlew :app:connectedMobileDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.ui.MainFlowTest
+```
+
+À savoir : AGP **désinstalle l'application** à la fin d'un `connected…AndroidTest` (les données
+d'onboarding partent avec). Pour la garder après le run :
+`-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true`.
+
 Le DHU lui-même est installé (`extras;google;auto`) et se lance avec `tools/dhu.sh` ; il
 demande l'app Android Auto **sur l'appareil**, absente de l'image `google_apis` de
 l'émulateur — d'où le test ci-dessus, qui couvre l'arbre sans elle.

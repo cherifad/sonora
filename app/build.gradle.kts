@@ -137,6 +137,10 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     // The Android Auto contract test binds to the media browser service.
     androidTestImplementation(libs.androidx.media)
+    // Compose UI tests (the phone flows): the semantics tree, the test activity, JUnit 4.
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.webkit)

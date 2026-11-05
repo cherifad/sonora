@@ -152,9 +152,10 @@ is correct.
       download quality parameters (23 tests in `api-subsonic`).
 - [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
-      Android Auto is covered: `AutoBrowserTest` (instrumented) checks the exported media
-      browser service, the three root tabs, the library folders, an album's playable songs and
-      search, against the test Navidrome.
+      Home, Library, an album and playback are covered by `MainFlowTest` (Compose, on the
+      emulator, against the test Navidrome). Android Auto is covered by `AutoBrowserTest`
+      (service, root tabs, library folders, album songs, search); the setup and search flows
+      remain.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
       Icon done: a pink-to-amber adaptive icon with five white level bars (plus the themed
       monochrome layer and `app_mark` for the About sheet), replacing Myspoti's green wave.
