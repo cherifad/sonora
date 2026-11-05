@@ -7,7 +7,7 @@ couvrir chaque format, en priorité depuis **Windows**, sans Android Studio comp
 
 | Cible | Outil | Poids / remarques |
 |---|---|---|
-| **Téléphone** | Ton CPH2207 en ADB sans fil (déjà utilisé) | 0 Mo, le plus fidèle |
+| **Téléphone** | Émulateur (`pixel_7`) | ~1,5 Go d'image, x86_64 |
 | **Tablette** | Émulateur Android (`medium_tablet` ou `pixel_tablet`) | ~1,5 Go d'image, x86_64 |
 | **Tablette / pliable, sans émulateur** | `adb shell wm size` + `wm density` sur le téléphone | 0 Mo, réversible (voir plus bas) |
 | **Wear OS** | Émulateur Android (`wearos_small_round`, Wear OS 5.1) | ~1,5 Go ; appairage avec un émulateur téléphone |
@@ -17,6 +17,18 @@ couvrir chaque format, en priorité depuis **Windows**, sans Android Studio comp
 Wear OS et Automotive ne sont couverts que par l'émulateur officiel : c'est la
 seule famille d'outils complète. « Léger » veut donc dire : **cmdline-tools +
 emulator, sans Android Studio**, une image x86_64, un AVD à la fois, snapshots.
+
+Les tests de ce dépôt tournent sur l'émulateur ; le téléphone physique n'est plus
+utilisé. Sur cette machine (WSL2) tout est scripté :
+
+```bash
+tools/fetch-emulator-libs.sh   # une fois : bibliothèques hôtes manquantes
+tools/create-avds.sh           # une fois : jellyfin (téléphone) + jellyfin_tablet
+tools/emulator.sh              # fenêtre sur le bureau Windows (WSLg)
+tools/emulator.sh jellyfin_tablet
+```
+
+Navidrome de test : `http://10.0.2.2:4533` depuis l'émulateur (pas d'`adb reverse`).
 
 ## Installation minimale sur Windows (PowerShell)
 
