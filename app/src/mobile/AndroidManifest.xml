@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The phone app: its launcher activity and the intents it answers. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="app.myspoti.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard|navigation|density"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Myspoti">
+            <!-- Desktop windows (Samsung DeX, freeform): opens in a landscape window, resizable. -->
+            <layout
+                android:defaultWidth="1100dp"
+                android:defaultHeight="760dp"
+                android:gravity="center" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- No autoVerify: these are Spotify's domains, verification can never
+                 pass for this app. spotify.link / spoti.fi short links (how the official
+                 apps share a collaborative playlist invitation) are offered too: the id and
+                 the invitation token (pt) are only in the redirect target, which the app
+                 resolves itself (InviteLinks). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="open.spotify.com" />
+                <data
+                    android:scheme="https"
+                    android:host="spotify.com" />
+                <data
+                    android:scheme="https"
+                    android:host="www.spotify.com" />
+                <data
+                    android:scheme="https"
+                    android:host="play.spotify.com" />
+                <data
+                    android:scheme="https"
+                    android:host="spotify.link" />
+                <data
+                    android:scheme="https"
+                    android:host="spoti.fi" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

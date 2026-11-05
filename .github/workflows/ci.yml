@@ -29,7 +29,7 @@ jobs:
       # The JVM tests first (the Subsonic contract, the offline/download logic,
       # the queue rules): they fail fast and need no device.
       - name: Unit tests
-        run: ./gradlew :api-subsonic:testDebugUnitTest :app:testDebugUnitTest --console=plain
+        run: ./gradlew :api-subsonic:testDebugUnitTest :app:testMobileDebugUnitTest --console=plain
 
       # The same APK a developer installs: the UI and the whole graph have to compile.
       - name: Build the debug APK

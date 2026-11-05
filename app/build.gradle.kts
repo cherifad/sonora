@@ -59,6 +59,20 @@ android {
     val stableRelease = !beta && findProperty("overDev") == null
     if (stableRelease && !hasReleaseKey && gradle.startParameter.taskNames.any { Regex("(assemble|bundle|package|install)Release").containsMatchIn(it) })
         throw GradleException("A stable release needs the release key: set MYSPOTI_KEYSTORE (CI) or add keystore/keystore.properties.")
+    // Two artifacts from one code base: the phone app (which Android Auto projects) and the
+    // Android Automotive OS app (no launcher, the car draws the media UI).
+    flavorDimensions += "device"
+    productFlavors {
+        create("mobile") {
+            dimension = "device"
+            isDefault = true
+        }
+        create("automotive") {
+            dimension = "device"
+            applicationIdSuffix = ".car"
+        }
+    }
+
     signingConfigs {
         create("release") {
             if (envStore != null) {

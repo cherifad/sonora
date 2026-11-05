@@ -153,6 +153,38 @@ l'émulateur — d'où le test ci-dessus, qui couvre l'arbre sans elle.
 Une app *Android Automotive* (écran embarqué) se teste à part, dans l'AVD
 `car` — ce n'est pas le même modèle.
 
+## Android Automotive OS (voiture) : build `automotive`
+
+En plus du téléphone, le dépôt produit un APK **Android Automotive OS** : même service de
+navigation média, sans activité de lancement (la voiture dessine l'UI). C'est un *flavor*
+Gradle, pas un module séparé :
+
+```bash
+# image + AVD (une fois)
+sdkmanager --install "system-images;android-35-ext15;android-automotive-playstore;x86_64"
+avdmanager create avd -n jellyfin_car \
+  -k "system-images;android-35-ext15;android-automotive-playstore;x86_64" \
+  -d automotive_1024p_landscape
+
+# APK pour l'émulateur (x86_64), puis la voiture
+./gradlew :app:assembleAutomotiveDebug -Pabis=x86_64
+tools/emulator.sh jellyfin_car
+adb -s emulator-5554 install -r app/build/outputs/apk/automotive/debug/app-automotive-debug.apk
+tools/car-open.sh
+```
+
+`tools/car-open.sh` démarre l'app média de la voiture (`com.android.car.media`) sur notre
+`PlaybackService` : Home / Library / Downloads, puis lecture — le tout dessiné par le système.
+
+Deux pièges connus :
+
+- une app sans activité de lancement reste à l'état « stopped » et la voiture l'ignore :
+  `tools/car-open.sh` démarre son service une fois pour lever l'état ;
+- `run-as` écrit dans les données de l'utilisateur 0 alors que la voiture tourne en
+  utilisateur 10 : pour configurer le serveur, le test instrumenté (`AutoBrowserTest`) le fait
+  dans le bon contexte — `adb shell am instrument -w --user 10 -e class
+  com.myspoti.auto.AutoBrowserTest com.adlen.jellyfinaudio.car.dev.test/androidx.test.runner.AndroidJUnitRunner`.
+
 ## Tablette sans émulateur (sur le téléphone)
 
 ```bash

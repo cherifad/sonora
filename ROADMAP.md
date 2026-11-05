@@ -140,6 +140,10 @@ is correct.
       free space) → permissions (notifications, Bluetooth, battery); the local-files permission
       is asked when Local Files is opened. The steps are remembered, so updates skip them.
 - [ ] Tablet/two-pane layout; responsive player; large-screen polish.
+      Android Automotive OS: the `automotive` flavor (no launcher, media metadata, `appCategory`
+      audio) runs on the car emulator — the car's media app browses Home / Library / Downloads
+      and plays from the Subsonic server. The phone build is unchanged (`assembleDebug` still
+      builds both variants).
       Audited on the 2560×1600 tablet AVD: Home, the quick tiles and the shelves already
       reflow (4 columns); an album page is a single column whose cover and buttons fill the
       first screen and can sit under the bottom chrome until it scrolls. Next: a width-aware

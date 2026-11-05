@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Automotive OS build: the same media browser service, and no launcher activity —
+     the car draws the media UI from the service's browse tree. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+
+    <application android:appCategory="audio">
+
+        <!-- What the car reads to find a media app (the phone's Auto declaration is the
+             other one, com.google.android.gms.car.application, removed below). -->
+        <meta-data
+            android:name="com.android.automotive"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            tools:node="remove" />
+    </application>
+</manifest>
