@@ -106,12 +106,31 @@ object OfflineDownloader {
     /** Re-queues what was waiting when the app last stopped. */
     fun resumePending() {
         // Read off the main thread (the app is already drawing): the queue fills a moment later.
-        scope.launch {
-            val saved = runCatching {
-                val a = JSONArray(OfflineStore.pendingFile.readText())
-                (0 until a.length()).map { Request.fromJson(a.getJSONObject(it)) }
-            }.getOrDefault(emptyList())
-            if (saved.isNotEmpty()) enqueueAll(saved)
+        scope.launch { resumePendingNow() }
+    }
+
+    /** The saved queue read and enqueued. */
+    internal suspend fun resumePendingNow() {
+        val saved = runCatching {
+            val a = JSONArray(OfflineStore.pendingFile.readText())
+            (0 until a.length()).map { Request.fromJson(a.getJSONObject(it)) }
+        }.getOrDefault(emptyList())
+        if (saved.isNotEmpty()) enqueueAll(saved)
+    }
+
+    /**
+     * Resumes the saved queue and waits until it is empty (WorkManager's worker). [onProgress]
+     * gets the requests left and the average progress (-1 while unknown).
+     */
+    suspend fun awaitPending(onProgress: (remaining: Int, progress: Float) -> Unit) {
+        resumePendingNow()
+        while (true) {
+            val remaining = synchronized(pending) { pending.size }
+            if (remaining == 0) return
+            val states = synchronized(pending) { pending.keys.toList() }.mapNotNull { OfflineStore.status[it] }
+            val known = states.mapNotNull { (it as? OfflineStatus.Downloading)?.progress?.takeIf { p -> p >= 0f } }
+            onProgress(remaining, if (known.isEmpty()) -1f else known.average().toFloat())
+            delay(1_000)
         }
     }
 
@@ -131,6 +150,8 @@ object OfflineDownloader {
             }
             return false
         }
+        // Subsonic downloads come from the server itself: no download-source extension needed.
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) return true
         if (!com.music.spotui.extensions.Extensions.hasDownloadSource()) {
             if (!auto) scope.launch(Dispatchers.Main) {
                 android.widget.Toast.makeText(Graph.app, app.myspoti.engine.R.string.downloads_need_source, android.widget.Toast.LENGTH_LONG).show()
@@ -176,6 +197,9 @@ object OfflineDownloader {
         }
         start()
         added.forEach { queue.trySend(it) }
+        // Keep going with the app in the background (or killed): the worker resumes the queue
+        // and shows its progress in a notification.
+        DownloadsWork.enqueue(Graph.app)
     }
 
     /**
@@ -291,6 +315,8 @@ object OfflineDownloader {
 
     private suspend fun download(r: Request): OfflineTrack {
         if (!isDownloadsEnabled(Graph.app)) throw Unavailable("downloads are off")
+        // Subsonic: the server itself serves the file (original or transcoded), no extension.
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic) return downloadSubsonic(r)
         val quality = qualityOf(r)
         val tmp = OfflineStore.tmpDir
         val audioTmp = File(tmp, "${r.trackId}.part")
@@ -344,6 +370,157 @@ object OfflineDownloader {
             audioTmp.delete()
         }
     }
+
+    /**
+     * The Subsonic download: the server's own `stream` endpoint (original file, or transcoded to
+     * the chosen quality), kept encrypted like every other download.
+     */
+    private suspend fun downloadSubsonic(r: Request): OfflineTrack {
+        val api = app.myspoti.host.android.MyspotiRuntime.subsonicApi
+            ?: throw Unavailable("no Subsonic server configured")
+        val quality = qualityOf(r)
+        val name = safeFileName(r.trackId)
+        val tmp = File(OfflineStore.tmpDir, "$name.part")
+        try {
+            setStatus(r.trackId, OfflineStatus.Downloading(-1f))
+            // The quality asked for first, then the original file: a server without a
+            // transcoder (or one that refuses the format) still gives its own audio.
+            val urls = runCatching {
+                listOf(api.downloadUrl(r.trackId, quality.name), api.downloadUrl(r.trackId, null)).distinct()
+            }.getOrElse { throw Unavailable("no download URL: ${it.message}") }
+            var fetched = false
+            var asOriginal = false
+            var lastError = "the server sent no audio"
+            for ((index, url) in urls.withIndex()) {
+                tmp.delete()
+                val ok = runCatching { fetchServerFile(r.trackId, url, tmp) }.getOrElse { e ->
+                    lastError = e.message ?: "the server did not send the file"
+                    false
+                }
+                if (!ok || tmp.length() < 10_000) {
+                    lastError = if (ok) "the server sent no audio (${tmp.length()} bytes)" else lastError
+                    continue
+                }
+                val audio = runCatching { checkServerAudio(tmp); true }.getOrElse { e ->
+                    lastError = e.message ?: "the server did not send an audio file"
+                    false
+                }
+                if (audio) { fetched = true; asOriginal = index > 0; break }
+            }
+            if (!fetched) throw Unavailable(lastError)
+            currentCoroutineContext().ensureActive()
+            val out = File(OfflineStore.audioDir, "$name.${sniffAudioExtension(tmp)}")
+            if (!tmp.renameTo(out)) throw IOException("could not move the file")
+            // The audio is complete on disk: "stop all" must not leave it out of the index.
+            return withContext(NonCancellable) {
+                runInterruptible(Dispatchers.IO) { OfflineCrypto.encryptInPlace(Graph.app, out) }
+                val coverUrl = api.coverUrl(r.trackId, 600) ?: r.coverUrl.takeIf { it.isNotBlank() }
+                val cover = runCatching {
+                    val c = File(OfflineStore.coverDir, "$name.jpg")
+                    if (coverUrl == null) "" else { httpGet(coverUrl, c); c.name }
+                }.getOrDefault("")
+                OfflineTrack(
+                    trackId = r.trackId, title = r.title, artist = r.artist, album = r.album,
+                    albumId = r.albumId, durationMs = r.durationMs, coverUrl = coverUrl.orEmpty(),
+                    file = out.name, cover = cover, source = "Subsonic", verified = true,
+                    bytes = out.length(), addedAt = System.currentTimeMillis(),
+                    providerId = null, extensionQuality = if (asOriginal) "Original" else qualityLabel(quality),
+                )
+            }
+        } finally {
+            tmp.delete()
+        }
+    }
+
+    /**
+     * The server file streamed straight to [out], reporting progress while it goes. A plain
+     * OkHttp call, not the extensions' safe HTTP: the Subsonic server is the user's own,
+     * often on the LAN or localhost (adb reverse), which that client refuses as a private
+     * address.
+     */
+    private suspend fun fetchServerFile(trackId: String, url: String, out: File): Boolean {
+        val copied = java.util.concurrent.atomic.AtomicLong(0)
+        val total = java.util.concurrent.atomic.AtomicLong(-1)
+        val watcher = scope.launch {
+            while (isActive) {
+                val done = copied.get()
+                val all = total.get()
+                setStatus(
+                    trackId,
+                    OfflineStatus.Downloading(if (all > 0) (done.toFloat() / all).coerceIn(0f, 1f) else -1f),
+                )
+                delay(400)
+            }
+        }
+        try {
+            return runInterruptible(Dispatchers.IO) {
+                val request = okhttp3.Request.Builder().url(url).build()
+                serverHttp.newCall(request).execute().use { res ->
+                    if (!res.isSuccessful) throw IOException("stream HTTP ${res.code}")
+                    val body = res.body ?: throw IOException("empty body")
+                    total.set(body.contentLength())
+                    out.outputStream().use { output ->
+                        body.byteStream().use { input ->
+                            val buf = ByteArray(256 * 1024)
+                            while (true) {
+                                val n = input.read(buf)
+                                if (n < 0) break
+                                output.write(buf, 0, n)
+                                copied.addAndGet(n.toLong())
+                            }
+                        }
+                    }
+                }
+                true
+            }
+        } finally {
+            watcher.cancel()
+            setStatus(trackId, OfflineStatus.Downloading(-1f))
+        }
+    }
+
+    private val serverHttp by lazy { okhttp3.OkHttpClient.Builder().build() }
+
+    /** A server file the phone's own extractor must read as audio (a JSON/XML error page would not). */
+    private fun checkServerAudio(file: File) {
+        val extractor = android.media.MediaExtractor()
+        try {
+            extractor.setDataSource(file.path)
+            val audio = (0 until extractor.trackCount).any {
+                extractor.getTrackFormat(it).getString(android.media.MediaFormat.KEY_MIME)?.startsWith("audio/") == true
+            }
+            if (!audio) throw Unavailable("the server did not send an audio file")
+        } catch (e: IOException) {
+            throw Unavailable("the file could not be read: ${e.message}")
+        } finally {
+            extractor.release()
+        }
+    }
+
+    /** The audio container from the file's first bytes (Subsonic does not say what it transcoded to). */
+    private fun sniffAudioExtension(file: File): String {
+        val head = ByteArray(12)
+        val n = runCatching { file.inputStream().use { it.read(head) } }.getOrDefault(0)
+        fun ascii(at: Int, len: Int) = String(head, at, len, Charsets.US_ASCII)
+        return when {
+            n >= 4 && ascii(0, 4) == "fLaC" -> "flac"
+            n >= 4 && ascii(0, 4) == "OggS" -> "ogg"
+            n >= 8 && ascii(4, 4) == "ftyp" -> "m4a"
+            n >= 4 && ascii(0, 4) == "RIFF" -> "wav"
+            n >= 2 && head[0] == 'I'.code.toByte() && head[1] == 'D'.code.toByte() -> "mp3"
+            n >= 2 && (head[0].toInt() and 0xFF) == 0xFF && (head[1].toInt() and 0xE0) == 0xE0 -> "mp3"
+            else -> "mp3"
+        }
+    }
+
+    private fun qualityLabel(q: com.music.spotui.data.preferences.DownloadQuality): String = when (q) {
+        com.music.spotui.data.preferences.DownloadQuality.SMALL -> "MP3 128 kbps"
+        com.music.spotui.data.preferences.DownloadQuality.CD -> "≤ 320 kbps"
+        else -> "Original"
+    }
+
+    private fun safeFileName(id: String): String =
+        id.replace(Regex("[^A-Za-z0-9._-]"), "_").take(80).ifBlank { "track" }
 
     private class Fetched(
         val provider: String,

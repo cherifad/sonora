@@ -149,28 +149,36 @@ fun SettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.background_playback_open), color = AppText, fontSize = 16.sp)
                 Text(stringResource(R.string.background_playback_samsung), color = AppMuted, fontSize = 12.sp)
             }
+            StorageInfoRows(ctx)
             }
             if (tab == 99) {
             Section(R.string.settings_section_downloads)
             // Its role quality takes the place of the app's (kept, and still passed to every extension as `quality`).
-            val ext = remember(registry) { com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.DOWNLOADS) }
+            val subsonic = app.myspoti.host.android.MyspotiRuntime.isSubsonic
+            val ext = remember(registry) {
+                if (subsonic) null
+                else com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.DOWNLOADS)
+            }
             if (ext?.hidesAppQuality != true) DownloadQualityPicker()
             ext?.let { ExtensionSectionSettings(it) }
             // Where downloads come from: the download-source extensions, in the order they are asked.
-            if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.DOWNLOAD_SOURCE).isNotEmpty())
-                SourcesBlock(app.myspoti.extensions.Action.DOWNLOAD_SOURCE, navController)
-            else Column(
-                Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.Extensions.route) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            ) {
-                Text(stringResource(R.string.downloads_source_row_title), color = AppText, fontSize = 16.sp)
-                Text(
-                    stringResource(
-                        if (com.music.spotui.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
-                        else R.string.downloads_source_row_off,
-                    ),
-                    color = AppMuted, fontSize = 12.sp,
-                )
+            // Subsonic serves its own files, so there is no source to choose.
+            if (!subsonic) {
+                if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.DOWNLOAD_SOURCE).isNotEmpty())
+                    SourcesBlock(app.myspoti.extensions.Action.DOWNLOAD_SOURCE, navController)
+                else Column(
+                    Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.Extensions.route) }
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Text(stringResource(R.string.downloads_source_row_title), color = AppText, fontSize = 16.sp)
+                    Text(
+                        stringResource(
+                            if (com.music.spotui.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
+                            else R.string.downloads_source_row_off,
+                        ),
+                        color = AppMuted, fontSize = 12.sp,
+                    )
+                }
             }
             if (com.music.spotui.data.offline.OfflineStore.tracks.isNotEmpty()) RemoveDownloadsRow()
             }
@@ -464,6 +472,35 @@ private fun LanguageRow() {
                 }
             }
         }
+    }
+}
+
+/** Downloads, cache and free space: what the app keeps on the phone. */
+@Composable
+private fun StorageInfoRows(ctx: android.content.Context) {
+    var cache by remember { mutableStateOf(com.music.spotui.data.offline.StorageInfo.cacheBytes(ctx)) }
+    val count = com.music.spotui.data.offline.OfflineStore.tracks.size
+    val size = android.text.format.Formatter.formatShortFileSize(ctx, com.music.spotui.data.offline.OfflineStore.totalBytes())
+    val cacheText = android.text.format.Formatter.formatShortFileSize(ctx, cache)
+    val free = android.text.format.Formatter.formatShortFileSize(ctx, com.music.spotui.data.offline.StorageInfo.freeBytes(ctx))
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_storage_downloads_title), color = AppText, fontSize = 16.sp)
+        Text(stringResource(R.string.settings_storage_downloads_detail, count, size), color = AppMuted, fontSize = 12.sp)
+    }
+    Column(
+        Modifier.fillMaxWidth().clickable {
+            com.music.spotui.data.offline.StorageInfo.clearCache(ctx) { left ->
+                cache = left
+                android.widget.Toast.makeText(ctx, ctx.getString(R.string.settings_storage_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.settings_storage_cache_clear), color = AppText, fontSize = 16.sp)
+        Text(cacheText, color = AppMuted, fontSize = 12.sp)
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_storage_free_title), color = AppText, fontSize = 16.sp)
+        Text(free, color = AppMuted, fontSize = 12.sp)
     }
 }
 

@@ -153,6 +153,11 @@ fun ImmersiveHomeScreen(navController: NavController) {
             contentPadding = PaddingValues(top = immersiveHeaderContentPadding(), bottom = Immersive.BottomChrome),
             modifier = Modifier.fillMaxSize().immersiveHazeSource().immersiveChromeScroll(),
         ) {
+            item(key = "home:offline") {
+                com.music.spotui.ui.components.OfflineBanner(
+                    Modifier.padding(horizontal = Immersive.Gutter, vertical = 6.dp),
+                )
+            }
             item(key = "home:facets") {
                 ImmersiveChipRow {
                     ImmersiveChip(stringResource(R.string.filter_chip_all_label), selected = facet.isEmpty()) {

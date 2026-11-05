@@ -168,6 +168,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.8.0")
     implementation("androidx.media3:media3-datasource:1.8.0")
     implementation("androidx.media3:media3-database:1.8.0")
+    // Downloads keep going in the background (and after a restart) under WorkManager.
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
 
 
 

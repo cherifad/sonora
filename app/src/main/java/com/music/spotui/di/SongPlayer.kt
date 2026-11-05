@@ -1086,6 +1086,23 @@ object SongPlayer {
         song: String, context: Context? = null, contextUri: String? = null, order: List<String>? = null, positionMs: Long? = null,
         songs: List<SongsModel>? = null, askExtensions: Boolean = true, alone: Boolean = false,
     ) {
+        // Subsonic, offline (or the data saver on mobile data): the server cannot stream, so a
+        // downloaded song plays from its file and anything else says why it cannot.
+        if (app.myspoti.host.android.MyspotiRuntime.isSubsonic && com.music.spotui.data.offline.OfflineMode.offline) {
+            val id = if (song.startsWith("episode:")) null else spotifyTrackIdForPlayback(song)
+            val download = id?.let { com.music.spotui.data.offline.OfflineStore.tracks[it] }
+            if (download != null) {
+                com.music.spotui.di.LocalPlayer.play(
+                    listOf(com.music.spotui.data.offline.OfflineStore.toLocalTrack(download)), 0,
+                    context = download.album.ifBlank { download.artist },
+                )
+            } else {
+                main.post {
+                    android.widget.Toast.makeText(Graph.app, app.myspoti.engine.R.string.offline_track_unavailable, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            return
+        }
         // Data saver on mobile data: Spotify can't stream, only downloads and Local Files play.
         if (com.music.spotui.data.DataSaver.active) {
             main.post {

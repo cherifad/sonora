@@ -81,6 +81,19 @@ class SubsonicClient(initialConfig: SubsonicConfig) {
 
     fun streamUrl(id: String): String = endpoint("stream", listOf("id" to id)).toString()
 
+    /**
+     * The URL to save for offline listening: the original file, or a server-side transcode
+     * (`format`/`maxBitRate`), so "small" downloads stay small and the phone does no encoding.
+     */
+    fun downloadUrl(id: String, format: String? = null, maxBitRateKbps: Int? = null): String {
+        val params = buildList {
+            add("id" to id)
+            if (!format.isNullOrBlank()) add("format" to format)
+            if (maxBitRateKbps != null && maxBitRateKbps > 0) add("maxBitRate" to maxBitRateKbps.toString())
+        }
+        return endpoint("stream", params).toString()
+    }
+
     fun coverUrl(coverArt: String?, size: Int = 300): String? {
         val id = coverArt?.takeIf { it.isNotBlank() } ?: return null
         return endpoint("getCoverArt", listOf("id" to id, "size" to size.toString())).toString()

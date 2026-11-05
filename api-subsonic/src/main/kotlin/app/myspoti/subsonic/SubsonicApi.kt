@@ -52,6 +52,19 @@ class SubsonicApi(
     private val readyFlow = MutableStateFlow(true)
     override val ready: StateFlow<Boolean> = readyFlow
 
+    /**
+     * Where to fetch [trackId] for offline listening. [quality] is a DownloadQuality name
+     * ("SMALL", "CD", "HI_RES"); anything else keeps the original file.
+     */
+    fun downloadUrl(trackId: String, quality: String?): String = when (quality) {
+        "SMALL" -> client.downloadUrl(trackId, format = "mp3", maxBitRateKbps = 128)
+        "CD" -> client.downloadUrl(trackId, maxBitRateKbps = 320)
+        else -> client.downloadUrl(trackId)
+    }
+
+    /** Cover art for a song, album or artist id (the `getCoverArt` id the server gave). */
+    fun coverUrl(id: String, size: Int = 600): String? = client.coverUrl(id, size)
+
     /** The setup screen changed the server: the same client/player now talk to the new one. */
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)

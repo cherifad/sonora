@@ -171,6 +171,7 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
                 )
             }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_playback), icon = Icons.Rounded.PlayArrow, chevron = true, onClick = { open(SettingsPage.Playback) }) }
+            row { ImmersiveGroupRow(stringResource(R.string.settings_section_downloads), icon = Icons.Rounded.Download, chevron = true, onClick = { open(SettingsPage.Downloads) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_data), icon = Icons.Rounded.SignalCellularAlt, chevron = true, onClick = { open(SettingsPage.Data) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_display), icon = Icons.Rounded.Palette, chevron = true, onClick = { open(SettingsPage.Display) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_app), icon = Icons.Rounded.Info, chevron = true, onClick = { open(SettingsPage.App) }) }
@@ -271,11 +272,16 @@ private fun DownloadsPage(navController: NavController, open: (SettingsPage) -> 
     val ctx = LocalContext.current
     val quality = getDownloadQuality(ctx)
     var ask by remember { mutableStateOf(false) }
+    var cacheBytes by remember { mutableStateOf(com.music.spotui.data.offline.StorageInfo.cacheBytes(ctx)) }
     val size = android.text.format.Formatter.formatShortFileSize(ctx, com.music.spotui.data.offline.OfflineStore.totalBytes())
+    val count = com.music.spotui.data.offline.OfflineStore.tracks.size
+    val cache = android.text.format.Formatter.formatShortFileSize(ctx, cacheBytes)
+    val free = android.text.format.Formatter.formatShortFileSize(ctx, com.music.spotui.data.offline.StorageInfo.freeBytes(ctx))
     // The first extension of the download order, when it announces settings here; its role quality
     // takes the place of the app's (kept, and still passed to every extension as `quality`).
     val registry by com.music.spotui.extensions.Extensions.registry.collectAsStateWithLifecycle()
-    val ext = remember(registry) { com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.DOWNLOADS) }
+    val subsonic = app.myspoti.host.android.MyspotiRuntime.isSubsonic
+    val ext = remember(registry) { if (subsonic) null else com.music.spotui.extensions.Extensions.sectionPlacement(app.myspoti.extensions.SettingSection.DOWNLOADS) }
     val extHeader = ext?.let { stringResource(R.string.ext_section_settings, it.name) }
     ImmersivePage(title = stringResource(R.string.settings_section_downloads), onBack = back) {
         if (ext?.hidesAppQuality != true) immersiveGroup("quality", footerRes = R.string.quality_download_detail) {
@@ -287,17 +293,42 @@ private fun DownloadsPage(navController: NavController, open: (SettingsPage) -> 
         }
         if (ext != null && extHeader != null) extensionSectionGroup(ext, extHeader)
         // Where downloads come from: the download-source extensions, in the order they are asked.
-        sourcesGroup(app.myspoti.extensions.Action.DOWNLOAD_SOURCE, navController)
-        if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.DOWNLOAD_SOURCE).isEmpty()) immersiveGroup("source") {
+        // Subsonic serves its own files, so there is no source to choose.
+        if (!subsonic) {
+            sourcesGroup(app.myspoti.extensions.Action.DOWNLOAD_SOURCE, navController)
+            if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.DOWNLOAD_SOURCE).isEmpty()) immersiveGroup("source") {
+                row {
+                    ImmersiveGroupRow(
+                        stringResource(R.string.downloads_source_row_title),
+                        detail = stringResource(
+                            if (com.music.spotui.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
+                            else R.string.downloads_source_row_off,
+                        ),
+                        chevron = true, onClick = { navController.navigate(Routes.Extensions.route) },
+                    )
+                }
+            }
+        }
+        immersiveGroup("storage") {
             row {
                 ImmersiveGroupRow(
-                    stringResource(R.string.downloads_source_row_title),
-                    detail = stringResource(
-                        if (com.music.spotui.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
-                        else R.string.downloads_source_row_off,
-                    ),
-                    chevron = true, onClick = { navController.navigate(Routes.Extensions.route) },
+                    stringResource(R.string.settings_storage_downloads_title),
+                    detail = stringResource(R.string.settings_storage_downloads_detail, count, size),
                 )
+            }
+            row {
+                ImmersiveGroupRow(
+                    stringResource(R.string.settings_storage_cache_clear), detail = cache,
+                    onClick = {
+                        com.music.spotui.data.offline.StorageInfo.clearCache(ctx) { left ->
+                            cacheBytes = left
+                            android.widget.Toast.makeText(ctx, ctx.getString(R.string.settings_storage_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
+            }
+            row {
+                ImmersiveGroupRow(stringResource(R.string.settings_storage_free_title), detail = free)
             }
         }
         if (com.music.spotui.data.offline.OfflineStore.tracks.isNotEmpty()) immersiveGroup("remove") {

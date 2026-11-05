@@ -3,8 +3,8 @@
 This repository contains a single Android client: the Myspoti-fork UI in `app/` with the
 Subsonic backend in `api-subsonic/`.
 
-The milestones below track that client. `M0` is done and the core of `M1` is done; `M2`
-is the current focus.
+The milestones below track that client. `M0`–`M4` are done; `M5` (downloads and offline) is
+in its device-check phase.
 
 ## M0 — Consolidation and licensing ✅
 
@@ -107,12 +107,24 @@ buttons work, and the queue survives process death.
 
 **Done when:** all mutations round-trip against Jellyfin and Navidrome.
 
-## M5 — Downloads and offline
+## M5 — Downloads and offline (code done, device check in progress)
 
-- [ ] Download manager (WorkManager), original or transcoded quality.
-- [ ] Per-track/album/playlist download state and progress.
-- [ ] Offline mode: local files first, clear indicators for remote-only items.
-- [ ] Storage screen: downloads, cache, free space, clear cache.
+- [x] Download manager: the existing `OfflineDownloader` queue, fed in Subsonic mode by the
+      server's own `stream` endpoint (no download-source extension), with WorkManager
+      (`DownloadWorker`) holding the process and showing progress in a notification.
+- [x] Quality mapping: `HI_RES` → original file, `CD` → `maxBitRate=320`, `SMALL` →
+      `format=mp3&maxBitRate=128`; a server that cannot transcode falls back to the original.
+- [x] Downloads are validated (MediaExtractor), encrypted (`OfflineCrypto`) and stored with
+      their cover, like the Spotify pipeline did.
+- [x] Per-track/album/playlist download state and progress (existing badges, queue screen,
+      "stop all", retry/cancel); the "install a download extension" cards and prompts are
+      hidden in Subsonic mode.
+- [x] Offline mode (`OfflineMode`): a single online/offline state from the network callback
+      plus the data saver; a downloaded song plays from its file, anything else says
+      "download this song to play it"; an offline banner heads Home in both looks.
+- [x] Storage screen: downloads count/size, cache size + clear, free space, remove all
+      (Immersive Settings → Downloads, Classic Settings → Data).
+- [ ] Device pass: airplane-mode playback, resume after force-stop, storage numbers.
 
 **Done when:** airplane-mode playback of downloaded content works and storage accounting
 is correct.

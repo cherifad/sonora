@@ -169,7 +169,7 @@ fun DownloadsScreen(navController: NavController) {
                 }
             }
             // No extension gives download files: say it where downloads would fail.
-            if (!com.music.spotui.extensions.Extensions.hasDownloadSource()) item(key = "source") {
+            if (!app.myspoti.host.android.MyspotiRuntime.isSubsonic && !com.music.spotui.extensions.Extensions.hasDownloadSource()) item(key = "source") {
                 Text(
                     stringResource(R.string.downloads_need_source),
                     color = AppText, fontSize = 14.sp, lineHeight = 19.sp,

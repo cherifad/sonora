@@ -663,4 +663,18 @@
     <string name="equalizer_speed_detail">Everything the app plays itself, music and downloaded episodes alike. Episodes streamed by Spotify keep the podcast player\'s speed. At any speed but 1×, Spotify does not play the song along (it is not counted there and your other devices do not see it): Spotify plays music at 1× only.</string>
     <string name="equalizer_skip_silence">Skip silences</string>
     <string name="equalizer_skip_silence_detail">Silent stretches are skipped (long pauses in an episode, a silence before a hidden track).</string>
+    <plurals name="download_notification_count">
+        <item quantity="one">Downloading %1$d song</item>
+        <item quantity="other">Downloading %1$d songs</item>
+    </plurals>
+    <string name="download_channel_name">Downloads</string>
+    <string name="offline_track_unavailable">Offline: download this song to play it</string>
+    <string name="offline_banner_title">Offline</string>
+    <string name="offline_banner_detail">Only downloaded music plays. Tap a downloaded song, or reconnect.</string>
+    <string name="settings_storage_downloads_title">Downloads</string>
+    <string name="settings_storage_downloads_detail">%1$d songs · %2$s</string>
+    <string name="settings_storage_cache_title">Cache</string>
+    <string name="settings_storage_cache_clear">Clear cache</string>
+    <string name="settings_storage_cache_cleared">Cache cleared</string>
+    <string name="settings_storage_free_title">Free space</string>
 </resources>

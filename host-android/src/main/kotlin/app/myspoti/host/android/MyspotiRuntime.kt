@@ -24,6 +24,8 @@ object MyspotiRuntime {
     @Volatile private var subsonic: app.myspoti.api.MyspotiApi? = null
     val isSubsonic: Boolean get() = subsonic != null
     val api: MyspotiApi get() = subsonic ?: spotify
+    /** The Subsonic backend itself (download URLs, server config), null in Spotify mode. */
+    val subsonicApi: app.myspoti.subsonic.SubsonicApi? get() = subsonic as? app.myspoti.subsonic.SubsonicApi
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     /** Starts the Subsonic backend. No WebView, no login page, no Spotify session. */

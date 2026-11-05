@@ -241,6 +241,9 @@ fun HomeFeedContent(navController: NavController, feed: HomeFeedModel, facet: St
                 HomeHeaderRow(navController, facet, onFacet)
             }
         }
+        item {
+            com.music.spotui.ui.components.OfflineBanner(Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+        }
         shortcuts?.let { tiles ->
             item {
                 HomeShortcutGrid(navController, tiles)

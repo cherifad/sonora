@@ -31,6 +31,8 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Playlists (CRUD) | Oui : lecture, création (`createPlaylist`), renommage/description (`updatePlaylist`), ajout/retrait de titres (`songIdToAdd`/`songIndexToRemove`), suppression (`deletePlaylist`) |
 | Artiste | Oui : `getArtist`, `getTopSongs`, `getArtistInfo2` (biographie, images, artistes similaires) |
 | Paroles | Oui : OpenSubsonic `getLyricsBySongId` (synchronisées ou texte) + fallback `getLyrics` + fallback LRCLIB |
+| Téléchargements / hors ligne | Oui : le serveur sert lui-même le fichier (`stream`, original ou transcodé), file `OfflineDownloader` + WorkManager (notification de progression), fichiers chiffrés ; hors ligne, seuls les titres téléchargés jouent (bandeau + message pour les autres) |
+| Stockage | Oui : téléchargements (nombre/taille), cache + vider, espace libre, tout supprimer |
 | Partage | Oui : feuille de partage Android native (`titre — artiste`), sans Spotify Code ni lien `open.spotify.com` |
 | Podcasts, Connect, Jam, Blends, Canvas, Genius, extensions, pubs/DRM | **Désactivés / stubs** |
 
@@ -96,7 +98,7 @@ Exemples d'URL :
    Canvas, Genius, extensions, pubs, DRM) — ils restent dans ce fork.
 3. MediaSession + notification + lecture en arrière-plan (le spike n'a qu'un ExoPlayer
    en processus).
-4. CRUD playlists, favoris, downloads/offline.
+4. CRUD playlists, favoris, downloads/offline. ✅ (M4/M5)
 5. Renommer le package et retirer toute marque/asset Spotify avant distribution.
 6. Tests : contrats Subsonic, mapping, player, écrans principaux.
 

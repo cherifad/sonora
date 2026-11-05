@@ -32,6 +32,7 @@ object Graph {
         // Supporter thank-yous (accent colour) before any screen draws.
         com.music.spotui.data.api.SupportReminder.init(application)
         com.music.spotui.data.offline.OfflineStore.init(application)
+        com.music.spotui.data.offline.OfflineMode.init(application)
         com.music.spotui.data.offline.OfflineCollections.init(application)
         SongPlayer.startLibraryOutbox(application)
         com.music.spotui.data.offline.OfflineCollections.refreshAll(application)
