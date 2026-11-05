@@ -52,6 +52,59 @@ Accélération : **WHPX** (Hyper-V + « Windows Hypervisor Platform ») ou **AEH
 (Android Emulator Hypervisor Driver, plus léger si Hyper-V est désactivé).
 HAXM est abandonné. Vérifier avec `emulator-check accel`.
 
+## Interagir dans une vraie fenêtre (sans Android Studio)
+
+L'émulateur **ouvre une fenêtre par défaut** : c'est `-no-window` (ou
+`-qt-hide-window`, réservé à Android Studio) qui la supprime. Depuis PowerShell :
+
+```powershell
+& "$env:ANDROID_HOME\emulator\emulator.exe" -avd tablet -gpu host
+# le terminal garde les logs, la fenêtre est interactive
+```
+
+Dans cette fenêtre :
+
+- la souris est le doigt (clic, glisser, appui long, Ctrl + glisser = pincer) ;
+  le clavier de l'hôte tape directement dans les champs ;
+- le **panneau de droite** : alim, volume, rotation, capture d'écran, zoom,
+  retour / accueil / récents, plier/déplier (pliable), boutons Wear, et « … » ;
+- « … » = **Extended controls** : position GPS, batterie, réseau, orientation,
+  capteurs, caméra, micro, empreinte, snapshots ;
+- **F1** ouvre la liste complète des raccourcis ;
+- glisser-déposer un APK sur la fenêtre l'installe.
+
+Si aucune fenêtre n'apparaît : vérifier qu'aucun `-no-window` n'est passé,
+puis `-gpu swiftshader_indirect`, `-no-snapshot-load`, `-verbose`, et
+`emulator-check accel` (WHPX/AEHD).
+
+### Encore plus léger : scrcpy
+
+Une seule petite fenêtre, identique pour un émulateur ou un téléphone :
+
+```powershell
+scrcpy -s emulator-5554        # ou -s <ip>:<port> pour le téléphone
+```
+
+Souris/clavier mappés, presse-papiers partagé, glisser-déposer d'APK, audio,
+capture — souvent plus agréable que la fenêtre de l'émulateur pour tester une UI.
+
+### Piloter depuis le terminal
+
+Tout ce que fait la fenêtre est scriptable :
+
+```bash
+adb shell input tap 540 1200
+adb shell input swipe 540 1800 540 600 300
+adb shell input text "mira"
+adb exec-out screencap -p > shot.png
+adb emu rotate                 # commandes de la console de l'émulateur
+adb emu geo fix 2.35 48.85
+adb emu avd snapshot save etat1
+```
+
+Le nouveau CLI `android` (remplaçant à terme de `emulator`) gère aussi les AVD :
+`android emulator list`, `android emulator start tablet`, `android emulator stop <serial>`.
+
 ## Android Auto : le DHU (le plus léger)
 
 Aucun émulateur : le téléphone projette vers une « autoradio » logicielle.
