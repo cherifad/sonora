@@ -71,3 +71,4 @@ via the Desktop Head Unit).
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — attribution.
 - [`docs/TESTING.md`](docs/TESTING.md) — emulators, the test matrix, Android Auto.
 - [`docs/RELEASING.md`](docs/RELEASING.md) — branches, tags, secrets and the release workflow.
+- [`docs/NAVIDROME-COMPAT.md`](docs/NAVIDROME-COMPAT.md) — the client against Navidrome's Subsonic API docs.
