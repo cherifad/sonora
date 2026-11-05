@@ -875,9 +875,8 @@ private fun AccountSheet(
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
-                    Text(account.name.ifBlank { stringResource(R.string.spotify_user) }, color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(account.name.ifBlank { stringResource(R.string.account_title) }, color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (account.email.isNotBlank()) Text(account.email, color = AppMuted, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (account.plan.isNotBlank()) Text(stringResource(R.string.spotify_plan, account.plan), color = AppAccent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
             }
             HorizontalDivider(color = tone(0xFF2A2A2A))

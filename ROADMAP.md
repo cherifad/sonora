@@ -173,6 +173,14 @@ is correct.
       the Windows desktop, Navidrome at `10.0.2.2:4533`, airplane mode for the offline checks);
       scripts in `tools/`, notes in `docs/TESTING.md`.
 
+- [x] Release 1.2.0 (R8, signed with `keystore/release.jks`) built for both flavors and checked
+      on a **clean** phone emulator: onboarding against Navidrome, Home, album playback, an album
+      downloaded (6 songs · 13 MB, WorkManager notification) and, in airplane mode, the offline
+      banner and playback from the file. `jellyfin-audio-1.2.0-release.apk` (17.8 MB) and
+      `…-automotive.apk` (10.8 MB).
+- [x] "Nerd stats" no longer reads the Spotify page in Subsonic mode (it opened a session that
+      was never started); the account sheet names the user without Spotify's plan wording.
+
 **Done when:** a signed release builds from CI, installs on a clean device, and passes
 the manual matrix (phone/tablet, HTTP/HTTPS, Jellyfin/Navidrome, offline).
 

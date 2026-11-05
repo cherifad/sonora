@@ -83,7 +83,9 @@ internal object NerdStats {
     suspend fun read(context: Context): List<NerdSection> = buildList {
         val local = LocalPlayer.active.value
         if (local) add(exoSection(context))
-        add(spotifySection(context, local))
+        // The Spotify page only exists in the Spotify backend: asking it here would touch a
+        // session that was never started.
+        if (!app.myspoti.host.android.MyspotiRuntime.isSubsonic) add(spotifySection(context, local))
     }
 
     private fun exoSection(c: Context): NerdSection {
