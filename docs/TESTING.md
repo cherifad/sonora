@@ -134,6 +134,18 @@ Aucun émulateur : le téléphone projette vers une « autoradio » logicielle.
 
 Le DHU sait simuler l'écran tactile, la molette, le mode jour/nuit, les
 restrictions « en roulant » (`restrict all`), la micro et les capteurs.
+
+L'arbre Android Auto se teste aussi **sans** l'app Android Auto : un test instrumenté
+se lie au service et parcourt les dossiers (avec Navidrome sur `10.0.2.2:4533`) :
+
+```bash
+./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.auto.AutoBrowserTest
+```
+
+Il vérifie que `PlaybackService` répond à `android.media.browse.MediaBrowserService`, que la
+racine donne Home / Library / Downloads, que Library liste les collections, qu'un album rend
+un « Start radio » et des morceaux jouables, et que la recherche répond.
 Une app *Android Automotive* (écran embarqué) se teste à part, dans l'AVD
 `car` — ce n'est pas le même modèle.
 

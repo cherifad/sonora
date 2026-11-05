@@ -121,6 +121,8 @@ dependencies {
     testImplementation("net.sf.kxml:kxml2:2.3.0")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    // The Android Auto contract test binds to the media browser service.
+    androidTestImplementation(libs.androidx.media)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.webkit)

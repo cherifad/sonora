@@ -88,7 +88,8 @@ branding or assets.
 - [x] Gapless playback, shuffle/repeat semantics, previous (<3 s previous track, ≥3 s restart)
       and next behaviour.
 - [x] Media notification with artwork and transport actions (Like, Shuffle, Prev, Play/Pause, Next).
-- [x] Android Auto browse tree (`AutoBrowser` over `Graph.api` → Subsonic).
+- [x] Android Auto browse tree (`AutoBrowser` over `Graph.api` → Subsonic), verified on the
+      emulator by an instrumented test (service, root tabs, library, album songs, search).
 
 **Done when:** playback continues in the background, the notification and headset
 buttons work, and the queue survives process death.
@@ -148,6 +149,9 @@ is correct.
       download quality parameters (23 tests in `api-subsonic`).
 - [ ] Unit tests: player queue and the remaining pure logic in `app`.
 - [ ] UI tests: setup, home, search, album, playback.
+      Android Auto is covered: `AutoBrowserTest` (instrumented) checks the exported media
+      browser service, the three root tabs, the library folders, an album's playable songs and
+      search, against the test Navidrome.
 - [ ] Package rename, icon, store metadata; remove all Spotify branding.
       Icon done: a pink-to-amber adaptive icon with five white level bars (plus the themed
       monochrome layer and `app_mark` for the About sheet), replacing Myspoti's green wave.
