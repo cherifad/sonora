@@ -139,6 +139,10 @@ is correct.
       free space) → permissions (notifications, Bluetooth, battery); the local-files permission
       is asked when Local Files is opened. The steps are remembered, so updates skip them.
 - [ ] Tablet/two-pane layout; responsive player; large-screen polish.
+      Audited on the 2560×1600 tablet AVD: Home, the quick tiles and the shelves already
+      reflow (4 columns); an album page is a single column whose cover and buttons fill the
+      first screen and can sit under the bottom chrome until it scrolls. Next: a width-aware
+      context page (capped column or cover-left / tracks-right).
 - [x] Unit tests: the Subsonic contract — URL shape + salted token (never the password), error
       messages, HTTP failures, reachability reporting, JSON → model mapping, album track paging,
       download quality parameters (23 tests in `api-subsonic`).
