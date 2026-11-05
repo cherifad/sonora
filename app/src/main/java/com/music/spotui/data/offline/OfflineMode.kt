@@ -25,7 +25,7 @@ object OfflineMode {
     private val server = mutableStateOf(true)
 
     /** True while only downloads can play. */
-    val offline: Boolean get() = !network.value || !server.value || com.music.spotui.data.DataSaver.active
+    val offline: Boolean get() = offlineNow(network.value, server.value, com.music.spotui.data.DataSaver.active)
 
     private var started = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -66,3 +66,11 @@ object OfflineMode {
         network.value = OfflineStore.isOnline(context)
     }
 }
+
+/**
+ * The state the screens read: offline when the phone has no usable network, when the server
+ * did not answer (a LAN server away from home, even with mobile data on), or when the data
+ * saver applies on mobile data.
+ */
+internal fun offlineNow(network: Boolean, server: Boolean, dataSaver: Boolean): Boolean =
+    !network || !server || dataSaver
