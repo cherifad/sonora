@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /** Browse: a genre page and the playlists tab of search. */
@@ -99,5 +100,13 @@ class SubsonicBrowseTest {
             .setRating("spotify:track:s1", 5)
 
         assertEquals(0, calls)
+    }
+
+    @Test
+    fun `a podcast stub is a typed unsupported failure`() {
+        val error = assertThrows(SubsonicException.Unsupported::class.java) {
+            runBlocking { SubsonicPodcasts().show("spotify:show:x") }
+        }
+        assertEquals("podcasts", error.feature)
     }
 }

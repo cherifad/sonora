@@ -643,11 +643,11 @@ internal class SubsonicUsers(private val config: SubsonicConfig) : Users {
 // --- Extras, Recents and unsupported Spotify-only surfaces -------------------
 
 internal class SubsonicPodcasts : Podcasts {
-    override suspend fun show(uri: Uri): com.adlen.sonora.api.Show = error("Podcasts are not supported yet")
-    override suspend fun audioUrl(uri: Uri): com.adlen.sonora.api.EpisodeAudio = error("Podcasts are not supported yet")
+    override suspend fun show(uri: Uri): com.adlen.sonora.api.Show = throw SubsonicException.Unsupported("podcasts")
+    override suspend fun audioUrl(uri: Uri): com.adlen.sonora.api.EpisodeAudio = throw SubsonicException.Unsupported("podcasts")
     override suspend fun episodes(uri: Uri, offset: Int, limit: Int): Page<com.adlen.sonora.api.Episode> = emptyPage()
-    override suspend fun episode(uri: Uri): com.adlen.sonora.api.Episode = error("Podcasts are not supported yet")
-    override suspend fun audiobook(uri: Uri): com.adlen.sonora.api.Audiobook = error("Audiobooks are not supported yet")
+    override suspend fun episode(uri: Uri): com.adlen.sonora.api.Episode = throw SubsonicException.Unsupported("podcasts")
+    override suspend fun audiobook(uri: Uri): com.adlen.sonora.api.Audiobook = throw SubsonicException.Unsupported("audiobooks")
     override suspend fun chapters(uri: Uri, offset: Int, limit: Int): Page<com.adlen.sonora.api.Episode> = emptyPage()
     override suspend fun savedEpisodes(offset: Int, limit: Int): Page<com.adlen.sonora.api.Episode> = emptyPage()
     override suspend fun setEpisodeSaved(uri: Uri, saved: Boolean) = Unit
@@ -745,8 +745,8 @@ internal class SubsonicJam : Jam {
     override suspend fun availability(): JamAvailability = JamAvailability.UNKNOWN
     override val session = MutableStateFlow<JamSession?>(null)
     override suspend fun refresh() = Unit
-    override suspend fun start(): JamSession = error("Jam is not supported")
-    override suspend fun join(joinToken: String): JamSession = error("Jam is not supported")
+    override suspend fun start(): JamSession = throw SubsonicException.Unsupported("Jam")
+    override suspend fun join(joinToken: String): JamSession = throw SubsonicException.Unsupported("Jam")
     override suspend fun leave() = Unit
     override suspend fun end() = Unit
     override suspend fun inviteLink(): String? = null
@@ -756,10 +756,10 @@ internal class SubsonicJam : Jam {
 }
 
 internal class SubsonicBlends : com.adlen.sonora.api.Blends {
-    override suspend fun invite(): BlendInvite = error("Blends are not supported")
-    override suspend fun invitation(linkOrId: String): BlendInvitation = error("Blends are not supported")
-    override suspend fun join(linkOrId: String): Uri = error("Blends are not supported")
-    override suspend fun group(playlist: Uri): BlendGroup = error("Blends are not supported")
+    override suspend fun invite(): BlendInvite = throw SubsonicException.Unsupported("Blends")
+    override suspend fun invitation(linkOrId: String): BlendInvitation = throw SubsonicException.Unsupported("Blends")
+    override suspend fun join(linkOrId: String): Uri = throw SubsonicException.Unsupported("Blends")
+    override suspend fun group(playlist: Uri): BlendGroup = throw SubsonicException.Unsupported("Blends")
     override suspend fun story(playlist: Uri): BlendStory? = null
     override suspend fun rename(playlist: Uri, name: String) = Unit
     override suspend fun leave(playlist: Uri) = Unit
