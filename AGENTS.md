@@ -66,6 +66,7 @@ via the Desktop Head Unit).
 
 ## Docs
 
+- [`PLAN.md`](PLAN.md) — the delivery tracker: features, rename, bug control, progress log.
 - [`ROADMAP.md`](ROADMAP.md) — milestones.
 - [`PORTING.md`](PORTING.md) — what the Subsonic port does and what is still stubbed.
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — attribution.

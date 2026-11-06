@@ -42,7 +42,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why
   - `./gradlew :api-subsonic:testDebugUnitTest :app:testMobileDebugUnitTest`
   - `./gradlew :app:assembleMobileDebug :app:assembleAutomotiveDebug`
 - [x] Record the baseline APK sizes and test counts in the Progress log.
-- [ ] Add a `PLAN.md` reference to `AGENTS.md` so contributors know it is the tracker.
+- [x] Add a `PLAN.md` reference to `AGENTS.md` so contributors know it is the tracker.
 
 **Done when:** the current tree builds and tests pass, and the numbers are written down.
 
