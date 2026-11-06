@@ -29,6 +29,8 @@ object SessionActions {
         }
         app.getSharedPreferences("sonora_prefs", android.content.Context.MODE_PRIVATE)
             .edit().putBoolean("LoggedIn", false).remove("CurrentAccountName").apply()
+        // The server password and API key go with the session, not to the next user of the phone.
+        com.adlen.sonora.subsonic.SubsonicSettings.clear(app)
         // Nothing of the account keeps playing or showing: local songs, the clip, the notification.
         LocalPlayer.stop()
         com.adlen.sonora.app.video.MusicVideoController.clearSession()

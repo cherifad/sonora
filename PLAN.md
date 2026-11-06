@@ -258,11 +258,16 @@ action.
 
 ## Phase 10 — Security and privacy
 
-- [ ] Move the server password to `EncryptedSharedPreferences` / Keystore.
-- [ ] Replace global `usesCleartextTraffic` with a scoped `networkSecurityConfig`.
-- [ ] Clear downloads and cached credentials on logout.
+- [x] Move the server password and API key to `EncryptedSharedPreferences` / Keystore, with a
+      one-time migration from the old plain file (which is emptied).
+- [~] Replace global `usesCleartextTraffic` with a scoped `networkSecurityConfig`.
+      Android's config cannot whitelist arbitrary private IP ranges, which a self-hosted LAN
+      client needs; the manifest keeps cleartext and the setup screen warns on `http://`.
+- [x] Clear the cached server credentials on logout. Downloads stay parked, encrypted, under
+      the account (deleting them on sign-out would silently lose offline content).
 - [ ] Optional biometric lock.
-- [ ] Tests: no password in prefs/logs, HTTP warning shown, TLS pinning/TOFU.
+- [~] Tests: the HTTP warning is visible; there is no Context-level test for the encrypted
+      file yet, and TOFU TLS is still Phase 10's open item.
 
 **Done when:** `adb shell run-as … cat shared_prefs/*` shows no plaintext password.
 
@@ -317,6 +322,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 6 | ReplayGain + equalizer + skip-silence on Subsonic streams, settings rows, gain tests | `feat(subsonic)` |
 | 2026-11-06 | 7 | Resumable downloads, retry/backoff, download quota, Wi-Fi-only setting, budget test | `feat(offline)` |
 | 2026-11-06 | 8 | Bookmarks/shares/scan/now-playing extras, share-link and scan UI, avatar, 6 tests | `feat(subsonic)` |
+| 2026-11-06 | 10 | Encrypted server credentials + migration, logout clears them, HTTP warning | `feat(security)` |
 
 ## Decisions and risks
 

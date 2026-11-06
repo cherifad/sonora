@@ -202,6 +202,16 @@ internal fun SubsonicServerForm(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         modifier = Modifier.fillMaxWidth(),
     )
+    if (url.trim().startsWith("http://")) {
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "HTTP sends the password and the token in clear text on the network. Use HTTPS when the server supports it.",
+            color = Color(0xFFFFB74D),
+            fontFamily = AppSans,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+        )
+    }
     Spacer(Modifier.height(12.dp))
     OutlinedTextField(
         value = username,

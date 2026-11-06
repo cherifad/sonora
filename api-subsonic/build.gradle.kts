@@ -21,6 +21,7 @@ dependencies {
     api(project(":api"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation(libs.okhttp)
+    implementation(libs.security.crypto)
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-common:1.8.0")
 
