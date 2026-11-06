@@ -229,8 +229,9 @@ action.
 
 ## Phase 8 — Server-native extras
 
-- [~] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks:
-      backend done and gated; the player does not create them on pause yet.
+- [x] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks:
+      backend done and gated; pausing a track of at least ten minutes (away from its edges)
+      writes one. Resuming from a bookmark on play is still open.
 - [x] Shares (`getShares`, `createShare`, `deleteShare`): the song sheets copy the server's
       share URL, with a toast on success/failure.
 - [x] Scan status (`getScanStatus`, `startScan`) in Settings, both looks (the Immersive row
@@ -340,6 +341,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 9 | Quick Settings play/pause tile and a widget shuffle action | `feat(platform)` |
 | 2026-11-06 | 12 | ROADMAP M7, PORTING/compat/testing/releasing docs, README features, release checklist | `docs(release)` |
 | 2026-11-06 | 11 | `tools/server_contract.py`: live-server endpoint/capability probe | `test(tools)` |
+| 2026-11-06 | 8 | Bookmark long tracks on pause, with a threshold test | `feat(subsonic)` |
 
 ## Decisions and risks
 
