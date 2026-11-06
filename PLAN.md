@@ -140,15 +140,18 @@ TOFU TLS is the one remaining item.
 
 ## Phase 3 — Real server-side paging
 
-- [ ] Pass `offset`/`size` to `getAlbumList2`, `getArtists`, `search3`, `getPlaylist`,
-      `getStarred2` instead of fetching 100 and slicing in memory.
-- [ ] Fix `SubsonicLibrary.items` (albums/artists/playlists) and `SubsonicSearch.*`.
-- [ ] Stop re-sorting truncated sets; sort on the server where the API allows it.
-- [ ] Cache the starred set briefly and invalidate on `star`/`unstar` instead of fetching it
+- [x] Pass `offset`/`size` to `getAlbumList2` and `search3` (`songOffset`, `artistOffset`,
+      `albumOffset`). `getArtists`, `getPlaylist` and `getStarred2` have no offset/size in the
+      API: they are fetched once, cached for 30 s and sliced locally.
+- [x] Fix `SubsonicLibrary.items` (albums/artists/playlists) and `SubsonicSearch.*`.
+- [x] Stop re-sorting truncated sets; `getAlbumList2?type=alphabeticalByName` sorts on the
+      server, artists and playlists keep the server order.
+- [x] Cache the starred set briefly and invalidate on `star`/`unstar` instead of fetching it
       in every `contains()` call.
 - [ ] Add a `getMusicFolders` selector when the server exposes more than one folder.
-- [ ] Tests: page 2 of a 250-album library, page 2 of a 250-result search, >100-song
-      playlist.
+      Deferred: it needs a Settings row and a folder-scoped `musicFolderId` on every call.
+- [x] Tests: page 2 of a 250-album library, page 2 of a 250-result search, >100-song
+      playlist, one `getStarred2` for contains + liked songs, cache dropped on a mutation.
 
 **Done when:** scrolling past the first page returns the next items on a 250-item fixture.
 
@@ -286,6 +289,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 0 | `PLAN.md` created; JVM tests green; debug APKs build (115 MB each, unminified) | `docs(plan)` |
 | 2026-11-06 | 1 | Packages, classes, resources, manifests, tools and tests renamed to Sonora; prefs migration added; attribution kept in docs and license headers | `refactor(rename)!` |
 | 2026-11-06 | 2 | Typed Subsonic failures, cached capability probe, precise setup errors, optional-call cache, API-key auth; 8 new contract tests | `feat(subsonic)` |
+| 2026-11-06 | 3 | Server-side album/search paging, 30 s caches for artists/playlists/starred/playlist tracks, 5 paging tests | `fix(subsonic)` |
 
 ## Decisions and risks
 

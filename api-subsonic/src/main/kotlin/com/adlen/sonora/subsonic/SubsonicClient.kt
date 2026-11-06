@@ -235,5 +235,20 @@ internal fun <T> pageOf(items: List<T>, offset: Int, limit: Int): com.adlen.sono
     )
 }
 
+/**
+ * A page the server already sliced. The API does not return a total, so [total] is the
+ * furthest item seen and [nextOffset] is set only when a full page came back: the caller
+ * stops on the first short page instead of walking empty pages forever.
+ */
+internal fun <T> serverPage(items: List<T>, offset: Int, limit: Int): com.adlen.sonora.api.Page<T> {
+    val hasMore = limit > 0 && items.size >= limit
+    return com.adlen.sonora.api.Page(
+        items = items,
+        offset = offset,
+        total = offset + items.size,
+        nextOffset = if (hasMore) offset + items.size else null,
+    )
+}
+
 internal fun <T> emptyPage(): com.adlen.sonora.api.Page<T> =
     com.adlen.sonora.api.Page(emptyList(), 0, 0, null)

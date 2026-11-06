@@ -57,7 +57,11 @@ import com.adlen.sonora.api.Users
 import com.adlen.sonora.api.sortedFor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.json.JSONObject
 import java.time.LocalTime
+
+/** How long a full-list endpoint (artists, playlists, starred) is trusted before re-asking. */
+private const val CACHE_MS = 30_000L
 
 internal class SubsonicHome(
     private val client: SubsonicClient,
@@ -99,7 +103,7 @@ internal class SubsonicHome(
         BrowsePage(uri, uri.substringAfterLast(':'), emptyList())
 
     override suspend fun whatsNew(offset: Int, limit: Int): Page<Album> =
-        pageOf(client.albums("newest", 100), offset, limit)
+        serverPage(client.albums("newest", limit, offset), offset, limit)
 
     private fun greeting(): String = when (LocalTime.now().hour) {
         in 5..11 -> res.getString(R.string.home_greeting_morning)
@@ -124,29 +128,35 @@ internal class SubsonicSearch(private val client: SubsonicClient) : Search {
         val albums = root?.array("album").orEmpty().map { client.albumOf(it) }
         val tracks = root?.array("song").orEmpty().map { client.trackOf(it) }
         return SearchResults(
-            tracks = pageOf(tracks, 0, tracks.size),
-            artists = pageOf(artists, 0, artists.size),
-            albums = pageOf(albums, 0, albums.size),
+            tracks = serverPage(tracks, 0, limit),
+            artists = serverPage(artists, 0, limit),
+            albums = serverPage(albums, 0, limit),
             playlists = emptyPage(),
         )
     }
 
     override suspend fun tracks(query: String, offset: Int, limit: Int): Page<Track> {
-        val root = client.call("search3", mapOf("query" to query, "songCount" to "100"))
-            .optJSONObject("searchResult3")
-        return pageOf(root?.array("song").orEmpty().map { client.trackOf(it) }, offset, limit)
+        val root = client.call(
+            "search3",
+            mapOf("query" to query, "songCount" to limit.toString(), "songOffset" to offset.toString()),
+        ).optJSONObject("searchResult3")
+        return serverPage(root?.array("song").orEmpty().map { client.trackOf(it) }, offset, limit)
     }
 
     override suspend fun artists(query: String, offset: Int, limit: Int): Page<Artist> {
-        val root = client.call("search3", mapOf("query" to query, "artistCount" to "100"))
-            .optJSONObject("searchResult3")
-        return pageOf(root?.array("artist").orEmpty().map { client.artistOf(it) }, offset, limit)
+        val root = client.call(
+            "search3",
+            mapOf("query" to query, "artistCount" to limit.toString(), "artistOffset" to offset.toString()),
+        ).optJSONObject("searchResult3")
+        return serverPage(root?.array("artist").orEmpty().map { client.artistOf(it) }, offset, limit)
     }
 
     override suspend fun albums(query: String, offset: Int, limit: Int): Page<Album> {
-        val root = client.call("search3", mapOf("query" to query, "albumCount" to "100"))
-            .optJSONObject("searchResult3")
-        return pageOf(root?.array("album").orEmpty().map { client.albumOf(it) }, offset, limit)
+        val root = client.call(
+            "search3",
+            mapOf("query" to query, "albumCount" to limit.toString(), "albumOffset" to offset.toString()),
+        ).optJSONObject("searchResult3")
+        return serverPage(root?.array("album").orEmpty().map { client.albumOf(it) }, offset, limit)
     }
 
     override suspend fun playlists(query: String, offset: Int, limit: Int): Page<Playlist> = emptyPage()
@@ -272,24 +282,27 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
 internal class SubsonicLibrary(private val client: SubsonicClient) : Library {
 
     private val changeFlow = MutableStateFlow(Unit)
+    private val cacheLock = Any()
+    private var artistsCache: Pair<Long, List<Artist>>? = null
+    private var playlistsCache: Pair<Long, List<Playlist>>? = null
+    private var starredCache: Pair<Long, StarredSnapshot>? = null
+
+    private data class StarredSnapshot(val ids: Set<String>, val songs: List<SavedTrack>)
 
     override suspend fun contains(uris: List<Uri>): List<Boolean> {
-        val starred = client.call("getStarred2").optJSONObject("starred2")
-        val ids = buildSet {
-            starred?.array("song").orEmpty().forEach { add(it.optString("id")) }
-            starred?.array("album").orEmpty().forEach { add(it.optString("id")) }
-            starred?.array("artist").orEmpty().forEach { add(it.optString("id")) }
-        }
+        val ids = starred().ids
         return uris.map { it.substringAfterLast(':') in ids }
     }
 
     override suspend fun add(uris: List<Uri>) {
         uris.forEach { star(it, true) }
+        invalidateStarred()
         changeFlow.tryEmit(Unit)
     }
 
     override suspend fun remove(uris: List<Uri>) {
         uris.forEach { star(it, false) }
+        invalidateStarred()
         changeFlow.tryEmit(Unit)
     }
 
@@ -310,22 +323,71 @@ internal class SubsonicLibrary(private val client: SubsonicClient) : Library {
         folderUri: Uri?,
         offset: Int,
         limit: Int,
-    ): Page<LibraryItem> {
-        val items = when (filter) {
-            LibraryFilter.ALBUMS -> client.albums("alphabeticalByName", 100).map { albumItem(it) }
-            LibraryFilter.ARTISTS -> client.artists().map { artistItem(it) }
-            LibraryFilter.PLAYLISTS -> client.playlists().map { playlistItem(it) }
-            else -> buildList {
-                addAll(client.playlists().map { playlistItem(it) })
-                addAll(client.albums("alphabeticalByName", 100).map { albumItem(it) })
+    ): Page<LibraryItem> = when (filter) {
+        // The server sorts and slices albums: no 100-item ceiling, no client re-sort.
+        LibraryFilter.ALBUMS -> {
+            val page = client.albums("alphabeticalByName", limit, offset).map { albumItem(it) }
+            serverPage(page, offset, limit)
+        }
+        LibraryFilter.ARTISTS -> pageOf(artistsCached().map { artistItem(it) }, offset, limit)
+        LibraryFilter.PLAYLISTS -> pageOf(playlistsCached().map { playlistItem(it) }, offset, limit)
+        else -> {
+            // Playlists first, then albums, so a page can cross the boundary.
+            val playlists = playlistsCached().map { playlistItem(it) }
+            val fromPlaylists = if (offset < playlists.size) playlists.drop(offset).take(limit) else emptyList()
+            val albumOffset = (offset - playlists.size).coerceAtLeast(0)
+            val albumLimit = limit - fromPlaylists.size
+            val albums = if (albumLimit > 0) {
+                client.albums("alphabeticalByName", albumLimit, albumOffset).map { albumItem(it) }
+            } else {
+                emptyList()
             }
-        }.sortedBy { it.name.lowercase() }
-        return pageOf(items, offset, limit)
+            serverPage(fromPlaylists + albums, offset, limit)
+        }
     }
 
-    override suspend fun likedTracks(offset: Int, limit: Int): Page<SavedTrack> {
-        val songs = client.call("getStarred2").optJSONObject("starred2")?.array("song").orEmpty()
-        return pageOf(songs.map { SavedTrack(client.trackOf(it), null) }, offset, limit)
+    override suspend fun likedTracks(offset: Int, limit: Int): Page<SavedTrack> =
+        pageOf(starred().songs, offset, limit)
+
+    private suspend fun artistsCached(): List<Artist> {
+        val now = System.currentTimeMillis()
+        synchronized(cacheLock) {
+            artistsCache?.let { (at, value) -> if (now - at < CACHE_MS) return value }
+        }
+        val value = client.artists()
+        synchronized(cacheLock) { artistsCache = now to value }
+        return value
+    }
+
+    private suspend fun playlistsCached(): List<Playlist> {
+        val now = System.currentTimeMillis()
+        synchronized(cacheLock) {
+            playlistsCache?.let { (at, value) -> if (now - at < CACHE_MS) return value }
+        }
+        val value = client.playlists()
+        synchronized(cacheLock) { playlistsCache = now to value }
+        return value
+    }
+
+    private suspend fun starred(): StarredSnapshot {
+        val now = System.currentTimeMillis()
+        synchronized(cacheLock) {
+            starredCache?.let { (at, value) -> if (now - at < CACHE_MS) return value }
+        }
+        val root = client.call("getStarred2").optJSONObject("starred2")
+        val ids = buildSet {
+            root?.array("song").orEmpty().forEach { add(it.optString("id")) }
+            root?.array("album").orEmpty().forEach { add(it.optString("id")) }
+            root?.array("artist").orEmpty().forEach { add(it.optString("id")) }
+        }
+        val songs = root?.array("song").orEmpty().map { SavedTrack(client.trackOf(it), null) }
+        val snapshot = StarredSnapshot(ids, songs)
+        synchronized(cacheLock) { starredCache = now to snapshot }
+        return snapshot
+    }
+
+    private fun invalidateStarred() {
+        synchronized(cacheLock) { starredCache = null }
     }
 
     override suspend fun pin(uri: Uri) = Unit
@@ -375,19 +437,32 @@ internal class SubsonicLibrary(private val client: SubsonicClient) : Library {
 
 internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists {
 
+    /** `getPlaylist` has no offset/size: fetch it once, then page it locally. */
+    private val playlistCache = HashMap<String, Pair<Long, JSONObject>>()
+
+    private suspend fun playlistJson(id: String): JSONObject {
+        val now = System.currentTimeMillis()
+        synchronized(playlistCache) {
+            playlistCache[id]?.let { (at, value) -> if (now - at < CACHE_MS) return value }
+        }
+        val value = client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist")
+            ?: throw SubsonicException.NotFound("Playlist not found")
+        synchronized(playlistCache) { playlistCache[id] = now to value }
+        return value
+    }
+
+    private fun invalidatePlaylist(id: String) {
+        synchronized(playlistCache) { playlistCache.remove(id) }
+    }
+
     override suspend fun playlist(uri: Uri): Playlist {
         val id = uri.substringAfterLast(':')
-        val detail = runCatching {
-            client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist")
-        }.getOrNull()
-        if (detail != null) return client.playlistOf(detail)
-        return client.playlists().firstOrNull { it.uri.endsWith(":$id") } ?: error("Playlist not found")
+        return client.playlistOf(playlistJson(id))
     }
 
     override suspend fun tracks(uri: Uri, offset: Int, limit: Int): Page<Track> {
         val id = uri.substringAfterLast(':')
-        val playlist = client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist")
-            ?: error("Playlist not found")
+        val playlist = playlistJson(id)
         val image = client.imageOf(playlist.optString("coverArt").takeIf { it.isNotBlank() }, 300)
         val name = playlist.optString("name")
         val tracks = playlist.array("entry").map { client.trackOf(it, albumName = name, albumImages = image) }
@@ -395,7 +470,7 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
     }
 
     override suspend fun sortedTracks(uri: Uri, sort: PlaylistSort, descending: Boolean): List<Track> =
-        tracks(uri, 0, 500).items.sortedFor(sort, descending)
+        tracks(uri, 0, Int.MAX_VALUE).items.sortedFor(sort, descending)
 
     override suspend fun mine(): List<Playlist> = client.playlists()
 
@@ -412,11 +487,13 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
     override suspend fun rename(uri: Uri, name: String) {
         val id = uri.substringAfterLast(':')
         client.call("updatePlaylist", mapOf("playlistId" to id, "name" to name))
+        invalidatePlaylist(id)
     }
 
     override suspend fun setDescription(uri: Uri, description: String) {
         val id = uri.substringAfterLast(':')
         client.call("updatePlaylist", mapOf("playlistId" to id, "comment" to description))
+        invalidatePlaylist(id)
     }
 
     override suspend fun access(uri: Uri): PlaylistAccess = PlaylistAccess.PUBLIC
@@ -425,6 +502,7 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
         val id = uri.substringAfterLast(':')
         val pub = access == PlaylistAccess.PUBLIC
         runCatching { client.call("updatePlaylist", mapOf("playlistId" to id, "public" to pub.toString())) }
+        invalidatePlaylist(id)
     }
 
     override suspend fun published(uri: Uri): Boolean = false
@@ -436,6 +514,7 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
     override suspend fun delete(uri: Uri) {
         val id = uri.substringAfterLast(':')
         client.call("deletePlaylist", mapOf("id" to id))
+        invalidatePlaylist(id)
     }
 
     override suspend fun follow(uri: Uri) = Unit
@@ -467,12 +546,15 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
                 if (songId.isNotBlank()) add("songIdToAdd" to songId)
             }
         }
-        if (pairs.size > 1) client.callPairs("updatePlaylist", pairs)
+        if (pairs.size > 1) {
+            client.callPairs("updatePlaylist", pairs)
+            invalidatePlaylist(id)
+        }
     }
 
     override suspend fun removeTracks(uri: Uri, uids: List<String>) {
         val id = uri.substringAfterLast(':')
-        val playlist = client.call("getPlaylist", mapOf("id" to id)).optJSONObject("playlist") ?: return
+        val playlist = playlistJson(id)
         val entries = playlist.array("entry")
         val indices = entries.mapIndexedNotNull { idx, entry ->
             val entryId = entry.optString("id")
@@ -484,6 +566,7 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
             indices.forEach { idx -> add("songIndexToRemove" to idx.toString()) }
         }
         client.callPairs("updatePlaylist", pairs)
+        invalidatePlaylist(id)
     }
 
     override suspend fun moveTracks(uri: Uri, uids: List<String>, beforeUid: String?) = Unit
@@ -678,8 +761,11 @@ internal class SubsonicRecents(private val client: SubsonicClient) : Recents {
     }
 }
 
-private suspend fun SubsonicClient.albums(type: String, size: Int): List<Album> {
-    val root = call("getAlbumList2", mapOf("type" to type, "size" to size.toString()))
+private suspend fun SubsonicClient.albums(type: String, size: Int, offset: Int = 0): List<Album> {
+    val root = call(
+        "getAlbumList2",
+        mapOf("type" to type, "size" to size.toString(), "offset" to offset.toString()),
+    )
     return root.optJSONObject("albumList2")?.array("album").orEmpty().map { albumOf(it) }
 }
 
