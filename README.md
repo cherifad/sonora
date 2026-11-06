@@ -12,10 +12,32 @@ so the same build works with Jellyfin/Subfin, Navidrome and other OpenSubsonic s
 > upstream projects are credited there. The original Myspoti notices are kept in
 > [`docs/upstream/`](docs/upstream/).
 
+## Screenshots
+
+Two looks ship in the same app: **Immersive** (the default: artwork forward, colours taken
+from the cover) and **Classic** (dark player, round play button). Switch in
+**Settings → Look**.
+
+**Immersive**
+
+| Home | Library | Album | Player |
+|:--:|:--:|:--:|:--:|
+| [![Home](docs/screenshots/sonora/immersive-home.png)](docs/screenshots/sonora/immersive-home.png) | [![Library](docs/screenshots/sonora/immersive-library.png)](docs/screenshots/sonora/immersive-library.png) | [![Album](docs/screenshots/sonora/immersive-album.png)](docs/screenshots/sonora/immersive-album.png) | [![Player](docs/screenshots/sonora/immersive-player.png)](docs/screenshots/sonora/immersive-player.png) |
+
+**Classic**
+
+| Home | Library | Album | Player |
+|:--:|:--:|:--:|:--:|
+| [![Home](docs/screenshots/sonora/classic-home.png)](docs/screenshots/sonora/classic-home.png) | [![Library](docs/screenshots/sonora/classic-library.png)](docs/screenshots/sonora/classic-library.png) | [![Album](docs/screenshots/sonora/classic-album.png)](docs/screenshots/sonora/classic-album.png) | [![Player](docs/screenshots/sonora/classic-player.png)](docs/screenshots/sonora/classic-player.png) |
+
+Also: [Immersive search](docs/screenshots/sonora/immersive-search.png) ·
+[Classic search](docs/screenshots/sonora/classic-search.png) ·
+[Downloads and offline](docs/screenshots/sonora/immersive-downloads.png).
+
 ## What it does
 
 - **Home, Search, Library, Album, Artist, Now Playing, Queue**, in two looks (Immersive by
-  default, Classic in Settings → Display → Look).
+  default, Classic in Settings → Look).
 - **Playback** through Media3 `ExoPlayer`: gapless, seek, shuffle/repeat, background playback
   with a media notification, lock screen and headset/Bluetooth controls.
 - **Your library's own data**: favourites (`star`), playlists (create, rename, add/remove,

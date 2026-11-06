@@ -37,7 +37,7 @@ class SubsonicApi(
 
     override val player: Player = playerImpl
     override val catalog: Catalog = catalogImpl
-    override val home: Home = SubsonicHome(client)
+    override val home: Home = SubsonicHome(client, context)
     override val search: Search = SubsonicSearch(client)
     override val library: Library = SubsonicLibrary(client)
     override val playlists: Playlists = playlistsImpl
