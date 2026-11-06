@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unattended playback pilot on the user's phone (debug build app.myspoti.dev, screen off).
+"""Unattended playback pilot on the user's phone (debug build com.adlen.sonora.dev, screen off).
 
 usage: tools/pilot.py [--out DIR] [--only A1,A2,B,C,D,F] [--long-pause SECS]
 
@@ -79,13 +79,13 @@ def ensure_app():
 
 def tracks():
     return pt.evaluate(f"""(async () => {{
-      const p = await window.Myspoti.call(-1, 'service.call', {{service: 'PlaylistAPI', method: 'getContents', args: [{json.dumps(PLAYLIST)}, {{limit: 12}}]}});
+      const p = await window.Sonora.call(-1, 'service.call', {{service: 'PlaylistAPI', method: 'getContents', args: [{json.dumps(PLAYLIST)}, {{limit: 12}}]}});
       return p.items.filter(i => i.isPlayable).map(i => i.uri);
     }})()""")
 
 
 def media_state():
-    return pt.evaluate("window.Myspoti.call(-1, 'media.state', {})")
+    return pt.evaluate("window.Sonora.call(-1, 'media.state', {})")
 
 
 def start_song(uri, settle=8):
@@ -97,7 +97,7 @@ def start_song(uri, settle=8):
 
 def uitrace(secs):
     # --ei: the receiver reads getIntExtra("secs"); playback_test.test() sends ints as --el (ignored: 30 s default)
-    L.adb("shell", "am", "broadcast", "-a", "app.myspoti.TEST", "-p", PKG, "--es", "cmd", "uitrace", "--ei", "secs", str(int(secs)))
+    L.adb("shell", "am", "broadcast", "-a", "com.adlen.sonora.TEST", "-p", PKG, "--es", "cmd", "uitrace", "--ei", "secs", str(int(secs)))
 
 
 def stop_check(cap):
@@ -412,7 +412,7 @@ def sc_X(out, T, secs=6):
     cap = L.Capture(out, "X_crossfade")
     notes = {}
     try:
-        L.adb("shell", "am", "broadcast", "-a", "app.myspoti.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", str(secs))
+        L.adb("shell", "am", "broadcast", "-a", "com.adlen.sonora.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", str(secs))
         time.sleep(1)
         p = start_song(T[8], 5)
         uitrace(190)
@@ -431,7 +431,7 @@ def sc_X(out, T, secs=6):
             stop_check(cap)
         notes["crossfade_on_ends"] = ends
         notes["state_after_2"] = media_state()
-        L.adb("shell", "am", "broadcast", "-a", "app.myspoti.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", "0")
+        L.adb("shell", "am", "broadcast", "-a", "com.adlen.sonora.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", "0")
         time.sleep(2)
         d = p["track"]["durationMs"]
         cur = p["track"]["uri"]
@@ -443,7 +443,7 @@ def sc_X(out, T, secs=6):
         stop_check(cap)
     finally:
         try:
-            L.adb("shell", "am", "broadcast", "-a", "app.myspoti.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", "0")
+            L.adb("shell", "am", "broadcast", "-a", "com.adlen.sonora.TEST", "-p", PKG, "--es", "cmd", "crossfade", "--ei", "secs", "0")
         except Exception:
             pass
         an = finish(cap, "X")

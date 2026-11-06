@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Announce a GitHub release of Myspoti on Discord (webhook), as one tidy embed.
+"""Announce a GitHub release of Sonora on Discord (webhook), as one tidy embed.
 
 usage: tools/discord_release.py TAG [--dry-run]
 env:   DISCORD_WEBHOOK_URL (required unless --dry-run), GITHUB_TOKEN (optional, API rate limit),
-       GITHUB_REPOSITORY (default kota-zo/myspoti)
+       GITHUB_REPOSITORY (default cherifad/sonora)
 
 The embed carries the release's notes (its CHANGELOG section, without GitHub's generated
 part), a link to the release page and a direct link to the APK. No third-party packages.
 """
 import json, os, re, sys, urllib.request
 
-REPO = os.environ.get("GITHUB_REPOSITORY", "kota-zo/myspoti")
+REPO = os.environ.get("GITHUB_REPOSITORY", "cherifad/sonora")
 GREEN = 0x1ED760
-LOGO = f"https://raw.githubusercontent.com/{REPO}/main/docs/brand/myspoti-logo-512.png"
+LOGO = f"https://raw.githubusercontent.com/{REPO}/main/docs/brand/sonora-logo-512.png"
 MAX_DESCRIPTION = 3900  # Discord allows 4096 in an embed description
 
 
 def github(path):
     req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/{path}",
-                                 headers={"Accept": "application/vnd.github+json", "User-Agent": "myspoti-release-bot"})
+                                 headers={"Accept": "application/vnd.github+json", "User-Agent": "sonora-release-bot"})
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
@@ -55,12 +55,12 @@ def payload(release):
         fields.append({"name": "Download", "value": f"[{apk['name']}]({apk['browser_download_url']}) ({size:.1f} MB)", "inline": True})
     fields.append({"name": "Release", "value": f"[{tag} on GitHub]({url})", "inline": True})
     return {
-        "username": "Myspoti",
+        "username": "Sonora",
         "avatar_url": LOGO,
-        "content": f"**Myspoti {version}** is out.",
+        "content": f"**Sonora {version}** is out.",
         "allowed_mentions": {"parse": []},
         "embeds": [{
-            "title": f"Myspoti {version}",
+            "title": f"Sonora {version}",
             "url": url,
             "description": shorten(notes, url),
             "color": GREEN,
@@ -86,7 +86,7 @@ def main():
         print("DISCORD_WEBHOOK_URL is not set: nothing posted.")
         return
     req = urllib.request.Request(hook, data=json.dumps(data).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", "User-Agent": "myspoti-release-bot"})
+                                 headers={"Content-Type": "application/json", "User-Agent": "sonora-release-bot"})
     with urllib.request.urlopen(req, timeout=20) as r:
         print(f"Posted {release['tag_name']} to Discord ({r.status}).")
 

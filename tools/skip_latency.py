@@ -13,7 +13,7 @@ WATCH = """(() => {
   window.__mspLat = null;
   const pl = sdk.harmony._streamer._playerPromise;
   pl.then(p => {
-    const from = window.Myspoti && p._currentContent && p._currentContent._track && p._currentContent._track.uri;
+    const from = window.Sonora && p._currentContent && p._currentContent._track && p._currentContent._track.uri;
     const started = Date.now();
     const tick = () => {
       const el = p._player;

@@ -15,12 +15,12 @@ val keystoreProperties = Properties().apply {
 
 
 android {
-    namespace = "app.myspoti.engine"
+    namespace = "com.adlen.sonora.engine"
     compileSdk = 37
 
-    // Two channels that install side by side: betas ("2.0.0-beta.3") stay "app.myspoti",
-    // signed with the first key, as "Myspoti Beta"; releases are "app.myspoti.stable",
-    // signed with their own key, as "Myspoti".
+    // Two channels that install side by side: betas ("2.0.0-beta.3") stay "com.adlen.sonora",
+    // signed with the first key, as "Sonora Beta"; releases are "com.adlen.sonora.stable",
+    // signed with their own key, as "Sonora".
     // Local builds (no version given) are on the beta side, like the phone test builds.
     val version = (findProperty("appVersionName") as String?) ?: "2.3.0"
     // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
@@ -28,7 +28,7 @@ android {
     defaultConfig {
         applicationId = "com.adlen.sonora"
         manifestPlaceholders["appLabel"] = "Sonora"
-        // The adb command line (com.music.spotui.cli): betas and debug builds only.
+        // The adb command line (com.adlen.sonora.app.cli): betas and debug builds only.
         manifestPlaceholders["cliEnabled"] = "false"
         minSdk = 29
         targetSdk = 36
@@ -37,7 +37,7 @@ android {
         versionName = version
         // GitHub "owner/repo" whose releases the app checks for updates; empty = off
         // (local builds). CI sets it to the repository it builds.
-        buildConfigField("String", "UPDATE_REPO", "\"${(findProperty("updateRepo") as String?) ?: System.getenv("MYSPOTI_UPDATE_REPO") ?: ""}\"")
+        buildConfigField("String", "UPDATE_REPO", "\"${(findProperty("updateRepo") as String?) ?: System.getenv("SONORA_UPDATE_REPO") ?: System.getenv("MYSPOTI_UPDATE_REPO") ?: ""}\"")
         ndk {
             // -Pabis=arm64-v8a: a smaller test APK for one phone.
             abiFilters += (findProperty("abis") as String?)?.split(",") ?: listOf("arm64-v8a", "armeabi-v7a")
@@ -52,13 +52,13 @@ android {
     }
 
     // Release key from the CI secrets (env), else keystore/keystore.properties.
-    val envStore = System.getenv("MYSPOTI_KEYSTORE")
+    val envStore = System.getenv("SONORA_KEYSTORE") ?: System.getenv("MYSPOTI_KEYSTORE")
     val hasReleaseKey = envStore != null || keystorePropertiesFile.exists()
     // A stable release (a version without "-beta", given by CI) is never signed with the debug key:
     // without the release key the build stops. Local builds (no version) and -PoverDev are not stable releases.
     val stableRelease = !beta && findProperty("overDev") == null
     if (stableRelease && !hasReleaseKey && gradle.startParameter.taskNames.any { Regex("(assemble|bundle|package|install)Release").containsMatchIn(it) })
-        throw GradleException("A stable release needs the release key: set MYSPOTI_KEYSTORE (CI) or add keystore/keystore.properties.")
+        throw GradleException("A stable release needs the release key: set SONORA_KEYSTORE (CI) or add keystore/keystore.properties.")
     // Two artifacts from one code base: the phone app (which Android Auto projects) and the
     // Android Automotive OS app (no launcher, the car draws the media UI).
     flavorDimensions += "device"
@@ -77,9 +77,9 @@ android {
         create("release") {
             if (envStore != null) {
                 storeFile = file(envStore)
-                storePassword = System.getenv("MYSPOTI_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("MYSPOTI_KEY_ALIAS")
-                keyPassword = System.getenv("MYSPOTI_KEY_PASSWORD")
+                storePassword = System.getenv("SONORA_KEYSTORE_PASSWORD") ?: System.getenv("MYSPOTI_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("SONORA_KEY_ALIAS") ?: System.getenv("MYSPOTI_KEY_ALIAS")
+                keyPassword = System.getenv("SONORA_KEY_PASSWORD") ?: System.getenv("MYSPOTI_KEY_PASSWORD")
             } else if (keystorePropertiesFile.exists()) {
                 storeFile = rootProject.file("keystore/${keystoreProperties.getProperty("storeFile")}")
                 storePassword = keystoreProperties.getProperty("storePassword")

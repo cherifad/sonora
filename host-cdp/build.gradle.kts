@@ -21,7 +21,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     // Live tests need Chrome with --remote-debugging-port and a signed-in Web Player.
-    systemProperty("myspoti.cdp", providers.gradleProperty("cdp").getOrElse(""))
+    systemProperty("sonora.cdp", providers.gradleProperty("cdp").getOrElse(""))
     testLogging { events("passed", "failed", "skipped"); showStandardStreams = true }
     outputs.upToDateWhen { false }
 }

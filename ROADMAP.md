@@ -52,7 +52,7 @@ Navidrome, shows a useful error on bad credentials, and no credential is hard-co
       repeat restore, page reload); the output sheet is local-only.
 - [x] Runtime-verified on a OnePlus CPH2207 (Android 13) over wireless ADB + `adb reverse`.
 - [x] Application id renamed to `com.adlen.sonora` (debug `…dev`); label
-      "Sonora". The internal Kotlin namespace (`app.myspoti.*`) is a later mechanical
+      "Sonora". The internal Kotlin namespace (`com.adlen.sonora.*`) is a later mechanical
       rename.
 - [x] Default look switched to **Immersive** (the look of the Myspoti README); Classic is
       still selectable in Settings → Display → Look.

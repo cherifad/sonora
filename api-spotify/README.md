@@ -1,6 +1,6 @@
 # api-spotify
 
-Spotify implementation of the Myspoti API (`:api`), on top of the official Web Player.
+Spotify implementation of the Sonora API (`:api`), on top of the official Web Player.
 
 ## Modules
 
@@ -62,10 +62,10 @@ The same file runs in the Android WebView and in desktop Chrome over CDP.
 
 | Direction | Android | Desktop (CDP) |
 |---|---|---|
-| Host → page | `evaluateJavascript("Myspoti.call(id, method, args)")` | `Runtime.evaluate`, same call |
-| Page → host | `MyspotiHost.postMessage(json)` (web message listener, open.spotify.com only) | `Runtime.addBinding("__mspHostPost")` |
+| Host → page | `evaluateJavascript("Sonora.call(id, method, args)")` | `Runtime.evaluate`, same call |
+| Page → host | `SonoraHost.postMessage(json)` (web message listener, open.spotify.com only) | `Runtime.addBinding("__mspHostPost")` |
 
-`Myspoti.call` also returns a Promise, but hosts should rely on the `result` message:
+`Sonora.call` also returns a Promise, but hosts should rely on the `result` message:
 Android's `evaluateJavascript` does not wait for Promises.
 
 ### Messages (page → host)
@@ -121,7 +121,7 @@ The older Python harness [`bridge-tests/run_bridge_tests.py`](bridge-tests/run_b
 desktop Google Chrome (Widevine included) over CDP. Each test restores what it changes.
 
 ```bash
-google-chrome --user-data-dir="$HOME/.myspoti-chrome" --remote-debugging-port=9222
+google-chrome --user-data-dir="$HOME/.sonora-chrome" --remote-debugging-port=9222
 ```
 
 ```bash

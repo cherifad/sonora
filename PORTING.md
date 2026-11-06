@@ -11,7 +11,7 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 
 | Surface | État |
 |---|---|
-| Démarrage sans login Spotify | Oui : `MyspotiRuntime.startSubsonic(...)`, le WebView n'est pas démarré |
+| Démarrage sans login Spotify | Oui : `SonoraRuntime.startSubsonic(...)`, le WebView n'est pas démarré |
 | Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings / menu profil |
 | Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s` |
 | Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
@@ -49,11 +49,11 @@ reprise après redémarrage, la lecture hors ligne (serveur injoignable), le ban
 ## Architecture du portage
 
 - `api-subsonic/` : module Android du backend.
-  - `SubsonicApi` implémente `MyspotiApi` (le contrat que toute l'UI Myspoti utilise déjà).
+  - `SubsonicApi` implémente `SonoraApi` (le contrat que toute l'UI Myspoti utilise déjà).
   - `SubsonicClient` : OkHttp + JSON, auth Subsonic `u/t/s` (token, pas de mot de passe dans l'URL).
   - `SubsonicBackend` : `Home`, `Search`, `Catalog`, `Library`, `Playlists`, `Users` + stubs.
-  - `SubsonicPlayer` : `app.myspoti.api.Player` au-dessus de Media3 `ExoPlayer`.
-- `MyspotiRuntime` : ajoute `startSubsonic(...)` et `isSubsonic` ; `api` renvoie le backend
+  - `SubsonicPlayer` : `com.adlen.sonora.api.Player` au-dessus de Media3 `ExoPlayer`.
+- `SonoraRuntime` : ajoute `startSubsonic(...)` et `isSubsonic` ; `api` renvoie le backend
   Subsonic quand il est actif, sinon Spotify.
 - `Graph.init` : démarre Subsonic à la place du Web Player.
 - `MainActivity` : saute le login WebView en mode Subsonic.
@@ -71,7 +71,7 @@ des identifiants opaques pour l'UI Myspoti. Un nettoyage ultérieur peut les pas
 printf 'sdk.dir=/home/adlen/android-sdk\n' > local.properties
 JAVA_HOME=/home/adlen/tools/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.adlen.sonora.dev/app.myspoti.MainActivity
+adb shell am start -n com.adlen.sonora.dev/com.adlen.sonora.MainActivity
 ```
 
 Le serveur se configure dans l'app :

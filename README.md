@@ -85,7 +85,7 @@ Tests:
 ```bash
 ./gradlew :api-subsonic:testDebugUnitTest :app:testMobileDebugUnitTest   # JVM, no device
 ./gradlew :app:connectedMobileDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.package=com.myspoti.ui     # UI, on a device/emulator
+  -Pandroid.testInstrumentationRunnerArguments.package=com.adlen.sonora.test.ui     # UI, on a device/emulator
 ```
 
 ## Branches and releases
@@ -100,10 +100,10 @@ See [`docs/RELEASING.md`](docs/RELEASING.md) for the secrets and the exact steps
 
 ```
 app/            Compose UI (Myspoti fork)
-api/            domain contract (MyspotiApi, models)
+api/            domain contract (SonoraApi, models)
 api-subsonic/   Subsonic/OpenSubsonic backend + Media3 player
 api-spotify/    upstream Spotify engine (kept for reference, never started)
-host-android/   Android runtime (MyspotiRuntime, playback service)
+host-android/   Android runtime (SonoraRuntime, playback service)
 host-cdp/       upstream CDP tooling (reference)
 extensions/     upstream extension sandbox (reference)
 docs/           testing, releasing, Navidrome compatibility, screenshots

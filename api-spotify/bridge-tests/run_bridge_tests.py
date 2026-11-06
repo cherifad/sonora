@@ -6,7 +6,7 @@ and Playwright (`pip install playwright`). Sign in once in that window, then run
     python run_bridge_tests.py [--cdp http://localhost:9222]
 
 The host side mirrors Android: page -> host messages go through one binding
-(`__mspHostPost`), host -> page commands through `Myspoti.call`.
+(`__mspHostPost`), host -> page commands through `Sonora.call`.
 Every test restores what it changes (volume, queue, likes, pause state).
 """
 import argparse, asyncio, itertools, json, sys, time
@@ -46,7 +46,7 @@ class Host:
         await self.cdp.send("Runtime.enable")
         await self.cdp.send("Runtime.addBinding", {"name": "__mspHostPost"})
         self.cdp.on("Runtime.bindingCalled", lambda e: e["name"] == "__mspHostPost" and self.on_message(e["payload"]))
-        # A reload drops window.Myspoti: start fresh so the new binding is used.
+        # A reload drops window.Sonora: start fresh so the new binding is used.
         await self.page.reload()
         await self.page.wait_for_load_state("domcontentloaded")
         await self.page.evaluate(BRIDGE.read_text())
@@ -57,7 +57,7 @@ class Host:
         fut = asyncio.get_running_loop().create_future()
         self.pending[cid] = fut
         # Fire and forget, like Android's evaluateJavascript: the answer comes back as a message.
-        await self.page.evaluate(f"window.Myspoti.call({cid}, {json.dumps(method)}, {json.dumps(args)}).catch(() => {{}})")
+        await self.page.evaluate(f"window.Sonora.call({cid}, {json.dumps(method)}, {json.dumps(args)}).catch(() => {{}})")
         msg = await asyncio.wait_for(fut, 20)
         if not msg["ok"]:
             raise AssertionError(f"{method} failed: {msg['error']}")

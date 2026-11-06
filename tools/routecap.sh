@@ -5,7 +5,7 @@ ADB=${ADB:-$HOME/android-sdk/platform-tools/adb}
 SERIAL=${SERIAL:?set SERIAL to the adb serial, e.g. host:port}
 D=$(dirname "$0")/captures/$1; mkdir -p "$D"; rm -f "$D.stop"
 "$ADB" -s "$SERIAL" logcat -c
-"$ADB" -s "$SERIAL" logcat -v time | grep --line-buffered -E "MR2|Route2|RemoteDevice|MediaDevice|InfoMediaManager|LocalMediaManager|MediaOutput|spotify|Spotify|myspoti|MediaRouter|RouteListing|oneconnect.*Media" > "$D/routing.log" &
+"$ADB" -s "$SERIAL" logcat -v time | grep --line-buffered -E "MR2|Route2|RemoteDevice|MediaDevice|InfoMediaManager|LocalMediaManager|MediaOutput|spotify|Spotify|sonora|MediaRouter|RouteListing|oneconnect.*Media" > "$D/routing.log" &
 LP=$!
 i=0
 while [ ! -f "$D.stop" ]; do

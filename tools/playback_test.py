@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Playback scenarios on a phone (debug build app.myspoti.dev, signed in).
+"""Playback scenarios on a phone (debug build com.adlen.sonora.dev, signed in).
 
 usage: tools/playback_test.py [--serial S] [--only name,name] [--skip name,name] [--playlist URI]
 
 Drives the app as a user would: media keys (notification, headset path) and the debug-only
 test receiver (TestControlReceiver: the app's own play / seek commands). Reads the page through
-CDP (tools/cdp.py) and the app's log (adb logcat -s Myspoti MspPlayer).
+CDP (tools/cdp.py) and the app's log (adb logcat -s Sonora MspPlayer).
 
 After each step: the expected song is current, not paused, its position advances (page state
 and the page's media element), the page volume is above 0 and the media element is not muted.
@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cdp  # noqa: E402
 
 ADB = cdp.ADB
-PKG = "app.myspoti.dev"
-OTHERS = ["app.myspoti", "com.spotify.music"]
+PKG = "com.adlen.sonora.dev"
+OTHERS = ["com.adlen.sonora", "com.spotify.music"]
 PLAYLIST = "spotify:playlist:5G7gcsU1CbvqYJYFawDRZa"
 BAD = [
     (re.compile(r"timeout after \d+ ms"), "call timeout"),
@@ -104,12 +104,12 @@ def fire(expr):
 
 def bridge(method, args=None, timeout=12):
     a = json.dumps(args or {})
-    return evaluate(f"window.Myspoti.call(-1, {json.dumps(method)}, {a})", timeout)
+    return evaluate(f"window.Sonora.call(-1, {json.dumps(method)}, {a})", timeout)
 
 
 PROBE = """(async () => {
   const t = (p, ms) => Promise.race([p, new Promise((_, j) => setTimeout(() => j(new Error('no answer')), ms))]);
-  const c = (m, a) => t(window.Myspoti.call(-1, m, a || {}), 4000);
+  const c = (m, a) => t(window.Sonora.call(-1, m, a || {}), 4000);
   const s = await c('player.state');
   const q = await c('player.queue');
   let vol = null, media = null;
@@ -153,7 +153,7 @@ class Log:
     def __init__(self):
         adb("logcat", "-c")
         self.lines = []
-        cmd = [ADB] + (["-s", SERIAL] if SERIAL else []) + ["logcat", "-v", "time", "-s", "Myspoti:*", "MspPlayer:*", "AndroidRuntime:E"]
+        cmd = [ADB] + (["-s", SERIAL] if SERIAL else []) + ["logcat", "-v", "time", "-s", "Sonora:*", "MspPlayer:*", "AndroidRuntime:E"]
         self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, errors="replace")
         threading.Thread(target=self._read, daemon=True).start()
 
@@ -295,7 +295,7 @@ def key(code):
 
 
 def test(cmd, **extras):
-    args = ["shell", "am", "broadcast", "-a", "app.myspoti.TEST", "-p", PKG, "--es", "cmd", cmd]
+    args = ["shell", "am", "broadcast", "-a", "com.adlen.sonora.TEST", "-p", PKG, "--es", "cmd", cmd]
     for k, v in extras.items():
         args += (["--el", k, str(v)] if isinstance(v, int) else ["--es", k, shlex.quote(v)])
     adb(*args)
@@ -307,7 +307,7 @@ NEXT, PREV, PLAY, PAUSE, HOME, SLEEP, WAKE = 87, 88, 126, 127, 3, 223, 224
 def launch():
     if HEADLESS:
         # The playback service alone (no activity, nothing in front): the engine runs without a screen.
-        adb("shell", "am", "start-foreground-service", "-n", PKG + "/app.myspoti.host.android.PlaybackService")
+        adb("shell", "am", "start-foreground-service", "-n", PKG + "/com.adlen.sonora.host.android.PlaybackService")
         return
     adb("shell", "monkey", "-p", PKG, "-c", "android.intent.category.LAUNCHER", "1")
 
@@ -325,7 +325,7 @@ def seek_to(r, ms):
 
 def s_play_playlist(r, ctx):
     tracks = evaluate(f"""(async () => {{
-      const p = await window.Myspoti.call(-1, 'service.call', {{service: 'PlaylistAPI', method: 'getContents', args: [{json.dumps(ctx['playlist'])}, {{limit: 12}}]}});
+      const p = await window.Sonora.call(-1, 'service.call', {{service: 'PlaylistAPI', method: 'getContents', args: [{json.dumps(ctx['playlist'])}, {{limit: 12}}]}});
       return p.items.filter(i => i.isPlayable).map(i => i.uri);
     }})()""")
     ctx["tracks"] = tracks
@@ -457,8 +457,8 @@ def s_mute(r, ctx):
     # silence watchdog ("no silence until a restart") within a tick, so a separate probe could
     # read the restored level and fail a mute that worked (seen once in 6 runs).
     p = evaluate("""(async () => {
-      const n = await window.Myspoti.call(-1, 'media.mute', {on: true});
-      return {n, media: await window.Myspoti.call(-1, 'media.state', {})};
+      const n = await window.Sonora.call(-1, 'media.mute', {on: true});
+      return {n, media: await window.Sonora.call(-1, 'media.state', {})};
     })()""")
     n = p.get("n")
     if not isinstance(p.get("media"), dict) or p["media"]["volume"] > 0.01:
@@ -553,7 +553,7 @@ FAKE_AD = """(() => { try {
   // that the app's ad recovery does drops this patch.
   const orig = pl.getState.bind(pl);
   pl.getState = () => { const s = orig(); return s && Object.assign({}, s, { item: Object.assign({}, s.item, { type: 'ad', uri: 'spotify:ad:test', name: 'Test ad' }) }); };
-  window.Myspoti.announce();
+  window.Sonora.announce();
   return true;
 } catch (e) { return String(e && e.stack || e).slice(0, 600); } })()"""
 

@@ -25,7 +25,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "JellyfinAudio"
+rootProject.name = "Sonora"
 include(":app")
 include(":api")
 include(":extensions")

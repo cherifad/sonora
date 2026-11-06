@@ -14,11 +14,11 @@ SDK=${ANDROID_HOME:-$HOME/android-sdk}
 ADB=$SDK/platform-tools/adb
 SERIAL=${SERIAL:-emulator-5554}
 PKG=${CAR_PKG:-com.adlen.sonora.car.dev}
-COMPONENT="$PKG/app.myspoti.host.android.PlaybackService"
+COMPONENT="$PKG/com.adlen.sonora.host.android.PlaybackService"
 
 # The app must not be in the "stopped" state (a package with no launcher starts that way, and
 # the media host ignores stopped packages). Starting its playback service once is enough.
-"$ADB" -s "$SERIAL" shell am start-foreground-service -n "$PKG/app.myspoti.host.android.PlaybackService" >/dev/null 2>&1 || true
+"$ADB" -s "$SERIAL" shell am start-foreground-service -n "$PKG/com.adlen.sonora.host.android.PlaybackService" >/dev/null 2>&1 || true
 
 "$ADB" -s "$SERIAL" shell am start \
   -n com.android.car.media/.MediaDispatcherActivity \

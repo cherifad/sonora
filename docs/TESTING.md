@@ -140,7 +140,7 @@ se lie au service et parcourt les dossiers (avec Navidrome sur `10.0.2.2:4533`) 
 
 ```bash
 ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.auto.AutoBrowserTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.adlen.sonora.test.auto.AutoBrowserTest
 ```
 
 Il vérifie que `PlaybackService` répond à `android.media.browse.MediaBrowserService`, que la
@@ -157,12 +157,12 @@ Les écrans du téléphone ont leurs tests Compose :
 
 ```bash
 ./gradlew :app:connectedMobileDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.package=com.myspoti.ui
+  -Pandroid.testInstrumentationRunnerArguments.package=com.adlen.sonora.test.ui
 ```
 
 ```bash
 ./gradlew :app:connectedMobileDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.ui.MainFlowTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.adlen.sonora.test.ui.MainFlowTest
 ```
 
 À savoir : AGP **désinstalle l'application** à la fin d'un `connected…AndroidTest` (les données
@@ -176,7 +176,7 @@ reconfigurer une session déjà démarrée). Onboarde une fois (émulateur), pui
 ```bash
 ./gradlew :app:connectedMobileDebugAndroidTest \
   -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.myspoti.ui.MainFlowTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.adlen.sonora.test.ui.MainFlowTest
 ```
 
 Sans onboarding préalable, Home et Library sont testés et le parcours album est sauté.
@@ -217,7 +217,7 @@ Deux pièges connus :
 - `run-as` écrit dans les données de l'utilisateur 0 alors que la voiture tourne en
   utilisateur 10 : pour configurer le serveur, le test instrumenté (`AutoBrowserTest`) le fait
   dans le bon contexte — `adb shell am instrument -w --user 10 -e class
-  com.myspoti.auto.AutoBrowserTest com.adlen.sonora.car.dev.test/androidx.test.runner.AndroidJUnitRunner`.
+  com.adlen.sonora.test.auto.AutoBrowserTest com.adlen.sonora.car.dev.test/androidx.test.runner.AndroidJUnitRunner`.
 
 ## Tablette sans émulateur (sur le téléphone)
 

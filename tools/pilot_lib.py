@@ -158,7 +158,7 @@ class Capture:
         self.base = os.path.join(outdir, name)
         adb("logcat", "-c")
         self.logf = open(self.base + ".log", "w")
-        self.proc = subprocess.Popen([ADB, "logcat", "-v", "epoch", "-s", "Myspoti:*", "MspPlayer:*", "MspTrace:*", "AndroidRuntime:E"],
+        self.proc = subprocess.Popen([ADB, "logcat", "-v", "epoch", "-s", "Sonora:*", "MspPlayer:*", "MspTrace:*", "AndroidRuntime:E"],
                                      stdout=self.logf, stderr=subprocess.DEVNULL)
         self.sampler = Sampler(self.base + ".media.jsonl", every=every) if sampler else None
         if self.sampler:
