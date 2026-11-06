@@ -199,6 +199,7 @@
     <string name="widget_previous">Previous</string>
     <string name="widget_next">Next</string>
     <string name="widget_play_pause">Play or pause</string>
+    <string name="widget_shuffle">Shuffle</string>
     <string name="offline_only_downloaded">Offline: only the %1$d downloaded songs of %2$d play</string>
     <string name="track_sort_title">Title</string>
     <string name="track_sort_artist">Artist</string>

@@ -186,6 +186,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_now_playing_info" />
         </receiver>
+
+        <!-- Quick Settings tile: play or pause the current queue. -->
+        <service
+            android:name="com.adlen.sonora.app.widget.PlaybackTileService"
+            android:exported="true"
+            android:icon="@drawable/msp_ic_play"
+            android:label="${appLabel}"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

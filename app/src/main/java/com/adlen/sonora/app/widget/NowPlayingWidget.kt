@@ -32,6 +32,7 @@ class NowPlayingWidget : AppWidgetProvider() {
             ACTION_PREVIOUS -> SongPlayer.previous()
             ACTION_TOGGLE -> if (SongPlayer.isPlaying()) SongPlayer.pause(by = "widget") else SongPlayer.play(by = "widget")
             ACTION_NEXT -> SongPlayer.next()
+            ACTION_SHUFFLE -> SongPlayer.setShuffle(!SongPlayer.isShuffleOn())
             else -> super.onReceive(context, intent)
         }
     }
@@ -40,6 +41,7 @@ class NowPlayingWidget : AppWidgetProvider() {
         private const val ACTION_PREVIOUS = "com.adlen.sonora.widget.PREVIOUS"
         private const val ACTION_TOGGLE = "com.adlen.sonora.widget.TOGGLE"
         private const val ACTION_NEXT = "com.adlen.sonora.widget.NEXT"
+        private const val ACTION_SHUFFLE = "com.adlen.sonora.widget.SHUFFLE"
 
         private data class Shown(val title: String, val artist: String, val coverUrl: String?, val playing: Boolean)
 
@@ -81,6 +83,8 @@ class NowPlayingWidget : AppWidgetProvider() {
                 val bmp = cover.takeIf { coverUrl == s.coverUrl }
                 if (bmp != null) setImageViewBitmap(R.id.widget_cover, bmp) else setImageViewResource(R.id.widget_cover, R.mipmap.ic_launcher)
                 setImageViewResource(R.id.widget_play, if (s.playing) com.adlen.sonora.host.android.R.drawable.msp_ic_pause else com.adlen.sonora.host.android.R.drawable.msp_ic_play)
+                setImageViewResource(R.id.widget_shuffle, if (SongPlayer.isShuffleOn()) com.adlen.sonora.host.android.R.drawable.msp_ic_shuffle_on else com.adlen.sonora.host.android.R.drawable.msp_ic_shuffle)
+                setOnClickPendingIntent(R.id.widget_shuffle, action(context, ACTION_SHUFFLE, 5))
                 setOnClickPendingIntent(R.id.widget_previous, action(context, ACTION_PREVIOUS, 1))
                 setOnClickPendingIntent(R.id.widget_play, action(context, ACTION_TOGGLE, 2))
                 setOnClickPendingIntent(R.id.widget_next, action(context, ACTION_NEXT, 3))

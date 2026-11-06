@@ -246,11 +246,14 @@ action.
 
 ## Phase 9 — Platform
 
-- [ ] Cast a Subsonic `stream` URL (the `cast/` module is Spotify-only today).
-- [ ] Wear OS: media controls + a downloaded subset.
-- [ ] Verify `NowPlayingWidget` in Subsonic mode; add a shuffle-play action.
-- [ ] Quick Settings tile.
-- [ ] Automotive/two-pane polish; TalkBack and font-scale pass.
+- [ ] Cast a Subsonic `stream` URL: needs the Google Cast SDK and a receiver; the existing
+      `cast/` module speaks Spotify's protocol, not Cast. Deferred to its own change.
+- [ ] Wear OS: media controls + a downloaded subset. Needs a new module and dependencies.
+- [x] `NowPlayingWidget` drives `SongPlayer`, so it covers Subsonic streams; it now has a
+      shuffle button that reflects the queue's mode.
+- [x] Quick Settings tile: play/pause, state follows the player.
+- [~] Automotive/two-pane polish: the existing layouts are unchanged; the TalkBack and
+      font-scale pass is still to do.
 
 **Done when:** the phone, tablet, car, watch and Cast all play the same queue.
 
@@ -330,6 +333,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 8 | Bookmarks/shares/scan/now-playing extras, share-link and scan UI, avatar, 6 tests | `feat(subsonic)` |
 | 2026-11-06 | 10 | Encrypted server credentials + migration, logout clears them, HTTP warning | `feat(security)` |
 | 2026-11-06 | 11 | Contract/fault tests, R8 release gate in CI, bug template, review quality gate | `chore(ci)` |
+| 2026-11-06 | 9 | Quick Settings play/pause tile and a widget shuffle action | `feat(platform)` |
 
 ## Decisions and risks
 
