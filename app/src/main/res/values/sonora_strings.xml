@@ -134,7 +134,7 @@
     <string name="about_discord_detail">News, help and ideas: join the community</string>
     <string name="about_github">Source code</string>
     <string name="about_github_detail">Releases, issues and code on GitHub</string>
-    <string name="about_free">Free, open source and without ads. A fork of Sonora, under GPL-3.0.</string>
+    <string name="about_free">Free, open source and without ads. A fork of Myspoti, under GPL-3.0.</string>
     <string name="library_reorder_hint">Hold a playlist, then drag it to move it</string>
     <string name="library_reorder_reset">Back to the server\'s order</string>
     <string name="song_radio_failed">Couldn\'t open this song\'s radio</string>

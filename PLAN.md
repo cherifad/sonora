@@ -350,6 +350,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 3 | Multi-library selector (`getMusicFolders` + `musicFolderId`), both looks | `feat(subsonic)` |
 | 2026-11-06 | 11 | Debug report carries server type/version and OpenSubsonic extensions | `feat(diagnostics)` |
 | 2026-11-06 | 11 | Downloaded-lists file format locked by a JVM test | `test(offline)` |
+| 2026-11-06 | — | About shows the live update row / manual check; fork credit corrected to Myspoti | `fix(about)` |
 
 ## Decisions and risks
 
