@@ -64,6 +64,16 @@ The emulator reaches the test Navidrome on the host at `http://10.0.2.2:4533`
 See [`docs/TESTING.md`](docs/TESTING.md) for the full matrix (tablet, Wear, Android Auto
 via the Desktop Head Unit).
 
+## Quality gate
+
+- A stub must be hidden or raise a typed `Unsupported`; never return an empty list that looks
+  like real data.
+- Every endpoint the app calls needs a contract test in `api-subsonic/src/test` (the fake
+  server is `FakeSubsonic`).
+- CI runs the JVM tests, the debug APKs and the R8 release build (lint-vital included).
+- A bug report needs the server type/version and the debug report; the issue template asks
+  for both.
+
 ## Docs
 
 - [`PLAN.md`](PLAN.md) — the delivery tracker: features, rename, bug control, progress log.

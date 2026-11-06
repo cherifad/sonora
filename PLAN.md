@@ -275,21 +275,27 @@ action.
 
 ## Phase 11 — Bug control (the system)
 
-- [ ] Contract tests in `FakeSubsonic`: paging, auth failure, malformed JSON, missing
-      fields, transcode fallback, timeouts, every endpoint the app calls.
+- [x] Contract tests in `FakeSubsonic`: paging, auth failure, malformed/empty JSON,
+      timeouts, star/unstar ids, playlist create/update/delete, scrobble, play queue.
+      A few read endpoints (`getGenres`, the player's internal calls) are still only
+      exercised through their screens.
 - [ ] Capability-matrix CI: run the smoke suite against Navidrome and Jellyfin+Subfin
-      fixtures (version-pinned), plus Gonic/Airsonic when available.
-- [ ] Typed-error tests: one test per error class.
-- [ ] Performance budget from `docs/audit-2026-10-18.md`: cold start, tap→sound, idle
-      calls/min; nightly script with thresholds.
-- [ ] Fault injection: airplane mode, 500s, slow 3G, expired token, server restart
-      mid-stream, clock skew, self-signed TLS.
+      fixtures (version-pinned), plus Gonic/Airsonic when available. Needs Docker servers
+      and an emulator job; the manual matrix in `docs/TESTING.md` is the current check.
+- [x] Typed-error tests: auth, not-found, HTTP 500, protocol, empty answer, network refusal,
+      timeout, and `Unsupported`.
+- [~] Performance budget from `docs/audit-2026-10-18.md`: `tools/tap_latency.py` and
+      `tools/playback_test.py` measure it; no nightly threshold gate yet.
+- [~] Fault injection: HTTP 500, malformed/empty bodies and a timeout are unit-tested;
+      airplane mode, clock skew and self-signed TLS stay manual.
 - [ ] Migration tests: upgrade from the previous release APK; downloads/queue/settings
       survive.
-- [ ] Opt-in crash/diagnostics with redacted logs + "copy debug report".
-- [ ] Release gates: lint, detekt/ktlint, R8 build, signed APK, screenshot tests.
-- [ ] Issue template asking for server type/version + `ping` + debug log; severity labels.
-- [ ] Rule enforced in review: no stub returns empty data.
+- [~] Opt-in crash/diagnostics: `Logbook`/`BetaLogs` and the debug report exist; no opt-in
+      remote reporter.
+- [x] Release gates: the R8 release build (with lint-vital) now runs in CI; the signed APK
+      stays in the release workflow.
+- [x] Issue template asking for server type/version + `ping` + debug log.
+- [x] Rule enforced in review: no stub returns empty data (see `AGENTS.md`).
 
 **Done when:** CI fails on a contract, error, paging or performance regression, and a bug
 report arrives with the server facts needed to reproduce it.
@@ -323,6 +329,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 7 | Resumable downloads, retry/backoff, download quota, Wi-Fi-only setting, budget test | `feat(offline)` |
 | 2026-11-06 | 8 | Bookmarks/shares/scan/now-playing extras, share-link and scan UI, avatar, 6 tests | `feat(subsonic)` |
 | 2026-11-06 | 10 | Encrypted server credentials + migration, logout clears them, HTTP warning | `feat(security)` |
+| 2026-11-06 | 11 | Contract/fault tests, R8 release gate in CI, bug template, review quality gate | `chore(ci)` |
 
 ## Decisions and risks
 

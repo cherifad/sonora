@@ -4,6 +4,11 @@ package com.adlen.sonora.subsonic
 import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -12,6 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 /** The client's contract with the server: URL shape, token auth, parsing and errors. */
 class SubsonicClientTest {
@@ -233,6 +239,37 @@ class SubsonicClientTest {
         val error = assertThrows(SubsonicException.Server::class.java) { runBlocking { client.call("ping") } }
         assertEquals(500, error.code)
         assertTrue(error.userMessage.contains("internal error"))
+    }
+
+    @Test
+    fun `an empty answer is a protocol error`() {
+        val error = assertThrows(SubsonicException.Protocol::class.java) {
+            runBlocking { testClient { "" }.call("ping") }
+        }
+        assertTrue(error.userMessage.contains("Subsonic"))
+    }
+
+    @Test
+    fun `a server that never answers is a network failure`() {
+        val slow = OkHttpClient.Builder()
+            .callTimeout(50, TimeUnit.MILLISECONDS)
+            .addInterceptor { chain ->
+                Thread.sleep(200)
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(okEnvelope().toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        val client = SubsonicClient(SubsonicConfig("music.example", "me", TEST_PASSWORD), slow)
+
+        val error = assertThrows(SubsonicNetworkException::class.java) {
+            runBlocking { client.call("ping") }
+        }
+        assertTrue(error.userMessage.contains("reach"))
     }
 
     @Test
