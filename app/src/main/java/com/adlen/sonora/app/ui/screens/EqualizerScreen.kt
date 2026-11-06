@@ -36,7 +36,7 @@ import androidx.navigation.NavController
 import com.adlen.sonora.engine.R
 import com.adlen.sonora.app.data.preferences.EqPreset
 import com.adlen.sonora.app.data.preferences.EqualizerPref
-import com.adlen.sonora.app.di.EqBands
+import com.adlen.sonora.audio.EqBands
 import com.adlen.sonora.app.ui.theme.AppAccent
 import com.adlen.sonora.app.ui.theme.AppBackground
 import com.adlen.sonora.app.ui.theme.AppMuted
@@ -96,6 +96,18 @@ fun EqualizerScreen(navController: NavController) {
                 detail = stringResource(R.string.equalizer_skip_silence_detail),
                 checked = pref.skipSilence,
                 onChecked = { pref.setSkipSilence(ctx, it) },
+            )
+            OptionRow(
+                label = stringResource(R.string.equalizer_normalize_volume),
+                detail = stringResource(R.string.equalizer_normalize_volume_detail),
+                checked = pref.normalizeVolume,
+                onChecked = { pref.setNormalizeVolume(ctx, it) },
+            )
+            OptionRow(
+                label = stringResource(R.string.equalizer_replay_gain_album),
+                detail = stringResource(R.string.equalizer_replay_gain_album_detail),
+                checked = pref.replayGainAlbum,
+                onChecked = { pref.setReplayGainAlbum(ctx, it) },
             )
         }
     }

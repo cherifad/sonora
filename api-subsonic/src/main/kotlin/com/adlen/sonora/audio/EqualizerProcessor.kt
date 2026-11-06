@@ -9,7 +9,7 @@
  * path and an exact copy when the curve is flat are added, and the limiter is a small one of
  * our own.
  */
-package com.adlen.sonora.app.di
+package com.adlen.sonora.audio
 
 import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor

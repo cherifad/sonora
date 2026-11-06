@@ -4,9 +4,10 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.adlen.sonora.app.di.EqBands
-import com.adlen.sonora.app.di.EqTuning
-import com.adlen.sonora.app.di.Equalizer
+import com.adlen.sonora.audio.AudioSettings
+import com.adlen.sonora.audio.EqBands
+import com.adlen.sonora.audio.EqTuning
+import com.adlen.sonora.audio.Equalizer
 
 /** The equalizer's ready-made curves: ten band gains and the preamp that keeps them under full scale, in dB. */
 enum class EqPreset(val gains: FloatArray, val preamp: Float) {
@@ -54,12 +55,21 @@ object EqualizerPref {
         private set
     var skipSilence by mutableStateOf(p.getBoolean("skip_silence", false))
         private set
+    var normalizeVolume by mutableStateOf(p.getBoolean("normalize_volume", true))
+        private set
+    var replayGainAlbum by mutableStateOf(p.getBoolean("replay_gain_album", false))
+        private set
 
     /** The gains shown and heard: the preset's, or the user's own. */
     val gains: FloatArray get() = if (preset == EqPreset.CUSTOM) customGains else preset.gains
     val preamp: Float get() = if (preset == EqPreset.CUSTOM) customPreamp else preset.preamp
 
-    init { push() }
+    init {
+        push()
+        AudioSettings.skipSilence = skipSilence
+        AudioSettings.replayGainEnabled = normalizeVolume
+        AudioSettings.replayGainAlbum = replayGainAlbum
+    }
 
     fun setEnabled(c: Context, on: Boolean) {
         enabled = on
@@ -112,7 +122,20 @@ object EqualizerPref {
     fun setSkipSilence(c: Context, on: Boolean) {
         skipSilence = on
         prefs(c).edit().putBoolean("skip_silence", on).apply()
+        AudioSettings.skipSilence = on
         com.adlen.sonora.app.di.LocalPlayer.applyPlayback()
+    }
+
+    fun setNormalizeVolume(c: Context, on: Boolean) {
+        normalizeVolume = on
+        prefs(c).edit().putBoolean("normalize_volume", on).apply()
+        AudioSettings.replayGainEnabled = on
+    }
+
+    fun setReplayGainAlbum(c: Context, on: Boolean) {
+        replayGainAlbum = on
+        prefs(c).edit().putBoolean("replay_gain_album", on).apply()
+        AudioSettings.replayGainAlbum = on
     }
 
     /** Hands the curve to the players' equalizers (read on their audio threads). */

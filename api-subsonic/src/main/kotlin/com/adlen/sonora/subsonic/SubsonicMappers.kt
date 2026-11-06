@@ -9,6 +9,7 @@ import com.adlen.sonora.api.Image
 import com.adlen.sonora.api.MediaCard
 import com.adlen.sonora.api.MediaKind
 import com.adlen.sonora.api.Playlist
+import com.adlen.sonora.api.ReplayGain
 import com.adlen.sonora.api.Track
 import org.json.JSONObject
 
@@ -59,6 +60,14 @@ internal fun SubsonicClient.trackOf(
         playable = true,
         uid = id,
         rating = json.optInt("userRating", 0).takeIf { it > 0 },
+        replayGain = json.optJSONObject("replayGain")?.let { rg ->
+            ReplayGain(
+                trackGainDb = rg.optDouble("trackGain", Double.NaN).takeIf { !it.isNaN() }?.toFloat(),
+                albumGainDb = rg.optDouble("albumGain", Double.NaN).takeIf { !it.isNaN() }?.toFloat(),
+                trackPeak = rg.optDouble("trackPeak", Double.NaN).takeIf { !it.isNaN() }?.toFloat(),
+                albumPeak = rg.optDouble("albumPeak", Double.NaN).takeIf { !it.isNaN() }?.toFloat(),
+            )
+        },
     )
 }
 

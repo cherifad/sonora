@@ -9,6 +9,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.adlen.sonora.audio.AudioSettings
+import com.adlen.sonora.audio.EqualizerProcessor
+import com.adlen.sonora.audio.ReplayGainProcessor
+import com.adlen.sonora.audio.replayGainLinear
 import com.adlen.sonora.api.ItemKind
 import com.adlen.sonora.api.NowPlaying
 import com.adlen.sonora.api.Player
@@ -34,6 +38,25 @@ import kotlinx.coroutines.withContext
  * - Subsonic scrobbling (`nowPlaying` on start, `submission=true` at 50% or 4 min).
  * - Server play-queue persistence (`savePlayQueue` / `getPlayQueue`).
  */
+/** The default renderers with the same audio chain as the local player. */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+private fun subsonicRenderers(
+    context: Context,
+    replayGain: ReplayGainProcessor,
+): androidx.media3.exoplayer.DefaultRenderersFactory =
+    object : androidx.media3.exoplayer.DefaultRenderersFactory(context) {
+        override fun buildAudioSink(
+            context: Context,
+            enableFloatOutput: Boolean,
+            enableAudioTrackPlaybackParams: Boolean,
+        ): androidx.media3.exoplayer.audio.AudioSink =
+            androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                .setAudioProcessors(arrayOf(EqualizerProcessor(), replayGain))
+                .build()
+    }
+
 internal class SubsonicPlayer(
     context: Context,
     private val client: SubsonicClient,
@@ -41,7 +64,9 @@ internal class SubsonicPlayer(
     private val playlists: SubsonicPlaylists,
 ) : Player {
 
-    private val exo = ExoPlayer.Builder(context)
+    private val replayGain = ReplayGainProcessor()
+
+    private val exo = ExoPlayer.Builder(context, subsonicRenderers(context, replayGain))
         .setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
@@ -71,7 +96,12 @@ internal class SubsonicPlayer(
     private var lastSavedAtMs = 0L
 
     init {
+        exo.skipSilenceEnabled = AudioSettings.skipSilence
         exo.addListener(object : Media3Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                applyReplayGain()
+            }
+
             override fun onEvents(player: Media3Player, events: Media3Player.Events) {
                 publish()
                 if (events.containsAny(
@@ -86,11 +116,23 @@ internal class SubsonicPlayer(
         scope.launch {
             while (isActive) {
                 delay(500)
+                if (exo.skipSilenceEnabled != AudioSettings.skipSilence) exo.skipSilenceEnabled = AudioSettings.skipSilence
+                applyReplayGain()
                 publish()
                 checkScrobbleAndPeriodicSave()
             }
         }
         restoreServerQueueIfIdle()
+    }
+
+    /** Track or album gain, capped by the declared peak; 1 when normalization is off. */
+    private fun applyReplayGain() {
+        val track = tracks.getOrNull(exo.currentMediaItemIndex)
+        replayGain.gain = if (AudioSettings.replayGainEnabled) {
+            replayGainLinear(track?.replayGain, AudioSettings.replayGainAlbum)
+        } else {
+            1f
+        }
     }
 
     fun restoreServerQueueIfIdle() {

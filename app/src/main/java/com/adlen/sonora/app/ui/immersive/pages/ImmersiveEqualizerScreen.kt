@@ -23,7 +23,7 @@ import androidx.navigation.NavController
 import com.adlen.sonora.engine.R
 import com.adlen.sonora.app.data.preferences.EqPreset
 import com.adlen.sonora.app.data.preferences.EqualizerPref
-import com.adlen.sonora.app.di.EqBands
+import com.adlen.sonora.audio.EqBands
 import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.app.ui.look.ThinSlider
 import com.adlen.sonora.app.ui.screens.dbText
@@ -92,6 +92,14 @@ fun ImmersiveEqualizerScreen(navController: NavController) {
             row {
                 ImmersiveSwitchRow(stringResource(R.string.equalizer_skip_silence), checked = pref.skipSilence,
                     onChecked = { pref.setSkipSilence(ctx, it) }, detail = stringResource(R.string.equalizer_skip_silence_detail))
+            }
+            row {
+                ImmersiveSwitchRow(stringResource(R.string.equalizer_normalize_volume), checked = pref.normalizeVolume,
+                    onChecked = { pref.setNormalizeVolume(ctx, it) }, detail = stringResource(R.string.equalizer_normalize_volume_detail))
+            }
+            row {
+                ImmersiveSwitchRow(stringResource(R.string.equalizer_replay_gain_album), checked = pref.replayGainAlbum,
+                    onChecked = { pref.setReplayGainAlbum(ctx, it) }, detail = stringResource(R.string.equalizer_replay_gain_album_detail))
             }
         }
     }

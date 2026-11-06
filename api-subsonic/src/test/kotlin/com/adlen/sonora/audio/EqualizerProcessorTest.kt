@@ -1,4 +1,4 @@
-package com.adlen.sonora.app.di
+package com.adlen.sonora.audio
 
 import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor

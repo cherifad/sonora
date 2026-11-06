@@ -90,6 +90,15 @@ class SubsonicBrowseTest {
             JSONObject("""{"id":"s1","title":"A","duration":10,"userRating":4}"""),
         )
         assertEquals(4, track.rating ?: 0)
+
+        val normalized = client.trackOf(
+            JSONObject(
+                """{"id":"s1","title":"A","duration":10,"replayGain":{"trackGain":-6.0,"albumGain":-7.0,"trackPeak":0.9,"albumPeak":0.95}}""",
+            ),
+        )
+        assertEquals(-6f, normalized.replayGain?.trackGainDb ?: 0f, 0.001f)
+        assertEquals(-7f, normalized.replayGain?.albumGainDb ?: 0f, 0.001f)
+        assertEquals(0.9f, normalized.replayGain?.trackPeak ?: 0f, 0.001f)
     }
 
     @Test

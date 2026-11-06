@@ -194,13 +194,16 @@ clear "not supported by this server", never an empty screen.
 
 ## Phase 6 — Playback quality
 
-- [ ] ReplayGain: read OpenSubsonic `replayGain` and apply track/album gain in
-      `SubsonicPlayer`; expose "Normalize volume" in Settings.
-- [ ] Wire `EqualizerProcessor`, skip-silence and crossfade into `SubsonicPlayer` (today
-      they only work for downloads/local files).
+- [x] ReplayGain: `Track.replayGain` maps the OpenSubsonic fields, `ReplayGainProcessor`
+      applies track/album gain capped by the peak in `SubsonicPlayer`, and the Equalizer
+      screen has "Normalize volume" and "Use album gain".
+- [x] `EqualizerProcessor` moved to `api-subsonic` so the Subsonic player uses the same
+      chain as the local player: equalizer, ReplayGain, skip-silence.
+- [ ] Crossfade in `SubsonicPlayer` (the local player's two-player ramp is not shared).
 - [ ] Buffer tuning + pre-cache the next track on Wi-Fi.
 - [ ] Audio offload where the device supports it.
-- [ ] Tests: gain math, processor chain, crossfade ramp.
+- [x] Tests: ReplayGain math (track/album/peak cap), `replayGain` mapping, the moved
+      equalizer tests. A crossfade-ramp test waits for crossfade.
 
 **Done when:** the Equalizer screen changes the sound of a streamed Subsonic track, and a
 mixed-loudness album plays at a steady level.
@@ -303,6 +306,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 4 | Podcast/Jam/Blends stubs raise typed `Unsupported`; entry points stay hidden | `refactor(subsonic)` |
 | 2026-11-06 | 5 | `getSimilarSongs2` radio/autoplay, "For you" and "Recently played" Home shelves, 3 tests | `feat(subsonic)` |
 | 2026-11-06 | 5 | Album/artist seeds for the mix, `similarAlbums` for "More like this", 5 more tests | `feat(subsonic)` |
+| 2026-11-06 | 6 | ReplayGain + equalizer + skip-silence on Subsonic streams, settings rows, gain tests | `feat(subsonic)` |
 
 ## Decisions and risks
 

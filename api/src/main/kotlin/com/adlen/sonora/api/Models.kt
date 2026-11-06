@@ -13,6 +13,14 @@ data class ArtistRef(val uri: Uri, val name: String)
 
 data class AlbumRef(val uri: Uri, val name: String, val images: List<Image> = emptyList())
 
+/** OpenSubsonic `replayGain`: gains in dB and peaks as a linear factor. */
+data class ReplayGain(
+    val trackGainDb: Float? = null,
+    val albumGainDb: Float? = null,
+    val trackPeak: Float? = null,
+    val albumPeak: Float? = null,
+)
+
 data class Track(
     val uri: Uri,
     val name: String,
@@ -29,6 +37,8 @@ data class Track(
     val hasVideo: Boolean = false,
     /** 1..5 when the server exposes a user rating; null when unrated or unsupported. */
     val rating: Int? = null,
+    /** Normalisation data the server carries for this track, when it has any. */
+    val replayGain: ReplayGain? = null,
 )
 
 data class Album(

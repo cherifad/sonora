@@ -1,5 +1,6 @@
 package com.adlen.sonora.app.di
 
+import com.adlen.sonora.audio.EqualizerProcessor
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
