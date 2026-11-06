@@ -21,8 +21,27 @@ le workflow refuse un tag dont le commit n'est pas un ancêtre de `origin/main`.
 | `MYSPOTI_KEY_ALIAS` | alias de la clé |
 | `MYSPOTI_KEY_PASSWORD` | mot de passe de la clé |
 
+Les workflows actuels lisent encore les secrets `MYSPOTI_*` ; le build préfère désormais
+`SONORA_KEYSTORE`, `SONORA_KEYSTORE_PASSWORD`, `SONORA_KEY_ALIAS` et `SONORA_KEY_PASSWORD`
+et retombe sur les `MYSPOTI_*` quand ils manquent. On peut renommer les secrets plus tard
+sans casser les releases.
+
 Sans `MYSPOTI_KEYSTORE_BASE64`, le workflow `Release` se contente d'un avertissement et ne
 construit rien (il ne peut pas signer un build stable sans clé).
+
+## Avant de taguer
+
+La CI construit déjà les APK debug et le build R8 (`assembleMobileRelease`, lint-vital inclus).
+La liste manuelle qui reste :
+
+- [ ] tests JVM verts (`:api-subsonic:testDebugUnitTest`, `:app:testMobileDebugUnitTest`) ;
+- [ ] installation propre : onboarding, accueil, album, lecture, recherche ;
+- [ ] mise à jour par-dessus la release précédente : réglages, file et téléchargements
+      survivent ;
+- [ ] identifiants chiffrés : `shared_prefs/subsonic_secure.xml`, pas de `subsonic.xml` en clair ;
+- [ ] hors ligne : album téléchargé, mode avion, bandeau et lecture depuis le fichier ;
+- [ ] tuile Réglages rapides et widget (lecture/pause, shuffle) ;
+- [ ] serveur HTTP et HTTPS, Jellyfin/Subfin et Navidrome.
 
 ## Couper une release
 

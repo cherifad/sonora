@@ -18,6 +18,15 @@ testée contre Navidrome **0.64.2** (sans ffmpeg) sur `10.0.2.2:4533`.
 | `getPlaylist`, `createPlaylist`, `updatePlaylist`, `deletePlaylist` | playlists | ✅ |
 | `getStarred2`, `star`, `unstar` | favoris | ✅ |
 | `getGenres` | genres | ✅ |
+| `getAlbumList2?type=byGenre`, `getSongsByGenre` | pages genre (albums + titres) | ✅ |
+| `getRandomSongs`, `getSimilarSongs2` | « For you », radio et « More like this » | ✅ |
+| `setRating` | notes 0..5 (`userRating` en lecture) | ✅ |
+| `getOpenSubsonicExtensions` | sonde de capacités (une fois par session) | ✅ |
+| `getBookmarks`, `createBookmark`, `deleteBookmark` | signets | ✅ |
+| `getShares`, `createShare`, `deleteShare` | partages (lien copié depuis la fiche du titre) | ✅ |
+| `getScanStatus`, `startScan` | état du scan et « Scan now » dans Settings | ✅ |
+| `getNowPlaying`, `getAvatar` | now playing du serveur, avatar du compte | ✅ |
+| champ `replayGain` | normalisation (piste ou album, plafonnée par le peak) | ✅ |
 | `getLyricsBySongId`, `getLyrics` | paroles | ✅ OpenSubsonic puis repli |
 | `stream` (+ `format`, `maxBitRate`) | lecture et téléchargements | ✅ |
 | `getCoverArt` | pochettes | ✅ |
@@ -34,8 +43,9 @@ testée contre Navidrome **0.64.2** (sans ffmpeg) sur `10.0.2.2:4533`.
 - **`search3`** : l'app n'envoie que des requêtes simples (pas de syntaxe Lucene).
 - **`getIndexes` / `getMusicDirectory`** : non utilisés (Navidrome ne fait que simuler une
   arborescence).
-- **`getTopSongs` / `getArtistInfo2`** : nécessitent Last.fm ; les appels sont enveloppés dans
-  `runCatching` avec repli (albums de l'artiste, bio vide), donc sans erreur visible.
+- **`getTopSongs` / `getArtistInfo2`** : nécessitent Last.fm ; les appels passent par
+  `callOptional` (un endpoint refusé est mémorisé) et retombent sur les albums de l'artiste /
+  une bio vide, donc sans erreur visible.
 - **Téléchargements** : `stream` avec `format`/`maxBitRate` selon la qualité ; si le serveur ne
   sait pas transcoder (ffmpeg absent), l'app **retombe sur le fichier original** — vérifié sur
   le Navidrome de test.
@@ -44,15 +54,14 @@ testée contre Navidrome **0.64.2** (sans ffmpeg) sur `10.0.2.2:4533`.
 
 ## Écarts connus (non bloquants)
 
-- **Authentification par API key** (extension OpenSubsonic `apiKeyAuthentication`) : non
-  implémentée ; le client utilise le token `u`/`t`/`s`. Un mot de passe d'application suffit.
-- **`getOpenSubsonicExtensions`** : pas de sonde de capacités ; les appels OpenSubsonic sont
-  tentés puis remplacés en cas d'échec.
-- **`setRating`** : les notes ne sont pas exposées (M4, optionnel).
-- **`getScanStatus` / `startScan`** : pas d'écran de scan dans l'app.
-- **`getAvatar`** : les avatars viennent des images d'album/artiste ; l'utilisateur sans image
-  garde ses initiales.
-- **`getMusicFolders`** : non utilisé (tout est fusionné).
+- **Authentification par API key** : implémentée quand le serveur annonce
+  `apiKeyAuthentication` (champ optionnel dans l'écran serveur) ; le token `u`/`t`/`s` reste le
+  défaut.
+- **`getOpenSubsonicExtensions`** : sonde de capacités au démarrage, mise en cache et
+  réinitialisée quand le serveur change.
+- **`getMusicFolders`** : non utilisé (tout est fusionné) ; un sélecteur de bibliothèque
+  reste à faire pour les serveurs multi-dossiers.
+- **Multi-bibliothèques** : pas de sélecteur de « music folder ».
 
 ## Catalogue des clients Navidrome
 

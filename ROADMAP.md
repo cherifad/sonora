@@ -184,6 +184,25 @@ is correct.
 **Done when:** a signed release builds from CI, installs on a clean device, and passes
 the manual matrix (phone/tablet, HTTP/HTTPS, Jellyfin/Navidrome, offline).
 
+## M7 — Subsonic feature completion (current)
+
+The delivery tracker is [`PLAN.md`](PLAN.md); this is the summary.
+
+- [x] Capability probe, typed errors, API-key auth, precise setup errors.
+- [x] Server-side paging for albums and search; 30 s caches for artists, playlists and
+      starred songs.
+- [x] Genre albums/songs, playlist search, ratings.
+- [x] Similar-track radio, “For you” and “Recently played” shelves, “More like this”.
+- [x] ReplayGain, equalizer and skip-silence on streamed Subsonic tracks.
+- [x] Offline 2.0: resumable downloads, retry/backoff, storage quota, Wi-Fi-only.
+- [x] Bookmarks, shares, scan status, now playing, avatar.
+- [x] Quick Settings tile and widget shuffle.
+- [x] Encrypted server credentials, logout cleanup, HTTP warning.
+- [x] Contract/fault tests, R8 release gate in CI, bug-report template.
+- [ ] Cast a Subsonic stream, Wear OS.
+- [ ] Capability-matrix CI, upgrade/migration test, opt-in diagnostics.
+- [ ] Store metadata, source publication, signed release tag.
+
 ## Non-goals
 
 Spotify Connect, Jam, Blends, Spotify Codes, Wrapped, ads/DRM, podcasts/audiobooks

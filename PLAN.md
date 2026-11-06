@@ -307,11 +307,15 @@ report arrives with the server facts needed to reproduce it.
 
 ## Phase 12 — Docs and release
 
-- [ ] Update `ROADMAP.md` (M7) to point here; mark M6 leftovers.
-- [ ] Update `PORTING.md`, `docs/NAVIDROME-COMPAT.md`, `docs/TESTING.md`.
-- [ ] Publish the source (GPL-3.0) and the Navidrome app-catalogue entry.
-- [ ] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs.
-- [ ] Verify the release checklist end to end.
+- [x] Update `ROADMAP.md` (M7) to point here; mark M6 leftovers.
+- [x] Update `PORTING.md`, `docs/NAVIDROME-COMPAT.md`, `docs/TESTING.md`,
+      `docs/RELEASING.md` and the README feature list.
+- [ ] Publish the source (GPL-3.0) and the Navidrome app-catalogue entry. Needs the public
+      repository and store screenshots; not done here.
+- [ ] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs. Belongs to the release
+      flow (`bumpv`/`Release`), not to this work.
+- [~] Verify the release checklist end to end: the list is in `docs/RELEASING.md`; the device
+      pass (clean install, upgrade, offline, tile/widget) is still to do.
 
 ---
 
@@ -334,6 +338,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 10 | Encrypted server credentials + migration, logout clears them, HTTP warning | `feat(security)` |
 | 2026-11-06 | 11 | Contract/fault tests, R8 release gate in CI, bug template, review quality gate | `chore(ci)` |
 | 2026-11-06 | 9 | Quick Settings play/pause tile and a widget shuffle action | `feat(platform)` |
+| 2026-11-06 | 12 | ROADMAP M7, PORTING/compat/testing/releasing docs, README features, release checklist | `docs(release)` |
 
 ## Decisions and risks
 

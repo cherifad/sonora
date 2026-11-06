@@ -13,7 +13,7 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 |---|---|
 | Démarrage sans login Spotify | Oui : `SonoraRuntime.startSubsonic(...)`, le WebView n'est pas démarré |
 | Configuration serveur | Oui : écran natif au premier lancement + dialog depuis Settings / menu profil |
-| Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s` |
+| Authentification | Token Subsonic `u`/`t = md5(password + salt)`/`s`, ou clé API OpenSubsonic (`apiKey`) quand le serveur l'annonce ; identifiants chiffrés (Keystore) |
 | Menu profil | Oui : Settings / Server / About (plus d'entrées Spotify ni de « Log out ») |
 | Settings | Oui : serveur, apparence, à propos ; onglets Downloads/Extensions masqués |
 | Filtres Home | Oui : All / Music seulement (pas de podcasts/audiobooks) |
@@ -22,16 +22,22 @@ backend Spotify a été remplacé par un backend **Subsonic/OpenSubsonic** pour 
 | Sortie audio | Oui : « This phone » local ; plus de liste Connect ni de sonde qualité Spotify |
 | Look | Oui : **Immersive par défaut** (celui du README) ; Classic dans Settings → Display → Look |
 | Home | Oui : quick tiles (playlists/albums + Liked Songs) puis nouveautés, souvent écoutés, playlists |
-| Search | Oui : `search3` (morceaux/albums/artistes) + genres pour « Browse all » |
-| Library | Oui : artistes, albums, playlists |
-| Album | Oui : `getAlbum`, gradient, liste des morceaux |
-| Artist | Partiel : `getArtist`, albums, top morceaux approximatif |
+| Search | Oui : `search3` (morceaux/albums/artistes) + playlists filtrées + genres pour « Browse all » |
+| Library | Oui : artistes, albums, playlists, pagination serveur |
+| Album | Oui : `getAlbum`, gradient, liste des morceaux, « More like this » (`getSimilarSongs2`) |
+| Artist | Oui : `getArtist`, albums, `getTopSongs`, bio/similaires (`getArtistInfo2`) |
+| Genres | Oui : albums (`getAlbumList2?type=byGenre`) et titres (`getSongsByGenre`) |
+| Radio / découverte | Oui : `getSimilarSongs2` pour l'autoplay, « For you » (`getRandomSongs`), récemment écoutés |
+| Notes | Oui : `setRating` (0..5), `userRating` dans `Track` |
+| ReplayGain / EQ | Oui : `replayGain` OpenSubsonic, égaliseur, skip-silence et gain album |
+| Extras serveur | Oui : signets, partages, scan (`getScanStatus`/`startScan`), now playing, avatar |
+| Plateforme | Oui : Android Auto/Automotive, widget (shuffle), tuile Réglages rapides |
 | Lecture & MediaSession | Oui : ExoPlayer (audio focus, noisy, wake lock réseau) + `PlaybackService` (`MediaSession`, notification, écran verrouillé, boutons casque) |
 | Persistance file & Scrobble | Oui : `savePlayQueue` / `getPlayQueue` + `scrobble` (`nowPlaying` et `submission=true` à 50% / 4 min) |
 | Playlists (CRUD) | Oui : lecture, création (`createPlaylist`), renommage/description (`updatePlaylist`), ajout/retrait de titres (`songIdToAdd`/`songIndexToRemove`), suppression (`deletePlaylist`) |
 | Artiste | Oui : `getArtist`, `getTopSongs`, `getArtistInfo2` (biographie, images, artistes similaires) |
 | Paroles | Oui : OpenSubsonic `getLyricsBySongId` (synchronisées ou texte) + fallback `getLyrics` + fallback LRCLIB |
-| Téléchargements / hors ligne | Oui : le serveur sert lui-même le fichier (`stream`, original ou transcodé), file `OfflineDownloader` + WorkManager (notification de progression), fichiers chiffrés ; hors ligne, seuls les titres téléchargés jouent (bandeau + message pour les autres) |
+| Téléchargements / hors ligne | Oui : le serveur sert lui-même le fichier (`stream`, original ou transcodé), file `OfflineDownloader` + WorkManager (notification de progression), fichiers chiffrés, reprise HTTP `Range`, quota (8 Go / 500 Mo libres), Wi-Fi only ; hors ligne, seuls les titres téléchargés jouent (bandeau + message pour les autres) |
 | Stockage | Oui : téléchargements (nombre/taille), cache + vider, espace libre, tout supprimer |
 | Partage | Oui : feuille de partage Android native (`titre — artiste`), sans Spotify Code ni lien `open.spotify.com` |
 | Podcasts, Connect, Jam, Blends, Canvas, Genius, extensions, pubs/DRM | **Désactivés / stubs** |

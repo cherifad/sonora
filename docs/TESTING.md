@@ -264,8 +264,35 @@ points de l'AVD) relie une montre virtuelle à un téléphone virtuel ou réel.
 | | Téléphone | Tablette | Wear | Auto |
 |---|---|---|---|---|
 | Installation + démarrage | ✅ | ✅ | ⚠️ (UI non adaptée) | — |
-| Accueil / Recherche / Bibliothèque | ✅ | à faire (deux panneaux) | — | — |
-| Album / Artiste / Playlists | ✅ | à faire | — | — |
+| Accueil / Recherche / Bibliothèque | ✅ | ✅ (deux panneaux) | — | — |
+| Album / Artiste / Playlists | ✅ | ✅ | — | — |
+| Genres / notes / radio / « More like this » | ✅ | ✅ | — | — |
 | Lecture + notification | ✅ | ✅ | ⚠️ | ✅ (média) |
-| Téléchargements / hors ligne | ✅ | ✅ | — | — |
+| ReplayGain / égaliseur / skip-silence | ✅ | ✅ | — | — |
+| Téléchargements / hors ligne / reprise | ✅ | ✅ | — | — |
+| Tuile Réglages rapides / widget | ✅ | ✅ | — | — |
+| Identifiants chiffrés (Keystore) | ✅ | ✅ | — | — |
 | Serveur HTTP / HTTPS, Jellyfin / Navidrome | ✅ | ✅ | — | — |
+
+## Portes de CI
+
+`.github/workflows/ci.yml` exécute à chaque push/PR :
+
+1. `:api-subsonic:testDebugUnitTest` et `:app:testMobileDebugUnitTest` (75 tests backend au
+   moment de l'écriture, plus les tests unitaires de l'app) ;
+2. `:app:assembleMobileDebug` et `:app:assembleAutomotiveDebug` ;
+3. `:app:assembleMobileRelease` — R8, réduction des ressources et lint-vital.
+
+Le workflow `Release` signe les APK stables depuis un tag `vX.Y.Z` sur `main`.
+
+## Vérifications manuelles des surfaces plateforme
+
+- **Tuile Réglages rapides** : ajouter la tuile Sonora, lecture/pause, l'état suit le lecteur.
+- **Widget** : ajouter le widget 4x1, vérifier pochette/titre/artiste, précédent/lecture/suivant
+  et le bouton shuffle.
+- **Identifiants chiffrés** : après configuration,
+  `adb shell run-as com.adlen.sonora.dev ls shared_prefs` doit montrer `subsonic_secure.xml`
+  et aucun `subsonic.xml` en clair.
+- **Mise à jour** : installer la release précédente, configurer le serveur et télécharger un
+  album, puis installer le nouvel APK par-dessus ; réglages, file et téléchargements doivent
+  survivre.
