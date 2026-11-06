@@ -282,9 +282,9 @@ action.
       timeouts, star/unstar ids, playlist create/update/delete, scrobble, play queue.
       A few read endpoints (`getGenres`, the player's internal calls) are still only
       exercised through their screens.
-- [ ] Capability-matrix CI: run the smoke suite against Navidrome and Jellyfin+Subfin
-      fixtures (version-pinned), plus Gonic/Airsonic when available. Needs Docker servers
-      and an emulator job; the manual matrix in `docs/TESTING.md` is the current check.
+- [~] Capability-matrix CI: `tools/server_contract.py` checks the required endpoints and
+      reports OpenSubsonic extensions against any live server; the Docker Navidrome/Jellyfin
+      job and the emulator run are still manual.
 - [x] Typed-error tests: auth, not-found, HTTP 500, protocol, empty answer, network refusal,
       timeout, and `Unsupported`.
 - [~] Performance budget from `docs/audit-2026-10-18.md`: `tools/tap_latency.py` and
@@ -339,6 +339,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 11 | Contract/fault tests, R8 release gate in CI, bug template, review quality gate | `chore(ci)` |
 | 2026-11-06 | 9 | Quick Settings play/pause tile and a widget shuffle action | `feat(platform)` |
 | 2026-11-06 | 12 | ROADMAP M7, PORTING/compat/testing/releasing docs, README features, release checklist | `docs(release)` |
+| 2026-11-06 | 11 | `tools/server_contract.py`: live-server endpoint/capability probe | `test(tools)` |
 
 ## Decisions and risks
 
