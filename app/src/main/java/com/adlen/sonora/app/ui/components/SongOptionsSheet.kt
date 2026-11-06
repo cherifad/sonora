@@ -55,9 +55,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -142,6 +144,18 @@ fun SongOptionsSheet(
         return
     }
     val hasId = song.spotifyTrackId.isNotBlank()
+    val ratingSupported = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+        ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.RATINGS) == true
+    var rating by remember(song.spotifyTrackId) { mutableStateOf<Int?>(null) }
+    val ratingScope = rememberCoroutineScope()
+    LaunchedEffect(song.spotifyTrackId, ratingSupported) {
+        if (ratingSupported && song.spotifyTrackId.isNotBlank()) {
+            rating = runCatching {
+                com.adlen.sonora.host.android.SonoraRuntime.api.catalog
+                    .track("spotify:track:${song.spotifyTrackId}").rating
+            }.getOrNull()
+        }
+    }
     // An episode is keyed by its url ("episode:<id>") and has no track id: the Download row
     // (and only it) follows that key, everything else in this menu stays on the track id.
     val episodeKey = com.adlen.sonora.app.data.offline.episodeKeyOf(song)
@@ -183,6 +197,17 @@ fun SongOptionsSheet(
                 SongPlayer.setTrackSaved(song.spotifyTrackId, !liked)
                 toast(context.getString(if (liked) R.string.snackbar_removed_from_liked_songs else R.string.snackbar_added_to_liked_songs))
                 onDismiss()
+            }
+            if (ratingSupported && hasId) {
+                TrackRatingRow(rating) { value ->
+                    rating = value
+                    ratingScope.launch {
+                        runCatching {
+                            com.adlen.sonora.host.android.SonoraRuntime.api.extras
+                                .setRating("spotify:track:${song.spotifyTrackId}", value)
+                        }
+                    }
+                }
             }
             MenuRow(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.context_menu_add_to_playlist), enabled = hasId) { showSavedIn = true }
             // Copy into another playlist: one tap, one target, said out loud by the toast.

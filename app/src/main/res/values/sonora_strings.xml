@@ -680,4 +680,6 @@
     <string name="settings_storage_cache_clear">Clear cache</string>
     <string name="settings_storage_cache_cleared">Cache cleared</string>
     <string name="settings_storage_free_title">Free space</string>
+    <string name="rating_title">Rating</string>
+    <string name="rating_star">%1$d stars</string>
 </resources>

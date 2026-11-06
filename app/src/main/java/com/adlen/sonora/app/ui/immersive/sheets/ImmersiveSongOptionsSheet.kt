@@ -34,11 +34,13 @@ import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.ThumbDownOffAlt
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +57,7 @@ import com.adlen.sonora.app.ui.components.CreditsSheet
 import com.adlen.sonora.app.ui.components.DownloadBadge
 import com.adlen.sonora.app.ui.components.SavedInSheet
 import com.adlen.sonora.app.ui.components.ShareCard
+import com.adlen.sonora.app.ui.components.TrackRatingRow
 import com.adlen.sonora.app.ui.immersive.sheets.ImmersiveSleepTimerSheet as SleepTimerSheet
 import com.adlen.sonora.app.ui.components.SpeedSheet
 import com.adlen.sonora.app.ui.immersive.Immersive
@@ -111,6 +114,18 @@ fun ImmersiveSongOptionsSheet(
     if (showSleep) { SleepTimerSheet(onDismiss = { showSleep = false; onDismiss() }); return }
 
     val hasId = song.spotifyTrackId.isNotBlank()
+    val ratingSupported = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+        ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.RATINGS) == true
+    var rating by remember(song.spotifyTrackId) { mutableStateOf<Int?>(null) }
+    val ratingScope = rememberCoroutineScope()
+    LaunchedEffect(song.spotifyTrackId, ratingSupported) {
+        if (ratingSupported && song.spotifyTrackId.isNotBlank()) {
+            rating = runCatching {
+                com.adlen.sonora.host.android.SonoraRuntime.api.catalog
+                    .track("spotify:track:${song.spotifyTrackId}").rating
+            }.getOrNull()
+        }
+    }
     val episodeKey = com.adlen.sonora.app.data.offline.episodeKeyOf(song)
     val downloadKey = episodeKey ?: song.spotifyTrackId
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -128,6 +143,17 @@ fun ImmersiveSongOptionsSheet(
             SongPlayer.setTrackSaved(song.spotifyTrackId, !liked)
             toast(context.getString(if (liked) R.string.snackbar_removed_from_liked_songs else R.string.snackbar_added_to_liked_songs))
             onDismiss()
+        }
+        if (ratingSupported && hasId) {
+            TrackRatingRow(rating) { value ->
+                rating = value
+                ratingScope.launch {
+                    runCatching {
+                        com.adlen.sonora.host.android.SonoraRuntime.api.extras
+                            .setRating("spotify:track:${song.spotifyTrackId}", value)
+                    }
+                }
+            }
         }
         ImmersiveSheetRow(Icons.AutoMirrored.Rounded.PlaylistAdd, stringResource(R.string.context_menu_add_to_playlist), enabled = hasId) { showSavedIn = true }
         ImmersiveSheetRow(Icons.AutoMirrored.Rounded.PlaylistAdd, stringResource(R.string.context_menu_add_to_another_playlist), enabled = hasId) { showAddTo = true }

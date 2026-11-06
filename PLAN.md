@@ -163,9 +163,9 @@ TOFU TLS is the one remaining item.
       `SubsonicHome.category`; the existing category screens now get Albums and Songs shelves.
 - [x] Playlist search: `SubsonicSearch.playlists` filters the server's list; the Playlists
       tab and `all()` are no longer empty.
-- [~] Ratings: `setRating` is wired behind `ServerCapabilities.RATINGS`, `Track.rating` reads
-      `userRating`, and the client clamps 0..5. The 1–5 star control in the song sheet is the
-      remaining UI step.
+- [x] Ratings: `setRating` is wired behind `ServerCapabilities.RATINGS`, `Track.rating` reads
+      `userRating`, the client clamps 0..5, and both song sheets show a 1–5 star row (tap the
+      current value to clear it).
 - [ ] Make every remaining stub return `Unsupported` and hide its entry point (podcasts,
       Connect, Jam, Blends, friends, history).
 - [x] Tests: genre albums/songs, playlist search, rating round-trip, Jellyfin rating skip.
@@ -294,7 +294,8 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 1 | Packages, classes, resources, manifests, tools and tests renamed to Sonora; prefs migration added; attribution kept in docs and license headers | `refactor(rename)!` |
 | 2026-11-06 | 2 | Typed Subsonic failures, cached capability probe, precise setup errors, optional-call cache, API-key auth; 8 new contract tests | `feat(subsonic)` |
 | 2026-11-06 | 3 | Server-side album/search paging, 30 s caches for artists/playlists/starred/playlist tracks, 5 paging tests | `fix(subsonic)` |
-| 2026-11-06 | 4 | Genre albums/songs, playlist search, rating backend + `Track.rating`, 5 browse tests; star control still to do | `feat(subsonic)` |
+| 2026-11-06 | 4 | Genre albums/songs, playlist search, rating backend + `Track.rating`, 5 browse tests | `feat(subsonic)` |
+| 2026-11-06 | 4 | 1–5 star row in the Classic and Immersive song sheets, capability-gated | `feat(ui)` |
 
 ## Decisions and risks
 
