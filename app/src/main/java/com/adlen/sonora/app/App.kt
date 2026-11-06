@@ -56,7 +56,6 @@ fun App() {
     LaunchedEffect(Unit) { com.adlen.sonora.app.ui.components.DownloadAsk.openRoute.collect { r -> runCatching { navController.navigateSingleTop(r) } } }
 
     UpdatePrompt()
-    SupportPrompt()
     // The playlists at the top of the library, fetched ahead on Wi-Fi (see PagePrefetch).
     LaunchedEffect(Unit) { com.adlen.sonora.app.data.api.PagePrefetch.start() }
 
@@ -172,115 +171,11 @@ private fun ImmersiveShell(navController: androidx.navigation.NavHostController)
     }
 }
 
-/** The update card is on screen: the donation reminder waits for another launch. */
-private val updateCardOpen = mutableStateOf(false)
-
 /**
  * The release the update card shows. The launch check fills it; so does the manual check in
  * Settings, which is why it is not private to [UpdatePrompt].
  */
 internal val updateRelease = mutableStateOf<com.adlen.sonora.app.data.api.UpdateChecker.Release?>(null)
-
-/**
- * The donation reminder (see SupportReminder): a card a few seconds after launch, only
- * when due, signed in, and no update card is open. "No thanks" closes it for 2 weeks.
- */
-@Composable
-private fun SupportPrompt() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var show by androidx.compose.runtime.remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(12_000)
-        val signedIn = context.getSharedPreferences("sonora_prefs", android.content.Context.MODE_PRIVATE).getBoolean("LoggedIn", false)
-        show = signedIn && !updateCardOpen.value && com.adlen.sonora.app.data.api.SupportReminder.isDue(context)
-    }
-    if (!show) return
-    val close = { com.adlen.sonora.app.data.api.SupportReminder.shown(context); show = false }
-    SupportDialog(
-        supporter = com.adlen.sonora.app.data.api.SupportReminder.level != com.adlen.sonora.app.data.api.SupportReminder.Level.NONE,
-        onSupport = { close(); com.adlen.sonora.app.data.api.SupportReminder.open(context) },
-        onSponsor = { close(); com.adlen.sonora.app.data.api.SupportReminder.openSponsors(context) },
-        onDecline = close,
-        onSupported = { level -> com.adlen.sonora.app.data.api.SupportReminder.setLevel(context, level); close() },
-    )
-}
-
-/**
- * The reminder card: a request, or a thank-you for someone who already gave. "I've
- * supported" (on trust) asks once or monthly, and unlocks the supporter thank-yous.
- */
-@Composable
-private fun SupportDialog(supporter: Boolean, onSupport: () -> Unit, onSponsor: () -> Unit, onDecline: () -> Unit, onSupported: (com.adlen.sonora.app.data.api.SupportReminder.Level) -> Unit) {
-    // The owner's reminder: no extension draws, listens or acts over it.
-    com.adlen.sonora.app.extensions.ProtectedSurfaceEffect(com.adlen.sonora.extensions.ProtectedSurface.SUPPORT)
-    var choosing by androidx.compose.runtime.remember { mutableStateOf(false) }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDecline) {
-        androidx.compose.foundation.layout.Column(
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                .background(tone(0xFF242424))
-                .padding(horizontal = 24.dp, vertical = 28.dp),
-        ) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(com.adlen.sonora.engine.R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                modifier = Modifier.size(72.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
-                    .background(tone(0xFF181818)),
-            )
-            androidx.compose.material3.Text(
-                androidx.compose.ui.res.stringResource(if (supporter) com.adlen.sonora.engine.R.string.supporter_thanks_title else com.adlen.sonora.engine.R.string.support_title),
-                color = AppText, fontFamily = com.adlen.sonora.app.ui.theme.AppSans,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 20.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 18.dp),
-            )
-            androidx.compose.material3.Text(
-                androidx.compose.ui.res.stringResource(if (supporter) com.adlen.sonora.engine.R.string.supporter_thanks_body else com.adlen.sonora.engine.R.string.support_body),
-                color = AppText.copy(alpha = 0.8f),
-                fontFamily = com.adlen.sonora.app.ui.theme.AppSans, fontSize = 14.sp, lineHeight = 20.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 12.dp),
-            )
-            androidx.compose.foundation.layout.Box(
-                contentAlignment = androidx.compose.ui.Alignment.Center,
-                modifier = Modifier
-                    .padding(top = 24.dp)
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .pressable(0.96f, onClick = onSupport)
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                    .background(com.adlen.sonora.app.ui.theme.AppAccent),
-            ) {
-                androidx.compose.material3.Text(
-                    androidx.compose.ui.res.stringResource(if (supporter) com.adlen.sonora.engine.R.string.support_again else com.adlen.sonora.engine.R.string.support_action),
-                    color = androidx.compose.ui.graphics.Color.Black, fontFamily = com.adlen.sonora.app.ui.theme.AppSans,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 16.sp,
-                )
-            }
-            com.adlen.sonora.app.ui.components.GitHubSponsorButton(Modifier.padding(top = 10.dp), onClick = onSponsor)
-            androidx.compose.material3.Text(
-                androidx.compose.ui.res.stringResource(com.adlen.sonora.engine.R.string.support_decline),
-                color = AppText, fontFamily = com.adlen.sonora.app.ui.theme.AppSans,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 15.sp,
-                modifier = Modifier.padding(top = 8.dp).pressable(0.96f, onClick = onDecline).padding(horizontal = 24.dp, vertical = 12.dp),
-            )
-            if (!supporter && com.adlen.sonora.app.data.api.SupportReminder.PERKS_ENABLED) {
-                if (choosing) androidx.compose.foundation.layout.Column(
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(top = 8.dp),
-                ) { com.adlen.sonora.app.ui.components.SupportChoice(onChosen = onSupported) }
-                else androidx.compose.material3.Text(
-                    androidx.compose.ui.res.stringResource(com.adlen.sonora.engine.R.string.supporter_i_supported),
-                    color = AppText.copy(alpha = 0.6f), fontFamily = com.adlen.sonora.app.ui.theme.AppSans,
-                    fontSize = 13.sp,
-                    modifier = Modifier.pressable(0.96f) { choosing = true }.padding(horizontal = 24.dp, vertical = 8.dp),
-                )
-            }
-        }
-    }
-}
 
 /**
  * "New version" dialog: checked at launch and on every return to the app (off the UI thread), shown as soon as the answer is
@@ -305,7 +200,6 @@ private fun UpdatePrompt() {
             }
         }
     }
-    updateCardOpen.value = release != null
     val r = release ?: return
     com.adlen.sonora.app.extensions.ProtectedSurfaceEffect(com.adlen.sonora.extensions.ProtectedSurface.UPDATE)
     val scope = androidx.compose.runtime.rememberCoroutineScope()

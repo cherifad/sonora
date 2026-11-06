@@ -104,34 +104,13 @@
     <string name="playlist_change_refused">Spotify refused the change to this playlist</string>
     <string name="download_kept_by_list">Still downloaded: a downloaded playlist holds it</string>
     <string name="download_kept_by_named">Still downloaded: “%1$s” is downloaded and holds it</string>
-    <string name="support_title">Support Sonora</string>
-    <string name="support_body">Sonora is free, without ads, and made in my spare time. If you enjoy it, a small donation helps keep it going.</string>
-    <string name="support_action">Support on Ko-fi</string>
-    <string name="support_decline">No thanks</string>
-    <string name="support_row_detail">A small donation on Ko-fi or GitHub Sponsors helps keep the app going</string>
-    <string name="supporter_perks_title">Supporter perks</string>
-    <string name="supporter_perks_detail">Accent colour, app icon and a badge, to say thanks</string>
-    <string name="supporter_perks_locked">Unlocked by supporting Sonora. It\'s on your word: nothing is checked.</string>
-    <string name="supporter_i_supported">I\'ve supported Sonora</string>
-    <string name="supporter_how">How did you support it?</string>
-    <string name="supporter_once">A donation</string>
-    <string name="supporter_monthly">Every month</string>
-    <string name="supporter_badge">Supporter</string>
-    <string name="supporter_thanks_title">Thank you for your support!</string>
-    <string name="supporter_thanks_body">If Sonora still serves you well, a new small donation helps keep it going.</string>
-    <string name="support_again">Support again</string>
     <string name="supporter_accent">Accent colour</string>
-    <string name="supporter_icon">App icon</string>
-    <string name="supporter_icon_note">When the icon changes, its home-screen shortcut may go away: the app stays in your app list.</string>
-    <string name="supporter_monthly_switch">I support every month (no more reminders)</string>
     <string name="color_green">Green</string>
     <string name="color_blue">Blue</string>
     <string name="color_purple">Purple</string>
     <string name="color_pink">Pink</string>
     <string name="color_orange">Orange</string>
     <string name="about_detail">Version, Discord community, source code</string>
-    <string name="about_discord">Discord</string>
-    <string name="about_discord_detail">News, help and ideas: join the community</string>
     <string name="about_github">Source code</string>
     <string name="about_github_detail">Releases, issues and code on GitHub</string>
     <string name="about_free">Free, open source and without ads. A fork of Myspoti, under GPL-3.0.</string>
@@ -412,7 +391,6 @@
     <string name="settings_rotation_portrait">Portrait</string>
     <string name="settings_rotation_auto">Automatic</string>
     <string name="settings_rotation_landscape">Landscape</string>
-    <string name="support_github_action">Sponsor on GitHub</string>
     <string name="download_on_mobile_data">Downloading on mobile data: it uses your data plan</string>
 
     <!-- Podcast show page, episode page and podcast player -->

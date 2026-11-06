@@ -104,34 +104,13 @@
     <string name="playlist_change_refused">Spotify a refusé la modification de cette playlist</string>
     <string name="download_kept_by_list">Reste téléchargé : une playlist téléchargée le contient</string>
     <string name="download_kept_by_named">Reste téléchargé : « %1$s » est téléchargé et le contient</string>
-    <string name="support_title">Soutenir Sonora</string>
-    <string name="support_body">Sonora est gratuit, sans publicité, et développé sur mon temps libre. Si vous l\'appréciez, un petit don aide à le faire avancer.</string>
-    <string name="support_action">Soutenir sur Ko-fi</string>
-    <string name="support_decline">Non merci</string>
-    <string name="support_row_detail">Un petit don sur Ko-fi ou GitHub Sponsors aide l\'app à avancer</string>
-    <string name="supporter_perks_title">Avantages Soutien</string>
-    <string name="supporter_perks_detail">Couleur d\'accent, icône de l\'app et badge, pour dire merci</string>
-    <string name="supporter_perks_locked">Débloqués en soutenant Sonora. C\'est sur l\'honneur : rien n\'est vérifié.</string>
-    <string name="supporter_i_supported">J\'ai soutenu Sonora</string>
-    <string name="supporter_how">Comment avez-vous soutenu ?</string>
-    <string name="supporter_once">Un don</string>
-    <string name="supporter_monthly">Chaque mois</string>
-    <string name="supporter_badge">Soutien</string>
-    <string name="supporter_thanks_title">Merci pour votre soutien !</string>
-    <string name="supporter_thanks_body">Si Sonora vous sert toujours, un nouveau petit don aide à continuer.</string>
-    <string name="support_again">Soutenir à nouveau</string>
     <string name="supporter_accent">Couleur d\'accent</string>
-    <string name="supporter_icon">Icône de l\'app</string>
-    <string name="supporter_icon_note">Au changement d\'icône, le raccourci de l\'écran d\'accueil peut disparaître : l\'app reste dans la liste des applications.</string>
-    <string name="supporter_monthly_switch">Je soutiens chaque mois (plus de rappels)</string>
     <string name="color_green">Vert</string>
     <string name="color_blue">Bleu</string>
     <string name="color_purple">Violet</string>
     <string name="color_pink">Rose</string>
     <string name="color_orange">Orange</string>
     <string name="about_detail">Version, communauté Discord, code source</string>
-    <string name="about_discord">Discord</string>
-    <string name="about_discord_detail">Nouveautés, aide et idées : rejoignez la communauté</string>
     <string name="about_github">Code source</string>
     <string name="about_github_detail">Versions, signalements et code sur GitHub</string>
     <string name="about_free">Gratuit, open source et sans publicité. Un fork de Sonora, sous GPL-3.0.</string>
@@ -406,7 +385,6 @@
     <string name="settings_rotation_portrait">Portrait</string>
     <string name="settings_rotation_auto">Automatique</string>
     <string name="settings_rotation_landscape">Paysage</string>
-    <string name="support_github_action">Sponsor sur GitHub</string>
     <string name="download_on_mobile_data">Téléchargement en données mobiles : il utilise votre forfait</string>
 
     <!-- Page émission, page épisode et lecteur de podcast -->
