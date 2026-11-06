@@ -178,10 +178,13 @@ clear "not supported by this server", never an empty screen.
 
 ## Phase 5 — Discovery
 
-- [ ] Instant mix from a track, album and artist (`getSimilarSongs2`, `getRandomSongs`).
-- [ ] "For you" shelf on Home from `recent` / `frequent` / `random`.
-- [ ] "More like this" on the player and album page.
-- [ ] "Most played" and "Recently played" shelves.
+- [~] Instant mix from a track, album and artist: `TrackExtras.similarTracks` uses
+      `getSimilarSongs2` and feeds autoplay/radio for a track seed. Album/artist seeds and the
+      radio playlist id are still open.
+- [x] "For you" shelf on Home from `getRandomSongs`; "Recently played" from
+      `getAlbumList2?type=recent`; "Frequently played" already covered most played.
+- [ ] "More like this" on the player and album page (`similarAlbums` still empty).
+- [x] Tests: similar tracks, Jellyfin skips the call, random songs map.
 - [ ] Tests: mix never repeats the seed, empty server returns an empty shelf cleanly.
 
 **Done when:** a user can start radio from any song and get a sensible queue.
@@ -297,6 +300,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 4 | Genre albums/songs, playlist search, rating backend + `Track.rating`, 5 browse tests | `feat(subsonic)` |
 | 2026-11-06 | 4 | 1–5 star row in the Classic and Immersive song sheets, capability-gated | `feat(ui)` |
 | 2026-11-06 | 4 | Podcast/Jam/Blends stubs raise typed `Unsupported`; entry points stay hidden | `refactor(subsonic)` |
+| 2026-11-06 | 5 | `getSimilarSongs2` radio/autoplay, "For you" and "Recently played" Home shelves, 3 tests | `feat(subsonic)` |
 
 ## Decisions and risks
 

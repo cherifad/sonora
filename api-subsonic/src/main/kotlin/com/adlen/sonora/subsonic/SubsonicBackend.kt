@@ -74,6 +74,8 @@ internal class SubsonicHome(
     override suspend fun feed(filter: HomeFilter, itemsPerShelf: Int): HomeFeed {
         val newest = client.albums("newest", itemsPerShelf)
         val frequent = client.albums("frequent", itemsPerShelf)
+        val recent = client.albums("recent", itemsPerShelf)
+        val random = client.randomSongs(itemsPerShelf)
         val playlists = client.playlists()
         val shelves = buildList {
             // Untitled lead shelf: the Sonora 2-column shortcut grid. The UI prepends
@@ -82,8 +84,12 @@ internal class SubsonicHome(
                 .distinctBy { it.uri }
                 .take(6)
             if (shortcuts.isNotEmpty()) add(Shelf(null, null, shortcuts, shortcuts.size))
+            val forYou = random.map { it.toCard() }
+            if (forYou.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_for_you), forYou, forYou.size))
             val newItems = newest.map { it.toCard() }
             if (newItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_new_releases), newItems, newItems.size))
+            val recentItems = recent.map { it.toCard() }
+            if (recentItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_recently_played), recentItems, recentItems.size))
             val frequentItems = frequent.map { it.toCard() }
             if (frequentItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_frequently_played), frequentItems, frequentItems.size))
             val playlistItems = playlists.map { it.toCard() }
@@ -725,6 +731,17 @@ internal class SubsonicExtras(
         client.call("setRating", mapOf("id" to id, "rating" to rating.coerceIn(0, 5).toString()))
     }
 
+    override suspend fun similarTracks(seedUri: Uri, limit: Int): List<Track> {
+        if (capabilities()?.supports(ServerCapabilities.Feature.SIMILAR_SONGS) == false) return emptyList()
+        val id = seedUri.substringAfterLast(':').substringBefore('|')
+        if (id.isBlank()) return emptyList()
+        val root = client.callOptional(
+            "getSimilarSongs2",
+            mapOf("id" to id, "count" to limit.coerceIn(1, 100).toString()),
+        ) ?: return emptyList()
+        return root.optJSONObject("similarSongs2")?.array("song").orEmpty().map { client.trackOf(it) }
+    }
+
     override suspend fun canvas(trackUri: Uri): Canvas? = null
     override suspend fun credits(trackUri: Uri): Credits = Credits(emptyList())
     override suspend fun radio(seedUri: Uri): Uri? = null
@@ -800,6 +817,11 @@ internal suspend fun SubsonicClient.genreSongs(genre: String, size: Int): List<T
     val root = callOptional("getSongsByGenre", mapOf("genre" to genre, "count" to size.toString()))
         ?: return emptyList()
     return root.optJSONObject("songsByGenre")?.array("song").orEmpty().map { trackOf(it) }
+}
+
+internal suspend fun SubsonicClient.randomSongs(size: Int): List<Track> {
+    val root = callOptional("getRandomSongs", mapOf("size" to size.toString())) ?: return emptyList()
+    return root.optJSONObject("randomSongs")?.array("song").orEmpty().map { trackOf(it) }
 }
 
 private suspend fun SubsonicClient.albums(type: String, size: Int, offset: Int = 0): List<Album> {

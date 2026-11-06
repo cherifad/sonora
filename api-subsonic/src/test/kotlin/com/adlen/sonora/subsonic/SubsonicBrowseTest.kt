@@ -6,6 +6,7 @@ import okhttp3.HttpUrl
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Browse: a genre page and the playlists tab of search. */
@@ -100,6 +101,46 @@ class SubsonicBrowseTest {
             .setRating("spotify:track:s1", 5)
 
         assertEquals(0, calls)
+    }
+
+    @Test
+    fun `similar tracks come from getSimilarSongs2`() = runBlocking {
+        var url: HttpUrl? = null
+        val client = testClient { u ->
+            url = u
+            okEnvelope("\"similarSongs2\":{\"song\":[{\"id\":\"s2\",\"title\":\"Like it\",\"duration\":10,\"artist\":\"A\"}]}")
+        }
+
+        val tracks = SubsonicExtras(client).similarTracks("spotify:track:s1", 20)
+
+        assertEquals("s1", url?.queryParameter("id"))
+        assertEquals("20", url?.queryParameter("count"))
+        assertEquals("spotify:track:s2", tracks.single().uri)
+    }
+
+    @Test
+    fun `a Jellyfin bridge is not asked for similar songs`() = runBlocking {
+        var calls = 0
+        val client = testClient { calls++; okEnvelope() }
+
+        val tracks = SubsonicExtras(client) { ServerCapabilities(type = "jellyfin") }
+            .similarTracks("spotify:track:s1", 20)
+
+        assertTrue(tracks.isEmpty())
+        assertEquals(0, calls)
+    }
+
+    @Test
+    fun `random songs are read from getRandomSongs`() = runBlocking {
+        val client = testClient { url ->
+            if (url.encodedPath.endsWith("/getRandomSongs.view")) {
+                okEnvelope("\"randomSongs\":{\"song\":[{\"id\":\"r1\",\"title\":\"Random\",\"duration\":10,\"artist\":\"A\"}]}")
+            } else {
+                okEnvelope()
+            }
+        }
+
+        assertEquals("spotify:track:r1", client.randomSongs(20).single().uri)
     }
 
     @Test

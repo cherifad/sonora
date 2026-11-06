@@ -278,6 +278,8 @@ interface TrackExtras {
     suspend fun radio(seedUri: Uri): Uri?
     /** 0 clears, 1..5 sets. A server without ratings ignores it. */
     suspend fun setRating(trackUri: Uri, rating: Int) = Unit
+    /** Tracks similar to the seed, for radio and autoplay. Empty when the backend has none. */
+    suspend fun similarTracks(seedUri: Uri, limit: Int = 50): List<Track> = emptyList()
     /** Hide this track from recommendations, or show it again. */
     suspend fun setExcludedFromTaste(trackUri: Uri, excluded: Boolean)
     suspend fun isExcludedFromTaste(trackUris: List<Uri>): List<Boolean>

@@ -616,6 +616,10 @@ class Api constructor(
     suspend fun getRecommendations(seedTrackIds: List<String>): List<SongsModel> {
         val seed = seedTrackIds.lastOrNull { it.isNotBlank() } ?: return emptyList()
         if (!ready()) return emptyList()
+        // A server that knows similar tracks answers directly; Spotify falls back to its radio.
+        val similar = runCatching { api.extras.similarTracks("spotify:track:$seed", 50) }
+            .getOrDefault(emptyList())
+        if (similar.isNotEmpty()) return similar.map(::songOf).filter { it.spotifyTrackId != seed }
         val radio = runCatching { api.extras.radio("spotify:track:$seed") }.getOrNull() ?: return emptyList()
         return runCatching { api.playlists.tracks(radio, 0, 50).items.map(::songOf).filter { it.spotifyTrackId != seed } }.getOrDefault(emptyList())
     }
