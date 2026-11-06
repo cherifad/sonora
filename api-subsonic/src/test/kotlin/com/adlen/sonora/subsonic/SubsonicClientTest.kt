@@ -32,7 +32,7 @@ class SubsonicClientTest {
         assertEquals("me", seen.queryParameter("u"))
         assertNull("the password must never travel", seen.queryParameter("p"))
         assertEquals("1.16.1", seen.queryParameter("v"))
-        assertEquals("JellyfinAudio", seen.queryParameter("c"))
+        assertEquals("Sonora", seen.queryParameter("c"))
         assertEquals("json", seen.queryParameter("f"))
         val salt = requireNotNull(seen.queryParameter("s"))
         assertEquals(md5(TEST_PASSWORD + salt), seen.queryParameter("t"))
@@ -139,6 +139,131 @@ class SubsonicClientTest {
         assertEquals("/rest/getCoverArt.view", url.encodedPath)
         assertEquals("al-17", url.queryParameter("id"))
         assertEquals("600", url.queryParameter("size"))
+    }
+
+    @Test
+    fun `the capability probe reads the server identity and its extensions`() = runBlocking {
+        val client = testClient { url ->
+            when {
+                url.encodedPath.endsWith("/ping.view") ->
+                    """{"subsonic-response":{"status":"ok","version":"1.16.1","type":"navidrome","serverVersion":"0.64.2","openSubsonic":true}}"""
+                url.encodedPath.endsWith("/getOpenSubsonicExtensions.view") ->
+                    """{"subsonic-response":{"status":"ok","openSubsonicExtensions":[{"name":"apiKeyAuthentication","versions":[1]},{"name":"songLyrics","versions":[1]}]}}"""
+                else -> okEnvelope()
+            }
+        }
+
+        val caps = client.probeCapabilities()
+
+        assertEquals("navidrome", caps.type)
+        assertEquals("0.64.2", caps.serverVersion)
+        assertEquals("1.16.1", caps.apiVersion)
+        assertTrue(caps.openSubsonic)
+        assertTrue(caps.supports(ServerCapabilities.Feature.API_KEY_AUTH))
+        assertTrue(caps.supports(ServerCapabilities.Feature.SONG_LYRICS))
+        assertFalse(caps.supports(ServerCapabilities.Feature.FORM_POST))
+    }
+
+    @Test
+    fun `a classic server is not asked for OpenSubsonic extensions`() = runBlocking {
+        var extensionCalls = 0
+        val client = testClient { url ->
+            if (url.encodedPath.endsWith("/getOpenSubsonicExtensions.view")) extensionCalls++
+            okEnvelope()
+        }
+
+        val caps = client.probeCapabilities()
+
+        assertFalse(caps.openSubsonic)
+        assertEquals(0, extensionCalls)
+    }
+
+    @Test
+    fun `an API key replaces the token parameters`() = runBlocking {
+        var url: HttpUrl? = null
+        val client = testClient(SubsonicConfig("music.example", "me", TEST_PASSWORD, "key-123")) { u ->
+            url = u
+            okEnvelope()
+        }
+
+        client.call("ping")
+
+        val seen = requireNotNull(url)
+        assertEquals("key-123", seen.queryParameter("apiKey"))
+        assertNull(seen.queryParameter("u"))
+        assertNull(seen.queryParameter("t"))
+        assertNull(seen.queryParameter("s"))
+    }
+
+    @Test
+    fun `server failures are typed and carry a user message`() {
+        val auth = assertThrows(SubsonicException.Auth::class.java) {
+            runBlocking {
+                testClient {
+                    """{"subsonic-response":{"status":"failed","error":{"code":40,"message":"Wrong username or password"}}}"""
+                }.call("ping")
+            }
+        }
+        assertEquals("Wrong username or password", auth.userMessage)
+
+        val missing = assertThrows(SubsonicException.NotFound::class.java) {
+            runBlocking {
+                testClient {
+                    """{"subsonic-response":{"status":"failed","error":{"code":70,"message":"Song not found"}}}"""
+                }.call("getSong")
+            }
+        }
+        assertEquals("Song not found", missing.userMessage)
+    }
+
+    @Test
+    fun `a body that is not a Subsonic envelope is a protocol error`() {
+        val error = assertThrows(SubsonicException.Protocol::class.java) {
+            runBlocking { testClient { "<html>login</html>" }.call("ping") }
+        }
+        assertTrue(error.userMessage.contains("Subsonic"))
+    }
+
+    @Test
+    fun `an HTTP error is typed too`() {
+        val client = SubsonicClient(
+            SubsonicConfig("music.example", "me", TEST_PASSWORD),
+            fakeHttpStatus { 500 to "" },
+        )
+        val error = assertThrows(SubsonicException.Server::class.java) { runBlocking { client.call("ping") } }
+        assertEquals(500, error.code)
+        assertTrue(error.userMessage.contains("internal error"))
+    }
+
+    @Test
+    fun `a refused connection is a network failure`() {
+        val client = SubsonicClient(
+            SubsonicConfig("music.example", "me", TEST_PASSWORD),
+            offlineHttp(),
+        )
+        val error = assertThrows(SubsonicNetworkException::class.java) { runBlocking { client.call("ping") } }
+        assertTrue(error.userMessage.contains("reach"))
+    }
+
+    @Test
+    fun `an optional endpoint is asked once when the server does not have it`() = runBlocking {
+        var calls = 0
+        val client = SubsonicClient(
+            SubsonicConfig("music.example", "me", TEST_PASSWORD),
+            fakeHttpStatus { url ->
+                if (url.encodedPath.endsWith("/getArtistInfo2.view")) {
+                    calls++
+                    404 to ""
+                } else {
+                    200 to okEnvelope()
+                }
+            },
+        )
+
+        assertNull(client.callOptional("getArtistInfo2"))
+        assertNull(client.callOptional("getArtistInfo2"))
+
+        assertEquals(1, calls)
     }
 
     @Test

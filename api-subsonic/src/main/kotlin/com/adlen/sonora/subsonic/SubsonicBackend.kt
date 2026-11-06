@@ -213,11 +213,9 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
         val artistJson = client.call("getArtist", mapOf("id" to id)).optJSONObject("artist") ?: return emptyList()
         val artistName = artistJson.optString("name").takeIf { it.isNotBlank() }
         if (artistName != null) {
-            val top = runCatching {
-                client.call("getTopSongs", mapOf("artist" to artistName, "count" to "10"))
-                    .optJSONObject("topSongs")?.array("song").orEmpty()
-                    .map { client.trackOf(it) }
-            }.getOrDefault(emptyList())
+            val top = client.callOptional("getTopSongs", mapOf("artist" to artistName, "count" to "10"))
+                ?.optJSONObject("topSongs")?.array("song").orEmpty()
+                .map { client.trackOf(it) }
             if (top.isNotEmpty()) return top
         }
         val album = artistJson.array("album").firstOrNull() ?: return emptyList()
@@ -232,9 +230,7 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
         val id = uri.substringAfterLast(':')
         val artist = artist(uri)
         val albums = discography(uri, 0, 50).items
-        val info = runCatching {
-            client.call("getArtistInfo2", mapOf("id" to id)).optJSONObject("artistInfo2")
-        }.getOrNull()
+        val info = client.callOptional("getArtistInfo2", mapOf("id" to id))?.optJSONObject("artistInfo2")
         val bio = info?.optString("biography")?.takeIf { it.isNotBlank() }
         val infoImages = listOfNotNull(
             info?.optString("largeImageUrl")?.takeIf { it.isNotBlank() }?.let { Image(it) },
@@ -264,9 +260,7 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
 
     override suspend fun relatedArtists(uri: Uri): List<Artist> {
         val id = uri.substringAfterLast(':')
-        val info = runCatching {
-            client.call("getArtistInfo2", mapOf("id" to id)).optJSONObject("artistInfo2")
-        }.getOrNull()
+        val info = client.callOptional("getArtistInfo2", mapOf("id" to id))?.optJSONObject("artistInfo2")
         return info?.array("similarArtist").orEmpty().map { client.artistOf(it) }
     }
 
@@ -556,17 +550,22 @@ internal class SubsonicPodcasts : Podcasts {
     override suspend fun setEpisodeSaved(uri: Uri, saved: Boolean) = Unit
 }
 
-internal class SubsonicExtras(private val client: SubsonicClient) : TrackExtras {
+internal class SubsonicExtras(
+    private val client: SubsonicClient,
+    private val capabilities: () -> ServerCapabilities? = { client.capabilities },
+) : TrackExtras {
     override suspend fun lyrics(trackUri: Uri): Lyrics? {
         val id = trackUri.substringAfterLast(':').substringBefore('|')
         if (id.isBlank()) return null
 
-        // 1. OpenSubsonic getLyricsBySongId (supports synced lines)
-        val structured = runCatching {
-            client.call("getLyricsBySongId", mapOf("id" to id))
-                .optJSONObject("lyricsList")?.array("structuredLyrics").orEmpty()
+        // 1. OpenSubsonic getLyricsBySongId (supports synced lines), when the server advertises it
+        val structured = if (capabilities()?.supports(ServerCapabilities.Feature.SONG_LYRICS) != false) {
+            client.callOptional("getLyricsBySongId", mapOf("id" to id))
+                ?.optJSONObject("lyricsList")?.array("structuredLyrics").orEmpty()
                 .firstOrNull { it.array("line").isNotEmpty() }
-        }.getOrNull()
+        } else {
+            null
+        }
         if (structured != null) {
             val synced = structured.optBoolean("synced", false)
             val lines = structured.array("line").map { line ->
@@ -590,9 +589,7 @@ internal class SubsonicExtras(private val client: SubsonicClient) : TrackExtras 
         }
 
         // 2. Classic Subsonic getLyrics (plain text by artist + title)
-        val song = runCatching {
-            client.call("getSong", mapOf("id" to id)).optJSONObject("song")
-        }.getOrNull()
+        val song = client.callOptional("getSong", mapOf("id" to id))?.optJSONObject("song")
         val artist = song?.optString("artist")?.takeIf { it.isNotBlank() }
         val title = song?.optString("title")?.takeIf { it.isNotBlank() }
         if (artist != null || title != null) {
@@ -600,9 +597,8 @@ internal class SubsonicExtras(private val client: SubsonicClient) : TrackExtras 
                 if (artist != null) put("artist", artist)
                 if (title != null) put("title", title)
             }
-            val plain = runCatching {
-                client.call("getLyrics", params).optJSONObject("lyrics")?.optString("value")
-            }.getOrNull()?.takeIf { it.isNotBlank() }
+            val plain = client.callOptional("getLyrics", params)
+                ?.optJSONObject("lyrics")?.optString("value")?.takeIf { it.isNotBlank() }
             if (plain != null) {
                 val lines = plain.lines().map { LyricsLine(startMs = 0L, endMs = null, text = it) }
                 return Lyrics(

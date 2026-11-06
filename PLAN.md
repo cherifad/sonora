@@ -113,21 +113,28 @@ identifiers, the app builds, and the attribution files are untouched.
 
 ## Phase 2 — Capability probe, typed errors, auth
 
-- [ ] Add `ServerCapabilities` (server type, version, OpenSubsonic extensions, features:
-      `apiKeyAuthentication`, `formPost`, `songLyrics`, `transcode`, `share`, `bookmark`).
-- [ ] Probe once at startup and cache it (`getOpenSubsonicExtensions`, `getLicense`, `ping`).
-- [ ] Add a typed error model: `Auth`, `NotFound`, `Network`, `Server`, `Unsupported`,
-      `RateLimited`; map HTTP/Subsonic error codes once in `SubsonicClient`.
-- [ ] Show precise setup errors ("wrong password", "server unreachable", "not a Subsonic
+- [x] Add `ServerCapabilities` (server type, version, OpenSubsonic extensions, features:
+      `apiKeyAuthentication`, `formPost`, `songLyrics`, `transcodeOffset`, plus the core
+      features ratings/shares/bookmarks/scan/artist-info/top-songs/podcasts).
+- [x] Probe once at startup and cache it (`ping` + `getOpenSubsonicExtensions`; `getLicense`
+      is not needed for feature gating).
+- [x] Add a typed error model: `Auth`, `NotFound`, `Network`, `Server`, `Protocol`,
+      `Unsupported`; `RateLimited` is `Server(429)`. HTTP/Subsonic codes are mapped once in
+      `SubsonicClient`.
+- [x] Show precise setup errors ("wrong password", "server unreachable", "not a Subsonic
       server") instead of one generic message.
-- [ ] Gate optional calls on capabilities (artist info, top songs, lyrics, ratings, shares,
-      bookmarks, scan) — no more `runCatching` as feature detection.
-- [ ] Implement API-key auth when `apiKeyAuthentication` is advertised.
+- [~] Gate optional calls on capabilities — lyrics, artist info and top songs use
+      `callOptional` + `supports()` today; ratings/shares/bookmarks/scan are gated when their
+      phases land.
+- [x] Implement API-key auth when `apiKeyAuthentication` is advertised (optional field in
+      setup; `apiKey` replaces `u`/`t`/`s`).
 - [ ] Trust-on-first-use for self-signed TLS, with an explicit HTTP warning in setup.
-- [ ] Contract tests: each error class, capability JSON, missing extension.
+      Deferred to Phase 10: it needs a trust manager plus a stored fingerprint per host.
+- [x] Contract tests: each error class, capability JSON, missing extension, API-key URL.
 
 **Done when:** a wrong password, a dead server, and a non-Subsonic server each produce a
 distinct message, and no optional endpoint is called on a server that does not advertise it.
+TOFU TLS is the one remaining item.
 
 ---
 
@@ -278,6 +285,7 @@ report arrives with the server facts needed to reproduce it.
 |---|---|---|---|
 | 2026-11-06 | 0 | `PLAN.md` created; JVM tests green; debug APKs build (115 MB each, unminified) | `docs(plan)` |
 | 2026-11-06 | 1 | Packages, classes, resources, manifests, tools and tests renamed to Sonora; prefs migration added; attribution kept in docs and license headers | `refactor(rename)!` |
+| 2026-11-06 | 2 | Typed Subsonic failures, cached capability probe, precise setup errors, optional-call cache, API-key auth; 8 new contract tests | `feat(subsonic)` |
 
 ## Decisions and risks
 

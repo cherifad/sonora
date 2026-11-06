@@ -10,23 +10,27 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
+import java.util.Collections
 import kotlin.random.Random
 
 data class SubsonicConfig(
     val baseUrl: String,
     val username: String,
     val password: String,
+    /** OpenSubsonic `apiKeyAuthentication`: when set, it replaces `u`/`t`/`s`. */
+    val apiKey: String? = null,
 ) {
     fun normalized(): SubsonicConfig {
         var url = baseUrl.trim().trimEnd('/')
         if (!url.startsWith("http://") && !url.startsWith("https://")) url = "http://$url"
-        return copy(baseUrl = "$url/")
+        return copy(baseUrl = "$url/", apiKey = apiKey?.trim()?.takeIf { it.isNotBlank() })
     }
 }
 
 /**
- * A small Subsonic client: JSON only, token auth (`u`/`t`/`s`), one call per endpoint.
- * The server can be changed at runtime (setup screen) through [updateConfig].
+ * A small Subsonic client: JSON only, token auth (`u`/`t`/`s`) or an OpenSubsonic API key,
+ * one call per endpoint. The server can be changed at runtime (setup screen) through
+ * [updateConfig].
  */
 class SubsonicClient(
     initialConfig: SubsonicConfig,
@@ -40,23 +44,94 @@ class SubsonicClient(
     @Volatile
     private var base: HttpUrl = config.baseUrl.toHttpUrl()
 
+    /** What the server said about itself; null until [probeCapabilities] runs. */
+    @Volatile
+    var capabilities: ServerCapabilities? = null
+        private set
+
+    /** Optional endpoints this server already refused: asked once, then skipped. */
+    private val unsupported = Collections.synchronizedSet(mutableSetOf<String>())
+
     fun updateConfig(newConfig: SubsonicConfig) {
         config = newConfig.normalized()
         base = config.baseUrl.toHttpUrl()
+        capabilities = null
+        unsupported.clear()
     }
 
     suspend fun ping(): JSONObject = call("ping")
 
+    /**
+     * One probe per session: `ping` carries the server type/version and whether it speaks
+     * OpenSubsonic; the extension list says which optional calls are worth making.
+     */
+    suspend fun probeCapabilities(force: Boolean = false): ServerCapabilities {
+        if (!force) capabilities?.let { return it }
+        val ping = ping()
+        val extensions = if (ping.optBoolean("openSubsonic")) {
+            callOptional("getOpenSubsonicExtensions")
+                ?.array("openSubsonicExtensions")
+                ?.mapNotNull { it.optString("name").takeIf(String::isNotBlank) }
+                ?.toSet()
+                .orEmpty()
+        } else {
+            emptySet()
+        }
+        val probed = ServerCapabilities(
+            type = ping.optString("type").takeIf { it.isNotBlank() },
+            serverVersion = ping.optString("serverVersion").takeIf { it.isNotBlank() },
+            apiVersion = ping.optString("version").takeIf { it.isNotBlank() },
+            openSubsonic = ping.optBoolean("openSubsonic"),
+            extensions = extensions,
+        )
+        capabilities = probed
+        return probed
+    }
+
+    /**
+     * An optional call (lyrics, biography, similar artists): a server that does not implement
+     * it is remembered, so the next screen does not pay for the same failed round-trip. A
+     * network failure and an auth failure still propagate: they are not "unsupported".
+     */
+    suspend fun callOptional(method: String, params: Map<String, String> = emptyMap()): JSONObject? {
+        if (method in unsupported) return null
+        return try {
+            call(method, params)
+        } catch (e: SubsonicException.NotFound) {
+            unsupported += method
+            null
+        } catch (e: SubsonicException.Protocol) {
+            unsupported += method
+            null
+        } catch (e: SubsonicException.Unsupported) {
+            unsupported += method
+            null
+        } catch (e: SubsonicException.Server) {
+            // A 404/405 is "this bridge does not have the endpoint"; code 0 is the generic
+            // Subsonic "failed" some servers use for the same thing. A 5xx may be transient.
+            if ((e.fromHttp && e.code in 400..499) || (!e.fromHttp && e.code == 0)) {
+                unsupported += method
+                null
+            } else {
+                throw e
+            }
+        }
+    }
+
     private fun endpoint(method: String, params: List<Pair<String, String>>): HttpUrl {
-        val salt = randomSalt()
-        val token = md5(config.password + salt)
-        val builder = base.newBuilder()
-            .addPathSegments("rest/$method.view")
-            .addQueryParameter("u", config.username)
-            .addQueryParameter("t", token)
-            .addQueryParameter("s", salt)
-            .addQueryParameter("v", "1.16.1")
-            .addQueryParameter("c", "JellyfinAudio")
+        val builder = base.newBuilder().addPathSegments("rest/$method.view")
+        val apiKey = config.apiKey
+        if (!apiKey.isNullOrBlank()) {
+            builder.addQueryParameter("apiKey", apiKey)
+        } else {
+            val salt = randomSalt()
+            val token = md5(config.password + salt)
+            builder.addQueryParameter("u", config.username)
+                .addQueryParameter("t", token)
+                .addQueryParameter("s", salt)
+        }
+        builder.addQueryParameter("v", "1.16.1")
+            .addQueryParameter("c", "Sonora")
             .addQueryParameter("f", "json")
         params.forEach { (key, value) -> builder.addQueryParameter(key, value) }
         return builder.build()
@@ -73,20 +148,36 @@ class SubsonicClient(
             } catch (e: java.io.IOException) {
                 // The network refused the server: the app shows its downloads until it is back.
                 onReachable?.invoke(false)
-                throw e
+                throw SubsonicNetworkException("Could not reach ${config.baseUrl}", e)
             }
             response.use { response ->
                 onReachable?.invoke(true)
-                val text = response.body?.string().orEmpty()
-                if (!response.isSuccessful) error("Subsonic HTTP ${response.code}")
-                val root = JSONObject(text).optJSONObject("subsonic-response")
-                    ?: error("Not a Subsonic response")
+                val text = response.body.string()
+                if (!response.isSuccessful) {
+                    // Some servers put the Subsonic error in the body of a 401/404.
+                    val root = text.takeIf { it.isNotBlank() }
+                        ?.let { runCatching { envelope(it) }.getOrNull() }
+                    val error = root?.optJSONObject("error")
+                    if (root?.optString("status") == "failed" && error != null) {
+                        throw subsonicFailure(error.optInt("code", 0), error.optString("message"))
+                    }
+                    throw SubsonicException.Server(response.code, "Subsonic HTTP ${response.code}", fromHttp = true)
+                }
+                val root = envelope(text)
                 if (root.optString("status") != "ok") {
-                    error(root.optJSONObject("error")?.optString("message") ?: "Subsonic error")
+                    val error = root.optJSONObject("error")
+                    throw subsonicFailure(error?.optInt("code") ?: 0, error?.optString("message").orEmpty())
                 }
                 root
             }
         }
+
+    private fun envelope(text: String): JSONObject = try {
+        JSONObject(text).optJSONObject("subsonic-response")
+            ?: throw SubsonicException.Protocol("Not a Subsonic response")
+    } catch (e: org.json.JSONException) {
+        throw SubsonicException.Protocol("Not a Subsonic response: ${e.message}")
+    }
 
     fun streamUrl(id: String): String = endpoint("stream", listOf("id" to id)).toString()
 

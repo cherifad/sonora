@@ -9,13 +9,15 @@ object SubsonicSettings {
     private const val KEY_URL = "url"
     private const val KEY_USER = "username"
     private const val KEY_PASS = "password"
+    private const val KEY_API_KEY = "apiKey"
 
     fun load(context: Context): SubsonicConfig? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val url = prefs.getString(KEY_URL, null)?.takeIf { it.isNotBlank() } ?: return null
         val user = prefs.getString(KEY_USER, null)?.takeIf { it.isNotBlank() } ?: return null
         val pass = prefs.getString(KEY_PASS, null) ?: return null
-        return SubsonicConfig(url, user, pass).normalized()
+        val apiKey = prefs.getString(KEY_API_KEY, null)
+        return SubsonicConfig(url, user, pass, apiKey).normalized()
     }
 
     fun save(context: Context, config: SubsonicConfig) {
@@ -24,6 +26,9 @@ object SubsonicSettings {
             .putString(KEY_URL, normalized.baseUrl)
             .putString(KEY_USER, normalized.username)
             .putString(KEY_PASS, normalized.password)
+            .apply {
+                if (normalized.apiKey != null) putString(KEY_API_KEY, normalized.apiKey) else remove(KEY_API_KEY)
+            }
             .apply()
     }
 

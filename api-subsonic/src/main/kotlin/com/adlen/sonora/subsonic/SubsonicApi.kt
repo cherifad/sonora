@@ -16,8 +16,12 @@ import com.adlen.sonora.api.Recents
 import com.adlen.sonora.api.Search
 import com.adlen.sonora.api.TrackExtras
 import com.adlen.sonora.api.Users
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 /**
  * The Subsonic backend behind the `SonoraApi` contract.
@@ -31,9 +35,18 @@ class SubsonicApi(
 ) : SonoraApi {
 
     private val client = SubsonicClient(config)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _capabilities = MutableStateFlow<ServerCapabilities?>(null)
     private val catalogImpl = SubsonicCatalog(client)
     private val playlistsImpl = SubsonicPlaylists(client)
     private val playerImpl = SubsonicPlayer(context.applicationContext, client, catalogImpl, playlistsImpl)
+
+    /** The server type/version and the optional calls it advertises. */
+    val capabilities: StateFlow<ServerCapabilities?> = _capabilities
+
+    init {
+        scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
+    }
 
     override val player: Player = playerImpl
     override val catalog: Catalog = catalogImpl
@@ -43,7 +56,7 @@ class SubsonicApi(
     override val playlists: Playlists = playlistsImpl
     override val users: Users = SubsonicUsers(config)
     override val podcasts: Podcasts = SubsonicPodcasts()
-    override val extras: TrackExtras = SubsonicExtras(client)
+    override val extras: TrackExtras = SubsonicExtras(client) { _capabilities.value }
     override val devices: Devices = SubsonicDevices()
     override val jam: Jam = SubsonicJam()
     override val blends: Blends = SubsonicBlends()
@@ -67,9 +80,22 @@ class SubsonicApi(
     /** True when the server answers: detects it coming back while the app is offline. */
     suspend fun ping(): Boolean = runCatching { client.call("ping") }.isSuccess
 
+    /** Re-probe after the user changes the server; null when the server did not answer. */
+    suspend fun refreshCapabilities(): ServerCapabilities? {
+        val probed = runCatching { client.probeCapabilities(force = true) }.getOrNull()
+        _capabilities.value = probed
+        return probed
+    }
+
+    /** Unknown capabilities count as supported: a core endpoint should not vanish on a slow probe. */
+    fun supports(feature: ServerCapabilities.Feature): Boolean =
+        _capabilities.value?.supports(feature) ?: true
+
     /** The setup screen changed the server: the same client/player now talk to the new one. */
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
+        _capabilities.value = null
+        scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
         playerImpl.restoreServerQueueIfIdle()
     }
 }

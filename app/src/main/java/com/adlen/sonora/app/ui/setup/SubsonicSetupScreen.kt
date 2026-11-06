@@ -47,6 +47,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.adlen.sonora.host.android.SonoraRuntime
 import com.adlen.sonora.subsonic.SubsonicClient
 import com.adlen.sonora.subsonic.SubsonicConfig
+import com.adlen.sonora.subsonic.SubsonicFailure
 import com.adlen.sonora.subsonic.SubsonicSettings
 import com.adlen.sonora.app.ui.theme.AppAccent
 import com.adlen.sonora.app.ui.theme.AppBackground
@@ -147,6 +148,7 @@ internal fun SubsonicServerForm(
     var url by remember { mutableStateOf(initial?.baseUrl.orEmpty()) }
     var username by remember { mutableStateOf(initial?.username.orEmpty()) }
     var password by remember { mutableStateOf(initial?.password.orEmpty()) }
+    var apiKey by remember { mutableStateOf(initial?.apiKey.orEmpty()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -168,18 +170,25 @@ internal fun SubsonicServerForm(
             error = "Fill in the server URL, username and password."
             return
         }
-        val config = SubsonicConfig(trimmedUrl, username.trim(), password)
+        val config = SubsonicConfig(
+            trimmedUrl,
+            username.trim(),
+            password,
+            apiKey.trim().takeIf { it.isNotBlank() },
+        )
         scope.launch {
             busy = true
             error = null
-            val result = runCatching { SubsonicClient(config).ping() }
+            val result = runCatching { SubsonicClient(config).probeCapabilities() }
             busy = false
             result.onSuccess {
                 SubsonicSettings.save(context, config)
                 SonoraRuntime.updateSubsonicConfig(config)
                 onSaved()
             }.onFailure {
-                error = it.message ?: "Could not connect to the server."
+                error = (it as? SubsonicFailure)?.userMessage
+                    ?: it.message
+                    ?: "Could not connect to the server."
             }
         }
     }
@@ -211,6 +220,25 @@ internal fun SubsonicServerForm(
         colors = fieldColors,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(12.dp))
+    OutlinedTextField(
+        value = apiKey,
+        onValueChange = { apiKey = it },
+        label = { Text("API key (optional)") },
+        singleLine = true,
+        colors = fieldColors,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        supportingText = {
+            Text(
+                "Only for servers that advertise OpenSubsonic API-key login; it replaces the password.",
+                color = AppMuted,
+                fontFamily = AppSans,
+                fontSize = 12.sp,
+            )
+        },
         modifier = Modifier.fillMaxWidth(),
     )
 
