@@ -1,4 +1,4 @@
-// `myspoti-ext`: build, check and try Myspoti extensions on a computer. With --cdp it also
+// `sonora-ext`: build, check and try Sonora extensions on a computer. With --cdp it also
 // reaches a real Spotify account through a desktop Chrome (:host-cdp), which :extensions itself
 // never depends on.
 //   ./gradlew :extensions-cli:run --args="run path/to/extension lyrics ..."
@@ -12,8 +12,8 @@ kotlin {
 }
 
 application {
-    mainClass.set("app.myspoti.extensions.cli.RunKt")
-    applicationName = "myspoti-ext"
+    mainClass.set("com.adlen.sonora.extensions.cli.RunKt")
+    applicationName = "sonora-ext"
 }
 
 dependencies {

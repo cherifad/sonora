@@ -1,0 +1,641 @@
+package com.adlen.sonora.app.ui.screens
+
+import com.adlen.sonora.app.ui.theme.tone
+import com.adlen.sonora.app.ui.theme.AppText
+import com.adlen.sonora.app.ui.theme.AppMuted
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.adlen.sonora.engine.R
+import kotlinx.coroutines.launch
+import com.adlen.sonora.app.ui.components.DownloadQualityPicker
+import com.adlen.sonora.app.ui.components.StreamingQualityPicker
+import com.adlen.sonora.app.ui.theme.AppBackground
+
+/**
+ * Settings, on one page: sound quality (streaming and downloads), the download source,
+ * data and battery, display, language, and the player's own repair tools.
+ */
+@Composable
+fun SettingsScreen(navController: NavController) {
+    val energy by com.adlen.sonora.power.EnergySettings.state.collectAsStateWithLifecycle()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var showServer by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize().background(AppBackground).statusBarsPadding()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.accessibility_navigate_back), tint = AppText)
+            }
+            Text(stringResource(R.string.settings_title), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = { showServer = true }) {
+                Icon(Icons.Filled.Cloud, contentDescription = "Server", tint = AppText)
+            }
+        }
+        // One tab per group, so the page is no longer one long list.
+        var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
+        val tabs = listOf(R.string.settings_section_playback, R.string.settings_tab_appearance, R.string.settings_tab_about)
+        androidx.compose.material3.ScrollableTabRow(
+            selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = AppText, edgePadding = 12.dp,
+            indicator = { positions ->
+                androidx.compose.material3.TabRowDefaults.SecondaryIndicator(
+                    Modifier.tabIndicatorOffset(positions[tab]), color = com.adlen.sonora.app.ui.theme.AppAccent)
+            },
+            divider = { HorizontalDivider(color = tone(0xFF2A2A2A)) },
+        ) {
+            tabs.forEachIndexed { i, title ->
+                androidx.compose.material3.Tab(
+                    selected = tab == i, onClick = { tab = i },
+                    text = { Text(stringResource(title), fontSize = 14.sp, fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal) },
+                    selectedContentColor = AppText, unselectedContentColor = AppMuted,
+                )
+            }
+        }
+        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).navigationBarsPadding()) {
+            // The first source of each order, when it is an extension announcing settings in that tab.
+            val registry by com.adlen.sonora.app.extensions.Extensions.registry.collectAsStateWithLifecycle()
+            // A source picked in the player for this session leads too ([com.adlen.sonora.app.extensions.SessionSource]).
+            val session by com.adlen.sonora.app.extensions.Extensions.sessionSource.collectAsStateWithLifecycle()
+            if (tab == 0) {
+            Section(R.string.settings_section_playback)
+            // The Subsonic server: the same dialog as the cloud icon and the profile menu.
+            val serverConfig = com.adlen.sonora.subsonic.SubsonicSettings.load(ctx)
+            Column(
+                Modifier.fillMaxWidth().clickable { showServer = true }
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+            ) {
+                Text("Server", color = AppText, fontSize = 16.sp)
+                Text(serverConfig?.baseUrl ?: "No server configured", color = AppMuted, fontSize = 12.sp)
+            }
+            com.adlen.sonora.app.ui.components.ServerScanRow()
+            Divider()
+            Section(R.string.settings_section_data)
+            OptionRow(
+                label = stringResource(R.string.energy_saver_title),
+                detail = stringResource(R.string.energy_saver_summary),
+                checked = energy.manualSaver,
+                onChecked = com.adlen.sonora.power.EnergySettings::setSaver,
+            )
+            OptionRow(
+                label = stringResource(R.string.data_saver_title),
+                detail = stringResource(R.string.data_saver_summary),
+                checked = com.adlen.sonora.app.data.DataSaver.enabled,
+                onChecked = com.adlen.sonora.app.data.DataSaver::set,
+            )
+            // Battery optimization off = music and Connect keep going with the screen off.
+            var exempt by remember { androidx.compose.runtime.mutableStateOf(com.adlen.sonora.power.BatteryExemption.isExempt(ctx)) }
+            androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                exempt = com.adlen.sonora.power.BatteryExemption.isExempt(ctx)
+            }
+            OptionRow(
+                label = stringResource(R.string.background_playback_title),
+                detail = stringResource(if (exempt) R.string.background_playback_on else R.string.background_playback_off),
+                checked = exempt,
+                onChecked = {
+                    if (exempt) ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                    else com.adlen.sonora.power.BatteryExemption.request(ctx)
+                },
+            )
+            // Samsung's "Sleeping apps" is a second list: the app has to be in Never sleeping apps too.
+            if (com.adlen.sonora.power.BatteryExemption.isSamsung()) Column(
+                Modifier.fillMaxWidth().clickable { com.adlen.sonora.power.BatteryExemption.openAppSettings(ctx) }
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+            ) {
+                Text(stringResource(R.string.background_playback_open), color = AppText, fontSize = 16.sp)
+                Text(stringResource(R.string.background_playback_samsung), color = AppMuted, fontSize = 12.sp)
+            }
+            StorageInfoRows(ctx)
+            }
+            if (tab == 99) {
+            Section(R.string.settings_section_downloads)
+            // Its role quality takes the place of the app's (kept, and still passed to every extension as `quality`).
+            val subsonic = com.adlen.sonora.host.android.SonoraRuntime.isSubsonic
+            val ext = remember(registry) {
+                if (subsonic) null
+                else com.adlen.sonora.app.extensions.Extensions.sectionPlacement(com.adlen.sonora.extensions.SettingSection.DOWNLOADS)
+            }
+            if (ext?.hidesAppQuality != true) DownloadQualityPicker()
+            ext?.let { ExtensionSectionSettings(it) }
+            // Where downloads come from: the download-source extensions, in the order they are asked.
+            // Subsonic serves its own files, so there is no source to choose.
+            if (!subsonic) {
+                if (com.adlen.sonora.app.extensions.Extensions.sources(com.adlen.sonora.extensions.Action.DOWNLOAD_SOURCE).isNotEmpty())
+                    SourcesBlock(com.adlen.sonora.extensions.Action.DOWNLOAD_SOURCE, navController)
+                else Column(
+                    Modifier.fillMaxWidth().clickable { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Extensions.route) }
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Text(stringResource(R.string.downloads_source_row_title), color = AppText, fontSize = 16.sp)
+                    Text(
+                        stringResource(
+                            if (com.adlen.sonora.app.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
+                            else R.string.downloads_source_row_off,
+                        ),
+                        color = AppMuted, fontSize = 12.sp,
+                    )
+                }
+            }
+            if (com.adlen.sonora.app.data.offline.OfflineStore.tracks.isNotEmpty()) RemoveDownloadsRow()
+            }
+            if (tab == 1) {
+
+            Section(R.string.settings_section_display)
+            OptionRow(
+                label = stringResource(R.string.settings_amoled_theme),
+                detail = stringResource(R.string.settings_amoled_theme_subtitle),
+                checked = energy.blackPreference,
+                onChecked = com.adlen.sonora.power.EnergySettings::setBlackBackground,
+            )
+            OptionRow(
+                label = stringResource(R.string.settings_player_lyrics_card_title),
+                detail = stringResource(R.string.settings_player_lyrics_card_detail),
+                checked = com.adlen.sonora.app.data.preferences.PlayerLyricsCardPref.on,
+                onChecked = { com.adlen.sonora.app.data.preferences.PlayerLyricsCardPref.set(ctx, it) },
+            )
+            OptionRow(
+                label = stringResource(R.string.settings_solid_nav_title),
+                detail = stringResource(R.string.settings_solid_nav_detail),
+                checked = com.adlen.sonora.app.data.preferences.SolidNavBar.on,
+                onChecked = { com.adlen.sonora.app.data.preferences.SolidNavBar.set(ctx, it) },
+            )
+            AccentRow(com.adlen.sonora.app.data.preferences.Look.CLASSIC)
+            LookRow()
+            OrientationRow()
+            LanguageRow()
+            }
+            if (tab == 98) {
+            ExtensionSettingsRows(navController)
+            // Third-party extensions: lyrics, a song's audio, scripts reacting to the music.
+            Column(
+                Modifier.fillMaxWidth().clickable { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Extensions.route) }
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+            ) {
+                Text(stringResource(R.string.extensions_title), color = AppText, fontSize = 16.sp)
+                Text(stringResource(R.string.extensions_row_detail), color = AppMuted, fontSize = 12.sp)
+            }
+            }
+            if (tab == 2) {
+            Section(R.string.settings_section_app)
+            AboutRow()
+            // A18: the launch check can be turned off; the manual check below keeps working.
+            OptionRow(
+                label = stringResource(R.string.settings_auto_update_title),
+                detail = stringResource(R.string.settings_auto_update_detail),
+                checked = com.adlen.sonora.app.data.preferences.AutoUpdateCheckPref.on,
+                onChecked = { com.adlen.sonora.app.data.preferences.AutoUpdateCheckPref.set(ctx, it) },
+            )
+            // The report a tester hands us. The engine's log is otherwise reachable only through
+            // adb logcat, which the person reporting the bug cannot run: the label is a literal
+            // rather than a string resource so this change stays out of the shared string files.
+            Column(
+                Modifier.fillMaxWidth().clickable {
+                    val file = runCatching { com.adlen.sonora.host.android.Logbook.export(ctx) }.getOrNull()
+                    if (file != null) shareDiagnosticReport(ctx, file)
+                    else android.widget.Toast.makeText(ctx, ctx.getString(R.string.diagnostic_export_failed), android.widget.Toast.LENGTH_SHORT).show()
+                }.padding(horizontal = 20.dp, vertical = 10.dp),
+            ) {
+                Text(stringResource(R.string.diagnostic_export_title), color = AppText, fontSize = 16.sp)
+                Text(stringResource(R.string.diagnostic_export_detail), color = AppMuted, fontSize = 12.sp)
+            }
+            }
+            // Clear of the mini player and the navigation bar, as every other page (96 dp left the
+            // last rows, "Restart the player" among them, under the mini player).
+            Spacer(Modifier.height(com.adlen.sonora.app.ui.components.bottomBarsSpace()))
+        }
+    }
+    if (showServer) {
+        com.adlen.sonora.app.ui.setup.SubsonicSetupDialog(
+            onDismiss = { showServer = false },
+            onSaved = {
+                showServer = false
+                (ctx as? android.app.Activity)?.recreate()
+            },
+        )
+    }
+}
+
+/**
+ * The installed extensions that declare settings (manifest `settings`), each one opening its page,
+ * where they are edited. Nothing when none has any.
+ */
+@Composable
+private fun ExtensionSettingsRows(navController: NavController) {
+    val registry by com.adlen.sonora.app.extensions.Extensions.registry.collectAsStateWithLifecycle()
+    val withSettings = registry.extensions.mapNotNull { e ->
+        com.adlen.sonora.app.extensions.Extensions.manifest(e.id)?.settings?.takeIf { it.isNotEmpty() }?.let { e to it }
+    }
+    if (withSettings.isEmpty()) return
+    Section(R.string.extensions_title)
+    withSettings.forEach { (e, settings) ->
+        Column(
+            Modifier.fillMaxWidth().clickable { navController.navigate(installedRoute(e.id)) }
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+        ) {
+            Text(e.name, color = AppText, fontSize = 16.sp)
+            Text(settings.joinToString { it.label }, color = AppMuted, fontSize = 12.sp, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
+    }
+    Divider()
+}
+
+/** The order a source action asks extensions in ([SourceOrderList]); nothing without any such extension. */
+@Composable
+private fun SourcesBlock(action: com.adlen.sonora.extensions.Action, navController: NavController) {
+    val registry by com.adlen.sonora.app.extensions.Extensions.registry.collectAsStateWithLifecycle()
+    val audio = action == com.adlen.sonora.extensions.Action.AUDIO_SOURCE
+    if (remember(registry) { com.adlen.sonora.app.extensions.Extensions.sources(action).isEmpty() }) return
+    Section(if (audio) R.string.sources_audio_title else R.string.sources_download_title)
+    SourceOrderList(action, spotifyLast = audio, look = SourceLook.Classic, onOpen = { navController.navigate(installedRoute(it)) })
+    Text(stringResource(if (audio) R.string.sources_audio_footer else R.string.sources_download_footer), color = AppMuted, fontSize = 12.sp,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+    if (audio) Divider()
+}
+
+@Composable
+internal fun Section(title: Int) {
+    Text(stringResource(title).uppercase(), color = com.adlen.sonora.app.ui.theme.AppAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp))
+}
+
+@Composable
+private fun Divider() = HorizontalDivider(color = tone(0xFF2A2A2A), modifier = Modifier.padding(top = 8.dp))
+
+/** Classic or Immersive: the choice made in the onboarding, changeable here. */
+@Composable
+private fun LookRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val current = com.adlen.sonora.app.data.preferences.LookPref.look
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_look_title), color = AppText, fontSize = 16.sp)
+        for (l in com.adlen.sonora.app.data.preferences.Look.entries) {
+            val classic = l == com.adlen.sonora.app.data.preferences.Look.CLASSIC
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+                    .semantics { role = Role.RadioButton }
+                    .clickable { com.adlen.sonora.app.data.preferences.LookPref.set(ctx, l) }
+                    .padding(vertical = 8.dp),
+            ) {
+                androidx.compose.material3.RadioButton(selected = current == l, onClick = null)
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text(stringResource(if (classic) R.string.look_classic else R.string.look_immersive), color = AppText, fontSize = 15.sp)
+                    Text(stringResource(if (classic) R.string.look_classic_detail else R.string.look_immersive_detail), color = AppMuted, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+/** The accent colour of one look, for everyone (the same palette the supporter sheet uses). */
+@Composable
+private fun AccentRow(look: com.adlen.sonora.app.data.preferences.Look) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.supporter_accent), color = AppText, fontSize = 16.sp)
+        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 10.dp)) {
+            for (a in com.adlen.sonora.app.data.api.SupportReminder.Accent.entries) {
+                val selected = com.adlen.sonora.app.data.api.SupportReminder.accentOf(look) == a
+                val name = stringResource(when (a) {
+                    com.adlen.sonora.app.data.api.SupportReminder.Accent.GREEN -> R.string.color_green
+                    com.adlen.sonora.app.data.api.SupportReminder.Accent.BLUE -> R.string.color_blue
+                    com.adlen.sonora.app.data.api.SupportReminder.Accent.PURPLE -> R.string.color_purple
+                    com.adlen.sonora.app.data.api.SupportReminder.Accent.PINK -> R.string.color_pink
+                    com.adlen.sonora.app.data.api.SupportReminder.Accent.ORANGE -> R.string.color_orange
+                })
+                Box(
+                    Modifier.size(40.dp)
+                        .semantics { contentDescription = name; role = Role.RadioButton }
+                        .clip(CircleShape).background(a.color)
+                        .then(if (selected) Modifier.border(3.dp, AppText, CircleShape) else Modifier)
+                        .clickable { com.adlen.sonora.app.data.api.SupportReminder.setAccent(ctx, look, a) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * "Crossfade": the length of the fade at the end of a song. The label says what it is: the two
+ * songs never overlap (the page plays one media element), so this is a fade, not a true
+ * crossfade. The default is 0: off, as before.
+ */
+@Composable
+private fun CrossfadeRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val pref = com.adlen.sonora.app.data.preferences.CrossfadePref
+    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_crossfade_title), color = AppText, fontSize = 16.sp)
+        Text(
+            stringResource(R.string.settings_crossfade_detail),
+            color = AppMuted, fontSize = 12.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Row(
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 10.dp),
+        ) {
+            for (v in listOf(0, 3, 6, 9, 12)) {
+                val selected = pref.seconds == v
+                Text(
+                    if (v == 0) stringResource(R.string.settings_crossfade_off)
+                    else stringResource(R.string.settings_crossfade_seconds, v),
+                    color = if (selected) Color.Black else AppText, fontSize = 14.sp,
+                    modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .background(if (selected) com.adlen.sonora.app.ui.theme.AppAccent else tone(0xFF2A2A2A))
+                        .clickable { pref.set(ctx, v) }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Screen rotation: portrait (default), automatic or landscape. */
+@Composable
+private fun OrientationRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val pref = com.adlen.sonora.app.data.preferences.OrientationPref
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_rotation_title), color = AppText, fontSize = 16.sp)
+        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+            for ((value, label) in listOf(
+                pref.PORTRAIT to R.string.settings_rotation_portrait,
+                pref.AUTO to R.string.settings_rotation_auto,
+                pref.LANDSCAPE to R.string.settings_rotation_landscape,
+            )) {
+                val selected = pref.mode == value
+                Text(
+                    stringResource(label),
+                    color = if (selected) Color.Black else AppText, fontSize = 14.sp,
+                    modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .background(if (selected) com.adlen.sonora.app.ui.theme.AppAccent else tone(0xFF2A2A2A))
+                        .clickable { pref.set(ctx, value) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+/** "App language": Automatic (French or English) or any language with Spotify's labels. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguageRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val current = remember { com.adlen.sonora.app.data.AppLanguage.current(ctx) }
+    var picking by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val auto = stringResource(R.string.language_auto)
+    fun label(tag: String) = if (tag == com.adlen.sonora.app.data.AppLanguage.SYSTEM) auto else com.adlen.sonora.app.data.AppLanguage.nativeName(tag)
+    androidx.compose.foundation.layout.Column(
+        Modifier.fillMaxWidth().clickable { picking = true }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.settings_item_app_language_title), color = AppText, fontSize = 16.sp)
+        Text(label(current), color = AppMuted, fontSize = 12.sp)
+    }
+    if (picking) androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = { picking = false },
+        containerColor = tone(0xFF282828),
+    ) {
+        androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            item {
+                Text(stringResource(R.string.settings_item_app_language_title), color = AppText, fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+                Text(stringResource(R.string.language_partial_note), color = AppMuted, fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp))
+            }
+            items(com.adlen.sonora.app.data.AppLanguage.AVAILABLE.size) { i ->
+                val tag = com.adlen.sonora.app.data.AppLanguage.AVAILABLE[i]
+                val selected = tag == current
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable {
+                        picking = false
+                        if (!selected) {
+                            com.adlen.sonora.app.data.AppLanguage.apply(ctx, tag)
+                            // Screens take the new language when the activity is rebuilt.
+                            generateSequence(ctx) { (it as? android.content.ContextWrapper)?.baseContext }
+                                .filterIsInstance<android.app.Activity>().firstOrNull()?.recreate()
+                        }
+                    }.padding(horizontal = 20.dp, vertical = 8.dp),
+                ) {
+                    androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+                        Text(label(tag), color = if (selected) com.adlen.sonora.app.ui.theme.AppAccent else AppText, fontSize = 16.sp)
+                        if (tag == com.adlen.sonora.app.data.AppLanguage.SYSTEM)
+                            Text(stringResource(R.string.language_auto_detail), color = AppMuted, fontSize = 12.sp)
+                    }
+                    if (selected) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Check, null, tint = com.adlen.sonora.app.ui.theme.AppAccent)
+                }
+            }
+        }
+    }
+}
+
+/** Downloads, cache and free space: what the app keeps on the phone. */
+@Composable
+private fun StorageInfoRows(ctx: android.content.Context) {
+    var cache by remember { mutableStateOf(com.adlen.sonora.app.data.offline.StorageInfo.cacheBytes(ctx)) }
+    val count = com.adlen.sonora.app.data.offline.OfflineStore.tracks.size
+    val size = android.text.format.Formatter.formatShortFileSize(ctx, com.adlen.sonora.app.data.offline.OfflineStore.totalBytes())
+    val cacheText = android.text.format.Formatter.formatShortFileSize(ctx, cache)
+    val free = android.text.format.Formatter.formatShortFileSize(ctx, com.adlen.sonora.app.data.offline.StorageInfo.freeBytes(ctx))
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_storage_downloads_title), color = AppText, fontSize = 16.sp)
+        Text(stringResource(R.string.settings_storage_downloads_detail, count, size), color = AppMuted, fontSize = 12.sp)
+    }
+    var wifiOnly by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.isWifiOnly(ctx)) }
+    OptionRow(
+        label = stringResource(R.string.download_wifi_only),
+        detail = stringResource(R.string.download_wifi_only_detail),
+        checked = wifiOnly,
+        onChecked = {
+            wifiOnly = it
+            com.adlen.sonora.app.data.preferences.setWifiOnly(ctx, it)
+        },
+    )
+    val limits = listOf(2L, 8L, 32L, 0L)
+    var maxBytes by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.maxDownloadBytes(ctx)) }
+    val limitText = if (maxBytes <= 0) stringResource(R.string.download_storage_limit_unlimited)
+        else android.text.format.Formatter.formatShortFileSize(ctx, maxBytes)
+    Column(
+        Modifier.fillMaxWidth().clickable {
+            val next = limits[(limits.indexOf(maxBytes).takeIf { it >= 0 }?.plus(1) ?: 0) % limits.size]
+            maxBytes = next
+            com.adlen.sonora.app.data.preferences.setMaxDownloadBytes(ctx, next)
+        }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.download_storage_limit), color = AppText, fontSize = 16.sp)
+        Text(limitText, color = AppMuted, fontSize = 12.sp)
+    }
+    Column(
+        Modifier.fillMaxWidth().clickable {
+            com.adlen.sonora.app.data.offline.StorageInfo.clearCache(ctx) { left ->
+                cache = left
+                android.widget.Toast.makeText(ctx, ctx.getString(R.string.settings_storage_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.settings_storage_cache_clear), color = AppText, fontSize = 16.sp)
+        Text(cacheText, color = AppMuted, fontSize = 12.sp)
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
+        Text(stringResource(R.string.settings_storage_free_title), color = AppText, fontSize = 16.sp)
+        Text(free, color = AppMuted, fontSize = 12.sp)
+    }
+}
+
+/** "Remove all downloads", with the space they take; asks first, like the official app. */
+@Composable
+private fun RemoveDownloadsRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var ask by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val size = android.text.format.Formatter.formatShortFileSize(ctx, com.adlen.sonora.app.data.offline.OfflineStore.totalBytes())
+    androidx.compose.foundation.layout.Column(
+        Modifier.fillMaxWidth().clickable { ask = true }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.settings_item_remove_downloads_title), color = AppText, fontSize = 16.sp)
+        Text(stringResource(R.string.downloads_size, size), color = AppMuted, fontSize = 12.sp)
+    }
+    if (ask) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { ask = false },
+        containerColor = tone(0xFF282828),
+        title = { Text(stringResource(R.string.settings_storage_remove_downloads_dialog_title), color = AppText) },
+        text = { Text(stringResource(R.string.playlist_entity_remove_download_dialog_description), color = AppMuted) },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                ask = false
+                com.adlen.sonora.app.data.offline.OfflineDownloader.removeAll()
+            }) { Text(stringResource(R.string.playlist_entity_remove_download_dialog_positive_button), color = com.adlen.sonora.app.ui.theme.AppAccent) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = { ask = false }) {
+                Text(stringResource(R.string.add_to_playlist_button_cancel), color = AppText)
+            }
+        },
+    )
+}
+
+
+
+@Composable
+internal fun OptionRow(label: String, detail: String, checked: Boolean,
+    enabled: Boolean = true, onChecked: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onChecked)
+            .padding(horizontal = 20.dp, vertical = 10.dp)) {
+        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+            Text(label, color = AppText, fontSize = 16.sp)
+            Text(detail, color = AppMuted, fontSize = 12.sp)
+        }
+        androidx.compose.material3.Switch(checked = checked, enabled = enabled, onCheckedChange = null)
+    }
+}
+
+/**
+ * The installed version with a refresh button: it asks GitHub right now (no cache), shows the
+ * answer and the time of the last check. A newer release opens the update card on tap.
+ */
+@Composable
+private fun AboutRow() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val check = com.adlen.sonora.app.data.api.rememberUpdateCheckState(ctx)
+    // Also what "Later" put aside: the card in the app offers it again from here.
+    val live = com.adlen.sonora.app.updateRelease.value
+    val known = live ?: remember { com.adlen.sonora.app.data.api.UpdateChecker.known(ctx) }
+    Row(
+        Modifier.fillMaxWidth()
+            .then(if (known != null) Modifier.clickable { com.adlen.sonora.app.updateRelease.value = known } else Modifier)
+            .padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.settings_about_version, com.adlen.sonora.engine.BuildConfig.VERSION_NAME), color = AppText, fontSize = 16.sp)
+            if (known != null) {
+                Text(stringResource(R.string.settings_update_available, known.version), color = com.adlen.sonora.app.ui.theme.AppAccent, fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 2.dp))
+                Text(stringResource(R.string.settings_update_available_detail), color = AppMuted, fontSize = 12.sp)
+            }
+            check.message?.takeIf { known == null || check.isError }?.let {
+                Text(it, color = if (check.isError) androidx.compose.material3.MaterialTheme.colorScheme.error else AppText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
+            }
+            Text(check.lastCheckedText, color = AppMuted, fontSize = 12.sp)
+        }
+        if (check.checking) {
+            androidx.compose.material3.CircularProgressIndicator(Modifier.padding(12.dp).size(24.dp), strokeWidth = 2.dp, color = AppMuted)
+        } else {
+            androidx.compose.material3.IconButton(onClick = { scope.launch { check.run() } }) {
+                androidx.compose.material3.Icon(Icons.Default.Refresh, stringResource(R.string.settings_update_refresh), tint = AppMuted)
+            }
+        }
+    }
+}
+
+/**
+ * Hands the exported report to the share sheet. The file goes through the app's FileProvider;
+ * if the provider refuses the path (external storage absent), the report's own path is shared
+ * instead, so the tester still has something to send.
+ */
+internal fun shareDiagnosticReport(context: android.content.Context, file: java.io.File) {
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_SUBJECT, "Sonora diagnostic report")
+    }
+    val uri = runCatching {
+        androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }.getOrNull()
+    if (uri != null) {
+        send.type = "application/octet-stream"
+        send.putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        send.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    } else {
+        send.putExtra(android.content.Intent.EXTRA_TEXT, "Sonora diagnostic report: ${file.absolutePath}")
+    }
+    context.startActivity(android.content.Intent.createChooser(send, null).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+}

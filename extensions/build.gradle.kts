@@ -1,7 +1,7 @@
-// Myspoti extensions: the sandbox third-party scripts run in, their manifest, permissions,
+// Sonora extensions: the sandbox third-party scripts run in, their manifest, permissions,
 // packages and catalogue. Plain JVM, so an extension runs on a desktop exactly as on the phone
 // (the runner is :extensions-cli). It depends on the :api contract only, never on Spotify's
-// implementation: a host gives it a MyspotiApi (SpotifyDispatcher) and, if it wants, the raw door.
+// implementation: a host gives it a SonoraApi (SpotifyDispatcher) and, if it wants, the raw door.
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)

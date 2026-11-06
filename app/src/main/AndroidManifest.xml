@@ -24,20 +24,20 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:name="app.myspoti.MyspotiApplication"
+        android:name="com.adlen.sonora.SonoraApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Myspoti"
+        android:theme="@style/Theme.Sonora"
         android:usesCleartextTraffic="true">
         <!-- Samsung DeX: the app keeps running (and playing) when the window moves to or from DeX. -->
         <meta-data android:name="com.samsung.android.keepalive.density" android:value="true" />
         <meta-data android:name="com.samsung.android.multidisplay.keep_process_alive" android:value="true" />
         <!-- Cover art for Android Auto (content:// only); Spotify image CDN hosts only. -->
         <provider
-            android:name="com.music.spotui.di.ArtworkProvider"
+            android:name="com.adlen.sonora.app.di.ArtworkProvider"
             android:authorities="${applicationId}.artwork"
             android:exported="true" />
         <!-- Share-as-image cards, handed to the target app through a read grant. -->
@@ -68,10 +68,10 @@
             android:value="true" />
 
 
-        <!-- Debug and beta builds only (cliEnabled, build.gradle.kts): tools/myspoti-cli drives the app over adb.
+        <!-- Debug and beta builds only (cliEnabled, build.gradle.kts): tools/sonora-cli drives the app over adb.
              DUMP is held by the adb shell, not by other apps. -->
         <receiver
-            android:name="com.music.spotui.cli.CliReceiver"
+            android:name="com.adlen.sonora.app.cli.CliReceiver"
             android:enabled="${cliEnabled}"
             android:exported="true"
             android:permission="android.permission.DUMP">
@@ -87,7 +87,7 @@
              them = remove the LAUNCHER filter from MainActivity and uncomment these aliases.
         <activity-alias
             android:name=".ui.LauncherGreen"
-            android:targetActivity="app.myspoti.MainActivity"
+            android:targetActivity="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:enabled="true"
             android:icon="@mipmap/ic_launcher"
@@ -99,7 +99,7 @@
         </activity-alias>
         <activity-alias
             android:name=".ui.LauncherBlue"
-            android:targetActivity="app.myspoti.MainActivity"
+            android:targetActivity="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:enabled="false"
             android:icon="@mipmap/ic_launcher_blue"
@@ -111,7 +111,7 @@
         </activity-alias>
         <activity-alias
             android:name=".ui.LauncherPurple"
-            android:targetActivity="app.myspoti.MainActivity"
+            android:targetActivity="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:enabled="false"
             android:icon="@mipmap/ic_launcher_purple"
@@ -123,7 +123,7 @@
         </activity-alias>
         <activity-alias
             android:name=".ui.LauncherPink"
-            android:targetActivity="app.myspoti.MainActivity"
+            android:targetActivity="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:enabled="false"
             android:icon="@mipmap/ic_launcher_pink"
@@ -135,7 +135,7 @@
         </activity-alias>
         <activity-alias
             android:name=".ui.LauncherOrange"
-            android:targetActivity="app.myspoti.MainActivity"
+            android:targetActivity="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:enabled="false"
             android:icon="@mipmap/ic_launcher_orange"
@@ -162,7 +162,7 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
         <receiver
-            android:name="com.music.spotui.data.api.AppUpdater$StatusReceiver"
+            android:name="com.adlen.sonora.app.data.api.AppUpdater$StatusReceiver"
             android:exported="false" />
         <receiver
             android:name="androidx.media.session.MediaButtonReceiver"
@@ -176,7 +176,7 @@
 
         <!-- Home screen widget: now playing with controls. -->
         <receiver
-            android:name="com.music.spotui.widget.NowPlayingWidget"
+            android:name="com.adlen.sonora.app.widget.NowPlayingWidget"
             android:exported="false"
             android:label="${appLabel}">
             <intent-filter>
@@ -186,6 +186,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_now_playing_info" />
         </receiver>
+
+        <!-- Quick Settings tile: play or pause the current queue. -->
+        <service
+            android:name="com.adlen.sonora.app.widget.PlaybackTileService"
+            android:exported="true"
+            android:icon="@drawable/msp_ic_play"
+            android:label="${appLabel}"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

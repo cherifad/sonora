@@ -40,11 +40,18 @@ Also: [Immersive search](docs/screenshots/sonora/immersive-search.png) ·
   default, Classic in Settings → Look).
 - **Playback** through Media3 `ExoPlayer`: gapless, seek, shuffle/repeat, background playback
   with a media notification, lock screen and headset/Bluetooth controls.
-- **Your library's own data**: favourites (`star`), playlists (create, rename, add/remove,
-  delete), recently played, artist biographies when the server provides them, lyrics
-  (OpenSubsonic `getLyricsBySongId`, then `getLyrics`).
+- **Your library's own data**: favourites (`star`), ratings (`setRating`), playlists (create,
+  rename, add/remove, delete), recently played, genres, artist biographies when the server
+  provides them, lyrics (OpenSubsonic `getLyricsBySongId`, then `getLyrics`).
+- **Discovery**: similar-track radio (`getSimilarSongs2`), “For you” (`getRandomSongs`),
+  “Recently played” and “More like this”.
+- **Server extras**: bookmarks, share links (`getShares`), library scan status, now playing
+  and the account avatar, each shown only when the server supports it.
+- **Sound**: ReplayGain (track or album), equalizer, skip-silence, crossfade for local files.
 - **Server queue persistence** (`savePlayQueue` / `getPlayQueue`) and scrobbling
   (`nowPlaying`, then `submission=true` at half the song).
+- **Platform**: Android Auto/Automotive, a home-screen widget with shuffle, and a Quick
+  Settings play/pause tile.
 - **Downloads and offline** — the server's own files (original or transcoded: MP3 128, ≤320 kbps,
   or untouched), kept encrypted on the phone; offline, only downloads play and the lists say so.
   A WorkManager job keeps downloads going in the background.
@@ -85,7 +92,7 @@ Tests:
 ```bash
 ./gradlew :api-subsonic:testDebugUnitTest :app:testMobileDebugUnitTest   # JVM, no device
 ./gradlew :app:connectedMobileDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.package=com.myspoti.ui     # UI, on a device/emulator
+  -Pandroid.testInstrumentationRunnerArguments.package=com.adlen.sonora.test.ui     # UI, on a device/emulator
 ```
 
 ## Branches and releases
@@ -100,10 +107,10 @@ See [`docs/RELEASING.md`](docs/RELEASING.md) for the secrets and the exact steps
 
 ```
 app/            Compose UI (Myspoti fork)
-api/            domain contract (MyspotiApi, models)
+api/            domain contract (SonoraApi, models)
 api-subsonic/   Subsonic/OpenSubsonic backend + Media3 player
 api-spotify/    upstream Spotify engine (kept for reference, never started)
-host-android/   Android runtime (MyspotiRuntime, playback service)
+host-android/   Android runtime (SonoraRuntime, playback service)
 host-cdp/       upstream CDP tooling (reference)
 extensions/     upstream extension sandbox (reference)
 docs/           testing, releasing, Navidrome compatibility, screenshots

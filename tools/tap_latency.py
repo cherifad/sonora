@@ -16,7 +16,7 @@ import argparse, json, os, statistics, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import playback_test as t
 
-PKG = "app.myspoti.dev"
+PKG = "com.adlen.sonora.dev"
 
 # First sound of a new song: the page's media element starts advancing once the
 # content changed or the element reset to the start.
@@ -76,7 +76,7 @@ def broadcast(**es):
     args = ["--es", "cmd", es.pop("cmd")]
     for k, v in es.items():
         args += ["--es", k, str(v)]
-    cmd = f"date +%s%3N; am broadcast -a app.myspoti.TEST -p {PKG} {' '.join(args)}"
+    cmd = f"date +%s%3N; am broadcast -a com.adlen.sonora.TEST -p {PKG} {' '.join(args)}"
     return int(t.adb("shell", cmd).splitlines()[0])
 
 

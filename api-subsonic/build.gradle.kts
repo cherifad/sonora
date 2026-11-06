@@ -1,11 +1,11 @@
-// A Subsonic/OpenSubsonic backend for the Myspoti API contract, under GPL-3.0.
+// A Subsonic/OpenSubsonic backend for the Sonora API contract, under GPL-3.0.
 // This is the porting spike: it implements Home -> album -> playback and stubs the rest.
 plugins {
     alias(libs.plugins.android.library)
 }
 
 android {
-    namespace = "app.myspoti.subsonic"
+    namespace = "com.adlen.sonora.subsonic"
     compileSdk = 37
 
     defaultConfig {
@@ -21,6 +21,7 @@ dependencies {
     api(project(":api"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation(libs.okhttp)
+    implementation(libs.security.crypto)
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-common:1.8.0")
 

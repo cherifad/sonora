@@ -5,7 +5,11 @@
     <string name="home_new_releases">New releases</string>
     <string name="home_frequently_played">Frequently played</string>
     <string name="home_your_playlists">Your playlists</string>
+    <string name="home_for_you">For you</string>
+    <string name="home_recently_played">Recently played</string>
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>
     <string name="home_greeting_evening">Good evening</string>
+    <string name="genre_albums">Albums</string>
+    <string name="genre_songs">Songs</string>
 </resources>

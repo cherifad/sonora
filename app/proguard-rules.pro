@@ -1,15 +1,15 @@
 # The Web Player page calls the host through this @JavascriptInterface on WebViews without
 # web message listeners (PlayerChannel.kt).
--keepclassmembers class app.myspoti.host.android.PlayerChannel {
+-keepclassmembers class com.adlen.sonora.host.android.PlayerChannel {
     @android.webkit.JavascriptInterface <methods>;
 }
 # The extension page's bridge (ExtensionPage.kt): the page's script calls it by method name.
--keepclassmembers class com.music.spotui.ui.screens.PageBridge {
+-keepclassmembers class com.adlen.sonora.app.ui.screens.PageBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
 # Bundled resources read by name (bridge script, GraphQL operation table).
--keep class app.myspoti.spotify.bridge.BridgeScript { *; }
--keep class app.myspoti.spotify.gql.GqlOps { *; }
+-keep class com.adlen.sonora.spotify.bridge.BridgeScript { *; }
+-keep class com.adlen.sonora.spotify.gql.GqlOps { *; }
 -keep class org.bouncycastle.** { *; }
 -dontwarn org.bouncycastle.**
 -dontwarn javax.annotation.concurrent.GuardedBy
@@ -58,7 +58,7 @@
 
 # Native UI (Spotui port) + Spotify data layer
 -keep class com.metrolist.spotify.models.** { *; }
--keep class com.music.spotui.data.entity.** { *; }
+-keep class com.adlen.sonora.app.data.entity.** { *; }
 -keepclassmembers @kotlinx.serialization.Serializable class ** { *; }
 -dontwarn org.slf4j.**
 -dontwarn io.ktor.**
@@ -84,8 +84,8 @@
 
 # Extensions: a Spotify call's result is turned into JSON from the API models' own field names
 # (SpotifyDispatcher reads them by reflection), and the sandbox loads prelude.js from its jar.
--keepclassmembers class app.myspoti.api.** { <fields>; }
--keep class app.myspoti.extensions.** { *; }
+-keepclassmembers class com.adlen.sonora.api.** { <fields>; }
+-keep class com.adlen.sonora.extensions.** { *; }
 
 # The relay's Cronet (before Android 14): CronetProvider finds the Play services provider by its
 # class name, and zstd's decoder is reached from its native library by JNI.

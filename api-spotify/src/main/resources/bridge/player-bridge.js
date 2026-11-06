@@ -1,13 +1,13 @@
 /*
- * Myspoti player bridge.
+ * Sonora player bridge.
  *
  * Runs inside the official Web Player page and exposes its player through one
  * small, host-agnostic contract. The same file is loaded by the Android WebView
  * and by desktop Chrome over CDP, so every command can be tested on a PC.
  *
- * Host -> page: window.Myspoti.call(id, method, args)  (also returns a Promise)
+ * Host -> page: window.Sonora.call(id, method, args)  (also returns a Promise)
  * Page -> host: one JSON string per message, sent to the first host channel found:
- *   - window.MyspotiHost.postMessage(json)  Android web message listener (open.spotify.com only)
+ *   - window.SonoraHost.postMessage(json)  Android web message listener (open.spotify.com only)
  *   - window.__mspHostPost(json)            CDP Runtime.addBinding
  * Messages: {type: "ready"} | {type: "state", state} | {type: "queue", queue}
  *         | {type: "result", id, ok, value | error} | {type: "error", error}
@@ -19,10 +19,10 @@
   // when the host asks for it (window.__mspReannounce, set when it is not ready). A second
   // "ready" for one page load would run every ready collector twice (state refresh, web
   // token, audio quality, volume).
-  if (window.Myspoti && window.Myspoti.version) {
-    if (window.Myspoti.announce && window.__mspReannounce) {
+  if (window.Sonora && window.Sonora.version) {
+    if (window.Sonora.announce && window.__mspReannounce) {
       window.__mspReannounce = false;
-      window.Myspoti.announce();
+      window.Sonora.announce();
     }
     return;
   }
@@ -48,7 +48,7 @@
   const post = msg => {
     const json = JSON.stringify(msg);
     try {
-      if (window.MyspotiHost && typeof window.MyspotiHost.postMessage === 'function') return window.MyspotiHost.postMessage(json);
+      if (window.SonoraHost && typeof window.SonoraHost.postMessage === 'function') return window.SonoraHost.postMessage(json);
       if (typeof window.__mspHostPost === 'function') return window.__mspHostPost(json);
     } catch (e) { /* host gone: nothing to report to */ }
   };
@@ -780,7 +780,7 @@
     pushState();
   };
 
-  window.Myspoti = { version: VERSION, call, announce, adsOff, adsSkip, methods: Object.keys(commands) };
+  window.Sonora = { version: VERSION, call, announce, adsOff, adsSkip, methods: Object.keys(commands) };
 
   // The page's own UI is never seen. On the home page a song change redraws ~7000 nodes and
   // ~190 images, which held the main thread for ~1 s and delayed the next song's sound; the

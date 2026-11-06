@@ -3,7 +3,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity
-            android:name="app.myspoti.MainActivity"
+            android:name="com.adlen.sonora.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="unspecified"
@@ -11,7 +11,7 @@
             android:supportsPictureInPicture="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard|navigation|density"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Myspoti">
+            android:theme="@style/Theme.Sonora">
             <!-- Desktop windows (Samsung DeX, freeform): opens in a landscape window, resizable. -->
             <layout
                 android:defaultWidth="1100dp"

@@ -42,6 +42,11 @@ jobs:
       - name: Build the debug APKs
         run: ./gradlew :app:assembleMobileDebug :app:assembleAutomotiveDebug --console=plain
 
+      # R8, resource shrinking and lint-vital: a release that only fails at tag time
+      # would ship broken. Local builds use the debug key, so no secret is needed.
+      - name: Release build (R8)
+        run: ./gradlew :app:assembleMobileRelease --console=plain
+
       - name: Upload the phone APK
         uses: actions/upload-artifact@v4
         with:

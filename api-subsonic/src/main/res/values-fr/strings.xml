@@ -3,7 +3,11 @@
     <string name="home_new_releases">Nouveautés</string>
     <string name="home_frequently_played">Souvent écoutés</string>
     <string name="home_your_playlists">Vos playlists</string>
+    <string name="home_for_you">Pour vous</string>
+    <string name="home_recently_played">Écoutés récemment</string>
     <string name="home_greeting_morning">Bonjour</string>
     <string name="home_greeting_afternoon">Bon après-midi</string>
     <string name="home_greeting_evening">Bonsoir</string>
+    <string name="genre_albums">Albums</string>
+    <string name="genre_songs">Titres</string>
 </resources>

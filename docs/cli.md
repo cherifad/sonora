@@ -1,11 +1,11 @@
-# Driving the app over adb (`tools/myspoti-cli`)
+# Driving the app over adb (`tools/sonora-cli`)
 
 Debug and beta builds answer a few commands sent over adb, so a test (or an agent) checks a feature
 through the app's own code paths without screenshots or taps. Stable releases leave the receiver
 off in their manifest, and it answers nothing outside debug and beta builds even if turned on.
 
 ```
-tools/myspoti-cli [-p app.myspoti.dev] [-s serial] [-t 40] [--raw] <command> [args…]
+tools/sonora-cli [-p com.adlen.sonora.dev] [-s serial] [-t 40] [--raw] <command> [args…]
 ```
 
 Each command is one broadcast (`<package>.CLI`, held to the adb shell by the `DUMP` permission).
@@ -18,7 +18,7 @@ time), `2` device unreachable (`adb get-state` is not `device`, or several devic
 has no CLI receiver: it leaves the broadcast's result at 0, where the receiver sets 1; `ext.why` is
 debug only). The script always targets one device: `-s` or `ANDROID_SERIAL`, else the only one adb
 lists; with several and none named it refuses. `ADB`, `ANDROID_SERIAL` and `MYSPOTI_PACKAGE` override
-the defaults (the beta is `-p app.myspoti`).
+the defaults (the beta is `-p com.adlen.sonora`).
 
 ## Commands
 
@@ -52,15 +52,15 @@ A sample lyrics extension, from packing to its answer, from the repository root 
 
 ```bash
 cd base && ./gradlew -q :extensions-cli:installDist && cd ..
-base/extensions-cli/build/install/myspoti-ext/bin/myspoti-ext pack docs/extensions/samples/lrclib-lyrics /tmp/myspoti-cli
-tools/myspoti-cli ext.install /tmp/myspoti-cli/app.myspoti.samples.lrclib-*.zip
-tools/myspoti-cli ext.list
-tools/myspoti-cli ext.call app.myspoti.samples.lrclib lyrics '{"title":"Get Lucky","artist":"Daft Punk","durationMs":369000}'
-tools/myspoti-cli ext.log app.myspoti.samples.lrclib 20
-tools/myspoti-cli play spotify:track:69kOkLUCkxIZYexIgSG8rq
-tools/myspoti-cli status
-tools/myspoti-cli ext.disable app.myspoti.samples.lrclib
+base/extensions-cli/build/install/sonora-ext/bin/sonora-ext pack docs/extensions/samples/lrclib-lyrics /tmp/sonora-cli
+tools/sonora-cli ext.install /tmp/sonora-cli/com.adlen.sonora.samples.lrclib-*.zip
+tools/sonora-cli ext.list
+tools/sonora-cli ext.call com.adlen.sonora.samples.lrclib lyrics '{"title":"Get Lucky","artist":"Daft Punk","durationMs":369000}'
+tools/sonora-cli ext.log com.adlen.sonora.samples.lrclib 20
+tools/sonora-cli play spotify:track:69kOkLUCkxIZYexIgSG8rq
+tools/sonora-cli status
+tools/sonora-cli ext.disable com.adlen.sonora.samples.lrclib
 ```
 
 In a script, `--raw` prints the whole reply (`{"ok":…,"cmd":…,"result":…}`) and the exit code says
-whether it worked, e.g. `tools/myspoti-cli --raw ext.list | jq '.result[].id'`.
+whether it worked, e.g. `tools/sonora-cli --raw ext.list | jq '.result[].id'`.

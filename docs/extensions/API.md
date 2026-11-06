@@ -49,7 +49,7 @@ Package it (a zip with the manifest and the script at its root, nothing else but
 files below):
 
 ```
-myspoti-ext pack ./my-lyrics        # writes io.github.you.lyrics-1.0.0.zip, prints its sha256
+sonora-ext pack ./my-lyrics        # writes io.github.you.lyrics-1.0.0.zip, prints its sha256
 ```
 
 A package may hold `manifest.json`, the `main` script, `icon.png` (or the PNG named by the
@@ -58,8 +58,8 @@ zip, 1 MB for the script, 256 KB for the icon. The zip is built the same way eve
 order and dates), so anyone can rebuild it and compare the sha256.
 
 How an extension reaches people: its own GitHub repository, found by the store through the topic
-`myspoti-extension` (section 9), the official repository's optional list of verified extensions or a repository the user adds at their own risk. A repository is a folder of packages
-and an `index.json` (`myspoti-ext index <folder> <name>` writes it). The index can also list
+`sonora-extension` (section 9), the official repository's optional list of verified extensions or a repository the user adds at their own risk. A repository is a folder of packages
+and an `index.json` (`sonora-ext index <folder> <name>` writes it). The index can also list
 extensions every Myspoti must turn off (`blocked`: an id, optionally some package sha256, a reason).
 
 An index entry is the manifest's fields (`id`, `name`, `version`, `versionCode`, `apiVersion`,
@@ -72,7 +72,7 @@ ignores them, an index without them still reads):
 
 | Field | Type | Shown |
 |---|---|---|
-| `icon_url` | string | The icon before download: a PNG, absolute or relative to the index (`myspoti-ext index` writes `icons/<id>.png`). `icon`, the older name, is still read. |
+| `icon_url` | string | The icon before download: a PNG, absolute or relative to the index (`sonora-ext index` writes `icons/<id>.png`). `icon`, the older name, is still read. |
 | `updated_at` | string | ISO 8601 date the version was listed (`2026-10-23`); `index` keeps it while the package's sha256 is unchanged. |
 | `category`, `tags`, `changelog` | | As in the manifest. |
 | `min_app_version` | string | As the manifest's `minAppVersion`: the row says "Requires Myspoti X or newer" and its Install button is off. |
@@ -122,7 +122,7 @@ extensions did there ("Lyrics of X from Y", "Skipped by Z") with a one-tap Turn 
 | `replaces` | string[] | `[]` | Extension ids this one takes the place of (10 at most): installing it offers to turn them off. |
 | `conflictsWith` | string[] | `[]` | Extension ids that must not run with this one (10 at most): the user picks which to keep. Either side declaring it is enough. |
 | `icon` | string | none | A `.png` at the root of the package (square, 256 px or less). Without it, `icon.png` is used if the package has one, else a tile with the name's first letter. |
-| `category` | string | `other` | Where the store files it, one of a fixed list: `lyrics` (needs `lyrics.provide` or `trackinfo.provide`), `playback` (Playback & audio: a `playback.*`, `audio.source` or `player.buttons` action), `library` (`library.read`, `library.write` or `playlists.write`), `discovery` (`home.sections`, `search.provide` or `spotify.catalog`), `stats` (`playback.events` or `library.read`), `look` (Look & feel: a blocks action or `webview.page`), `social` (`network`, `library.read` or `spotify.catalog`), `tools`, `other`. A category the actions do not fit, or an unknown one, is filed under `other` (`myspoti-ext check` says so); an extension with `download.source` is always under `tools`. `tags` are shown and found by the search, not filtered on. |
+| `category` | string | `other` | Where the store files it, one of a fixed list: `lyrics` (needs `lyrics.provide` or `trackinfo.provide`), `playback` (Playback & audio: a `playback.*`, `audio.source` or `player.buttons` action), `library` (`library.read`, `library.write` or `playlists.write`), `discovery` (`home.sections`, `search.provide` or `spotify.catalog`), `stats` (`playback.events` or `library.read`), `look` (Look & feel: a blocks action or `webview.page`), `social` (`network`, `library.read` or `spotify.catalog`), `tools`, `other`. A category the actions do not fit, or an unknown one, is filed under `other` (`sonora-ext check` says so); an extension with `download.source` is always under `tools`. `tags` are shown and found by the search, not filtered on. |
 | `tags` | string[] | `[]` | 8 at most, each 1 to 24 characters: lower case letters, digits, spaces, `-`. The store's search finds them. |
 | `minAppVersion` | string | none | The oldest Myspoti it works on (`"2.0.2"`, `"2.0.2-beta.4"`), compared like semantic versions (a release is newer than its betas). An older Myspoti shows "Requires Myspoti 2.0.2 or newer" and does not install it. |
 | `changelog` | string | `""` | What changed in this version, 2000 characters at most: shown on the store page and before an update. |
@@ -140,7 +140,7 @@ An action entry: `{ "name": "...", "why": "...", "hosts": [...] }`.
   no scheme, no path, no `localhost`.
 
 **Old manifests** (before actions: `provides` + `permissions`) still load and install, mapped to
-actions (section 4.1); `myspoti-ext check` says so. `actions` cannot be mixed with them.
+actions (section 4.1); `sonora-ext check` says so. `actions` cannot be mixed with them.
 
 A setting: `{ "key", "type", "label", "description", "default", "options", "section"?, "role"?, "perNetwork"? }`.
 
@@ -166,7 +166,7 @@ A setting: `{ "key", "type", "label", "description", "default", "options", "sect
     value as `quality` to every extension in `download-source`.
   An extension below the first one, turned off or not installed shows nothing there. Without
   `section`, a setting is on your page only, as always. An unknown value is ignored (your page only);
-  `myspoti-ext check` warns. A section is only ever shown for an extension that asks the matching
+  `sonora-ext check` warns. A section is only ever shown for an extension that asks the matching
   action (`audio.source`, `download.source`).
 - `role` (optional): `"quality"`, on a `choice` with a `section`, one per section at most: your
   extension's quality. Shown first-class in that section (in the place of the app's), and its value
@@ -228,7 +228,7 @@ Settings → Downloads while it is the first downloader:
 ]
 ```
 
-`myspoti-ext check` prints every problem in plain words.
+`sonora-ext check` prints every problem in plain words.
 
 ## 3. Hooks
 
@@ -1263,11 +1263,11 @@ is. `playlists.setCover` takes a JPEG as base64.
 
 ## 8. Testing on a computer
 
-`myspoti-ext` runs an extension the way the app would, without a phone. From `base/`:
+`sonora-ext` runs an extension the way the app would, without a phone. From `base/`:
 
 ```
 ./gradlew :extensions-cli:installDist
-extensions-cli/build/install/myspoti-ext/bin/myspoti-ext <command> ...
+extensions-cli/build/install/sonora-ext/bin/sonora-ext <command> ...
 ```
 
 (`./gradlew :extensions-cli:run --args="..."` works too, but may not pass your terminal's input
@@ -1315,7 +1315,7 @@ the account signed in to the Web Player of a Chrome you started yourself:
 
 ```
 google-chrome --user-data-dir=$HOME/.myspoti-chrome --remote-debugging-port=9222   # sign in to open.spotify.com once
-myspoti-ext run ./my-ext lyrics --title "Papaoutai" --artist Stromae --cdp 9222
+sonora-ext run ./my-ext lyrics --title "Papaoutai" --artist Stromae --cdp 9222
 ```
 
 The runner reloads that Web Player page, waits (60 s at most) for it, and stops if nobody is signed
@@ -1328,7 +1328,7 @@ the question on stderr and reads one line from stdin:
 Allow it? [y/N]
 ```
 
-`y` or `yes` allows; anything else, or end of input, refuses (so `echo y | myspoti-ext ...`
+`y` or `yes` allows; anything else, or end of input, refuses (so `echo y | sonora-ext ...`
 allows every question, a script run with no input refuses them all).
 
 **Limits of `check`.** It never calls a hook or an event and has no account, no current track and
@@ -1423,7 +1423,7 @@ and confirmed) is hidden from the store.
 ### 9.2 In the store
 
 The store searches GitHub once per visit (cached 6 hours) for public repositories with the topic
-`myspoti-extension`, up to 100, and reads each one's `manifest.json` on the default branch (a
+`sonora-extension`, up to 100, and reads each one's `manifest.json` on the default branch (a
 missing or refused manifest leaves the repository out). They are listed under **On GitHub**, by
 score, then the most recently updated.
 
@@ -1462,12 +1462,12 @@ piracy, credential theft, fake plays, malware) before you publish.
    Other files and folders (screenshots, sources, workflows) can live there too: the app keeps only
    the package files above.
 2. Rename the `id` (it never changes afterwards), edit `manifest.json` and `main.js`, and check it:
-   `myspoti-ext check .` (section 8) must print no problem.
-3. Add the topic **`myspoti-extension`** to the repository (About, Topics). The store finds it
+   `sonora-ext check .` (section 8) must print no problem.
+3. Add the topic **`sonora-extension`** to the repository (About, Topics). The store finds it
    within 6 hours.
 4. Release: raise `version` and `versionCode`, tag (`git tag v1.0.0 && git push origin v1.0.0`).
    The template's workflow checks that the tag matches `version`, builds the deterministic
-   `extension.zip` and attaches it to a GitHub release (by hand: `myspoti-ext pack .`'s zip renamed
+   `extension.zip` and attaches it to a GitHub release (by hand: `sonora-ext pack .`'s zip renamed
    **`extension.zip`**; without it, the tag's archive is used). Every phone gets it within a day, by
    itself if it asks nothing new.
 5. Optional: open the `Ratings` issue with the `myspoti-ratings` label, from your own account
@@ -1517,7 +1517,7 @@ made the key and how the phone's keystore and boot state look.
 It proves that the key lives in Android hardware (the attestation's security level is
 StrongBox or TrustedEnvironment, never Software), that **the app package made it** (the attestation
 extension, `attestationApplicationId`, holds the package name and the SHA-256 digest of the
-certificate that signed the app: `app.myspoti` or `app.myspoti.beta`, signed by the key you pin),
+certificate that signed the app: `com.adlen.sonora` or `com.adlen.sonora.beta`, signed by the key you pin),
 and that your server asked for it (the challenge). Every later signature then comes from that key.
 
 It does **not** prove that the build is untouched: on a rooted phone, or with a patched official
@@ -1546,8 +1546,8 @@ by uninstalling.
    description): check `attestationChallenge` equals your challenge, `attestationSecurityLevel` is
    StrongBox or TrustedEnvironment, and in the authorization lists that the key is an EC P-256 key
    with purpose `SIGN`, with no `ALL_APPLICATIONS` and no software-only part.
-4. **Check the app.** In `attestationApplicationId`: the package name is `app.myspoti` (or
-   `app.myspoti.beta` if you accept the beta), and one of the signing certificate digests is the
+4. **Check the app.** In `attestationApplicationId`: the package name is `com.adlen.sonora` (or
+   `com.adlen.sonora.beta` if you accept the beta), and one of the signing certificate digests is the
    SHA-256 of the release certificate **you choose to pin** (`apksigner verify --print-certs` on
    the official APK). Optionally also read the root of trust (verified boot, locked bootloader).
 5. **Store** the key against the account or install, with the time and the level you saw.
@@ -1587,8 +1587,8 @@ function signedPost(path, body) {
 
 (manifest: `"actions": [{ "name": "attest", "why": "Lets my server know this is a real Myspoti" }, { "name": "network", "hosts": ["api.example.com"], "why": "Talks to my server" }]`.)
 
-On a computer, `myspoti-ext` gives each extension a **software** EC P-256 key kept in
-`~/.myspoti-ext/attest/` (or under `$MYSPOTI_EXT_HOME`), and a one-certificate self-signed
+On a computer, `sonora-ext` gives each extension a **software** EC P-256 key kept in
+`~/.sonora-ext/attest/` (or under `$MYSPOTI_EXT_HOME`), and a one-certificate self-signed
 "chain" that says `TEST-ONLY` and carries the challenge in an extension of a private OID. It is
 there to test your signatures and your enrolment flow; a server that verifies the chain as in
 step 2 must refuse it, since it is not hardware-backed and not Google's.
