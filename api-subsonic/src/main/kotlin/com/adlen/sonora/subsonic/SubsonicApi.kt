@@ -35,7 +35,7 @@ class SubsonicApi(
 ) : SonoraApi {
 
     private val appContext = context.applicationContext
-    private val client = SubsonicClient(config)
+    private val client = SubsonicClient(config, SubsonicTls.client(appContext, config))
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _capabilities = MutableStateFlow<ServerCapabilities?>(null)
     private val catalogImpl = SubsonicCatalog(client)

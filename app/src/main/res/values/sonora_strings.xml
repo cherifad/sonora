@@ -689,4 +689,7 @@
     <string name="music_folder_title">Music library</string>
     <string name="music_folder_all">All libraries</string>
     <string name="music_folder_close">Close</string>
+    <string name="tls_reset_title">Reset server certificate trust</string>
+    <string name="tls_reset_detail">After the server\'s certificate changed: the next connection pins the new one.</string>
+    <string name="tls_reset_done">Server trust reset</string>
 </resources>

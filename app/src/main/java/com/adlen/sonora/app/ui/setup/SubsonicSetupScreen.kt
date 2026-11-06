@@ -179,7 +179,10 @@ internal fun SubsonicServerForm(
         scope.launch {
             busy = true
             error = null
-            val result = runCatching { SubsonicClient(config).probeCapabilities() }
+            val result = runCatching {
+                SubsonicClient(config, com.adlen.sonora.subsonic.SubsonicTls.client(context, config))
+                    .probeCapabilities()
+            }
             busy = false
             result.onSuccess {
                 SubsonicSettings.save(context, config)

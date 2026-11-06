@@ -128,8 +128,9 @@ identifiers, the app builds, and the attribution files are untouched.
       phases land.
 - [x] Implement API-key auth when `apiKeyAuthentication` is advertised (optional field in
       setup; `apiKey` replaces `u`/`t`/`s`).
-- [ ] Trust-on-first-use for self-signed TLS, with an explicit HTTP warning in setup.
-      Deferred to Phase 10: it needs a trust manager plus a stored fingerprint per host.
+- [x] Trust-on-first-use for self-signed TLS, with an explicit HTTP warning in setup.
+      The first certificate per host is pinned; a different one is refused and can be reset
+      in Settings.
 - [x] Contract tests: each error class, capability JSON, missing extension, API-key URL.
 
 **Done when:** a wrong password, a dead server, and a non-Subsonic server each produce a
@@ -271,8 +272,8 @@ action.
 - [x] Clear the cached server credentials on logout. Downloads stay parked, encrypted, under
       the account (deleting them on sign-out would silently lose offline content).
 - [ ] Optional biometric lock.
-- [~] Tests: the HTTP warning is visible; there is no Context-level test for the encrypted
-      file yet, and TOFU TLS is still Phase 10's open item.
+- [~] Tests: the HTTP warning is visible, the TLS fingerprint has a unit test, and the
+      encrypted prefs file still needs a Context-level test.
 
 **Done when:** `adb shell run-as … cat shared_prefs/*` shows no plaintext password.
 
@@ -352,6 +353,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 11 | Downloaded-lists file format locked by a JVM test | `test(offline)` |
 | 2026-11-06 | — | About shows the live update row / manual check; fork credit corrected to Myspoti | `fix(about)` |
 | 2026-11-06 | — | Removed Myspoti's Discord, Ko-fi and GitHub Sponsors links and their support UI/strings | `fix(about)` |
+| 2026-11-06 | 10 | Trust-on-first-use for self-signed HTTPS, reset row, fingerprint test | `feat(security)` |
 
 ## Decisions and risks
 
