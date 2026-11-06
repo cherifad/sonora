@@ -293,8 +293,9 @@ action.
       `tools/playback_test.py` measure it; no nightly threshold gate yet.
 - [~] Fault injection: HTTP 500, malformed/empty bodies and a timeout are unit-tested;
       airplane mode, clock skew and self-signed TLS stay manual.
-- [ ] Migration tests: upgrade from the previous release APK; downloads/queue/settings
-      survive.
+- [~] Migration tests: the downloaded-lists file format is covered by a JVM test
+      (`readCollections`), so a format change cannot silently drop downloads. A full
+      install-over-the-previous-APK upgrade test is still manual.
 - [x] Opt-in diagnostics: `Logbook.export` builds the redacted report the Settings row shares;
       it now includes the server type/version and OpenSubsonic extensions. No remote reporter
       is sent automatically; the report is only exported when the user asks.
@@ -348,6 +349,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 8 | Now-playing sheet in Settings, both looks | `feat(ui)` |
 | 2026-11-06 | 3 | Multi-library selector (`getMusicFolders` + `musicFolderId`), both looks | `feat(subsonic)` |
 | 2026-11-06 | 11 | Debug report carries server type/version and OpenSubsonic extensions | `feat(diagnostics)` |
+| 2026-11-06 | 11 | Downloaded-lists file format locked by a JVM test | `test(offline)` |
 
 ## Decisions and risks
 
