@@ -24,6 +24,7 @@ data class ServerCapabilities(
         ARTIST_INFO,
         TOP_SONGS,
         SIMILAR_SONGS,
+        NOW_PLAYING,
         PODCASTS,
     }
 
@@ -47,6 +48,7 @@ data class ServerCapabilities(
         Feature.ARTIST_INFO -> !isJellyfin
         Feature.TOP_SONGS -> !isJellyfin
         Feature.SIMILAR_SONGS -> !isJellyfin
+        Feature.NOW_PLAYING -> true
         // Podcasts are a Jellyfin feature; Navidrome has no podcast support.
         Feature.PODCASTS -> isJellyfin
     }

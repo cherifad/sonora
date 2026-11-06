@@ -624,13 +624,16 @@ internal class SubsonicPlaylists(private val client: SubsonicClient) : Playlists
     override suspend fun recommended(uri: Uri, limit: Int, skip: List<Uri>): List<Track> = emptyList()
 }
 
-internal class SubsonicUsers(private val config: SubsonicConfig) : Users {
+internal class SubsonicUsers(
+    private val config: SubsonicConfig,
+    private val client: SubsonicClient,
+) : Users {
 
     override suspend fun me(): Account = Account(
         uri = "spotify:user:${config.username}",
         username = config.username,
         name = config.username,
-        images = emptyList(),
+        images = listOfNotNull(client.avatarUrl(config.username)?.let { Image(it) }),
         premium = false,
         country = null,
     )

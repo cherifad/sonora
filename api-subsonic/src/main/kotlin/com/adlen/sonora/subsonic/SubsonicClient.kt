@@ -199,6 +199,10 @@ class SubsonicClient(
         return endpoint("getCoverArt", listOf("id" to id, "size" to size.toString())).toString()
     }
 
+    /** The avatar image of a user (`getAvatar` returns the image itself, not JSON). */
+    fun avatarUrl(username: String): String? =
+        username.takeIf { it.isNotBlank() }?.let { endpoint("getAvatar", listOf("username" to it)).toString() }
+
     private fun randomSalt(): String =
         (1..12).map { ALPHANUM[Random.nextInt(ALPHANUM.length)] }.joinToString("")
 

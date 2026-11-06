@@ -229,11 +229,16 @@ action.
 
 ## Phase 8 — Server-native extras
 
-- [ ] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks.
-- [ ] Shares (`getShares`, `createShare`, `deleteShare`) instead of plain text.
-- [ ] Scan status (`getScanStatus`, `startScan`) in Settings.
-- [ ] Now playing (`getNowPlaying`) and avatar (`getAvatar`).
-- [ ] Tests for each, capability-gated.
+- [~] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks:
+      backend done and gated; the player does not create them on pause yet.
+- [x] Shares (`getShares`, `createShare`, `deleteShare`): the song sheets copy the server's
+      share URL, with a toast on success/failure.
+- [x] Scan status (`getScanStatus`, `startScan`) in Settings, both looks (the Immersive row
+      starts a scan; the Classic row shows the status and starts one).
+- [~] Now playing (`getNowPlaying`) and avatar (`getAvatar`): the account avatar is wired;
+      the now-playing list has no screen yet.
+- [x] Tests for bookmarks, shares, scan, now playing, and a Jellyfin bridge that is not
+      asked for bookmarks.
 
 **Done when:** every extra is invisible on a server that does not support it.
 
@@ -311,6 +316,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 5 | Album/artist seeds for the mix, `similarAlbums` for "More like this", 5 more tests | `feat(subsonic)` |
 | 2026-11-06 | 6 | ReplayGain + equalizer + skip-silence on Subsonic streams, settings rows, gain tests | `feat(subsonic)` |
 | 2026-11-06 | 7 | Resumable downloads, retry/backoff, download quota, Wi-Fi-only setting, budget test | `feat(offline)` |
+| 2026-11-06 | 8 | Bookmarks/shares/scan/now-playing extras, share-link and scan UI, avatar, 6 tests | `feat(subsonic)` |
 
 ## Decisions and risks
 

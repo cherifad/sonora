@@ -146,6 +146,8 @@ fun SongOptionsSheet(
     val hasId = song.spotifyTrackId.isNotBlank()
     val ratingSupported = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
         ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.RATINGS) == true
+    val canShare = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+        ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.SHARES) == true
     var rating by remember(song.spotifyTrackId) { mutableStateOf<Int?>(null) }
     val ratingScope = rememberCoroutineScope()
     LaunchedEffect(song.spotifyTrackId, ratingSupported) {
@@ -206,6 +208,24 @@ fun SongOptionsSheet(
                             com.adlen.sonora.host.android.SonoraRuntime.api.extras
                                 .setRating("spotify:track:${song.spotifyTrackId}", value)
                         }
+                    }
+                }
+            }
+            if (canShare && hasId) {
+                MenuRow(Icons.Outlined.Share, stringResource(R.string.share_link), enabled = hasId) {
+                    ratingScope.launch {
+                        val share = runCatching {
+                            com.adlen.sonora.host.android.SonoraRuntime.subsonicApi?.serverExtras
+                                ?.createShare("spotify:track:${song.spotifyTrackId}")
+                        }.getOrNull()
+                        if (share != null) {
+                            val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                            clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Sonora", share.url))
+                            toast(context.getString(R.string.share_link_copied))
+                        } else {
+                            toast(context.getString(R.string.share_link_failed))
+                        }
+                        onDismiss()
                     }
                 }
             }

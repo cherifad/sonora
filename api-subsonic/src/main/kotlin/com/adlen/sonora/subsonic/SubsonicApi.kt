@@ -44,6 +44,9 @@ class SubsonicApi(
     /** The server type/version and the optional calls it advertises. */
     val capabilities: StateFlow<ServerCapabilities?> = _capabilities
 
+    /** Bookmarks, shares, scan status and the server's now-playing list. */
+    val serverExtras = SubsonicServerExtras(client)
+
     init {
         scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
     }
@@ -54,7 +57,7 @@ class SubsonicApi(
     override val search: Search = SubsonicSearch(client)
     override val library: Library = SubsonicLibrary(client)
     override val playlists: Playlists = playlistsImpl
-    override val users: Users = SubsonicUsers(config)
+    override val users: Users = SubsonicUsers(config, client)
     override val podcasts: Podcasts = SubsonicPodcasts()
     override val extras: TrackExtras = SubsonicExtras(client) { _capabilities.value }
     override val devices: Devices = SubsonicDevices()

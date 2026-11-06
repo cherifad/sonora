@@ -113,6 +113,7 @@ fun SettingsScreen(navController: NavController) {
                 Text("Server", color = AppText, fontSize = 16.sp)
                 Text(serverConfig?.baseUrl ?: "No server configured", color = AppMuted, fontSize = 12.sp)
             }
+            com.adlen.sonora.app.ui.components.ServerScanRow()
             Divider()
             Section(R.string.settings_section_data)
             OptionRow(

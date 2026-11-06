@@ -149,6 +149,7 @@ fun ImmersiveSettingsScreen(navController: NavController) {
 private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> Unit, back: () -> Unit) {
     val context = LocalContext.current
     val config = com.adlen.sonora.subsonic.SubsonicSettings.load(context)
+    val scope = rememberCoroutineScope()
     var showServer by remember { mutableStateOf(false) }
     if (showServer) {
         com.adlen.sonora.app.ui.setup.SubsonicSetupDialog(
@@ -169,6 +170,24 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
                     chevron = true,
                     onClick = { showServer = true },
                 )
+            }
+            if (com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+                    ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.SCAN) == true) {
+                row {
+                    ImmersiveGroupRow(
+                        stringResource(R.string.scan_title),
+                        detail = stringResource(R.string.scan_now),
+                        icon = Icons.Rounded.Refresh,
+                        chevron = true,
+                        onClick = {
+                            scope.launch {
+                                runCatching {
+                                    com.adlen.sonora.host.android.SonoraRuntime.subsonicApi?.serverExtras?.startScan()
+                                }
+                            }
+                        },
+                    )
+                }
             }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_playback), icon = Icons.Rounded.PlayArrow, chevron = true, onClick = { open(SettingsPage.Playback) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_downloads), icon = Icons.Rounded.Download, chevron = true, onClick = { open(SettingsPage.Downloads) }) }

@@ -693,4 +693,12 @@
     <string name="download_storage_limit_detail">Stop downloading when the downloads reach this size; the phone keeps 500 MB free.</string>
     <string name="download_storage_limit_unlimited">No limit</string>
     <string name="download_storage_full">Download stopped: the download limit or the phone\'s free-space reserve is reached.</string>
+    <string name="scan_title">Library scan</string>
+    <string name="scan_now">Scan now</string>
+    <string name="scan_started">Starting the scan…</string>
+    <string name="scan_running">Scanning… %1$d items</string>
+    <string name="scan_last">Last scan: %1$s</string>
+    <string name="scan_never">Never scanned</string>
+    <string name="share_link_copied">Share link copied</string>
+    <string name="share_link_failed">The server did not create a share link</string>
 </resources>
