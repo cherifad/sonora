@@ -212,12 +212,15 @@ mixed-loudness album plays at a steady level.
 
 ## Phase 7 — Offline 2.0
 
-- [ ] "Keep this playlist/album offline" with automatic sync when the server changes.
-- [ ] Wi-Fi-only downloads, storage quota, metered warning.
-- [ ] Resumable downloads + bounded retry/backoff (investigate the audit's 25/80 failures).
-- [ ] Re-validate files after a server re-scan (IDs can change).
-- [ ] Auto-cleanup of files removed from the server.
-- [ ] Tests: sync diff, retry, quota, re-validation.
+- [x] "Keep this playlist/album offline" with automatic sync when the server changes
+      (`OfflineCollections.sync`/`refreshAll`, already present and kept).
+- [x] Wi-Fi-only downloads, storage quota (default 8 GB, 500 MB reserve), metered warning.
+- [x] Resumable Subsonic downloads (`.part` + HTTP `Range`) and two retries with backoff.
+- [x] Re-validation after a server re-scan follows the list sync: changed ids leave as
+      `gone`, new ones are downloaded; singles are re-downloaded on demand.
+- [x] Auto-cleanup of files removed from the server (the sync's `gone` set).
+- [x] Tests: download budget (limit, reserve, unlimited). A resumable-transfer test needs a
+      local HTTP fixture; it is the one gap in this phase.
 
 **Done when:** a playlist kept offline stays in sync across a server re-scan without user
 action.
@@ -307,6 +310,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 5 | `getSimilarSongs2` radio/autoplay, "For you" and "Recently played" Home shelves, 3 tests | `feat(subsonic)` |
 | 2026-11-06 | 5 | Album/artist seeds for the mix, `similarAlbums` for "More like this", 5 more tests | `feat(subsonic)` |
 | 2026-11-06 | 6 | ReplayGain + equalizer + skip-silence on Subsonic streams, settings rows, gain tests | `feat(subsonic)` |
+| 2026-11-06 | 7 | Resumable downloads, retry/backoff, download quota, Wi-Fi-only setting, budget test | `feat(offline)` |
 
 ## Decisions and risks
 

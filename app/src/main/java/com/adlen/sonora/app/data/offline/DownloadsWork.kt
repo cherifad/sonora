@@ -32,8 +32,9 @@ object DownloadsWork {
 
     /** Schedules the download worker (network required, replaces a finished run). */
     fun enqueue(context: Context) {
+        val network = if (com.adlen.sonora.app.data.preferences.isWifiOnly(context)) NetworkType.UNMETERED else NetworkType.CONNECTED
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(network).build())
             .build()
         runCatching {
             WorkManager.getInstance(context).enqueueUniqueWork(WORK, ExistingWorkPolicy.APPEND_OR_REPLACE, request)

@@ -82,6 +82,20 @@ object OfflineDownloader {
 
     private class Unavailable(message: String) : Exception(message)
 
+private class StorageFull(message: String) : Exception(message)
+
+/**
+ * Whether another download fits: under the user's limit, and leaving the phone its reserve.
+ * 0 means "no limit" for either bound.
+ */
+fun withinDownloadBudget(
+    usedBytes: Long,
+    freeBytes: Long,
+    maxBytes: Long,
+    keepFreeBytes: Long,
+): Boolean = (maxBytes <= 0 || usedBytes < maxBytes) &&
+    (keepFreeBytes <= 0 || freeBytes > keepFreeBytes)
+
     /** Two AAC encodes at once at most: the CPU stays free for the rest of the app. */
     private val encodeSlots = kotlinx.coroutines.sync.Semaphore(2)
 
@@ -168,10 +182,16 @@ object OfflineDownloader {
         auto: Boolean = false,
     ) {
         if (!ready(auto)) return
-        if (auto) {
-            // Automatic downloads wait for Wi-Fi (never the user's mobile data): the next sync takes them.
-            if (com.adlen.sonora.app.data.DataSaver.metered || !OfflineStore.isOnline(Graph.app)) { OfflineCollections.waitForWifi(); return }
-        } else if (com.adlen.sonora.app.data.DataSaver.metered) {
+        val wifiOnly = com.adlen.sonora.app.data.preferences.isWifiOnly(Graph.app)
+        if ((auto || wifiOnly) && (com.adlen.sonora.app.data.DataSaver.metered || !OfflineStore.isOnline(Graph.app))) {
+            // Automatic downloads always wait for Wi-Fi; a user download does too when asked.
+            OfflineCollections.waitForWifi()
+            if (!auto) scope.launch(Dispatchers.Main) {
+                android.widget.Toast.makeText(Graph.app, com.adlen.sonora.engine.R.string.download_waiting_wifi, android.widget.Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        if (!auto && com.adlen.sonora.app.data.DataSaver.metered) {
             // Asked for by the user on mobile data: it goes ahead, but they are told.
             scope.launch(Dispatchers.Main) {
                 android.widget.Toast.makeText(Graph.app, com.adlen.sonora.engine.R.string.download_on_mobile_data, android.widget.Toast.LENGTH_LONG).show()
@@ -251,6 +271,10 @@ object OfflineDownloader {
     /** Removes the song: the file if downloaded, else its download. */
     fun remove(trackId: String) {
         cancel(trackId)
+        // A removed song takes its resumable partial with it.
+        val name = safeFileName(trackId)
+        File(OfflineStore.tmpDir, "$name.part").delete()
+        File(OfflineStore.tmpDir, "$name.part.src").delete()
         // File deletion on the IO scope, not the (UI) caller's thread.
         scope.launch { OfflineStore.remove(trackId) }
     }
@@ -287,13 +311,24 @@ object OfflineDownloader {
         val job = scope.launch {
             val outcome: OfflineStatus? = try {
                 setStatus(r.trackId, OfflineStatus.Downloading(-1f))
-                val t = download(r)
+                checkBudget()
+                val t = retrying(r)
                 // Already on the IO scope: the index rewrite stays off the main thread.
                 OfflineStore.add(t)
                 withContext(Dispatchers.Main) { requests.remove(r.trackId) }
                 null
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: StorageFull) {
+                Log.i(TAG, "${r.title}: ${e.message}")
+                scope.launch(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        Graph.app,
+                        com.adlen.sonora.engine.R.string.download_storage_full,
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
+                OfflineStatus.Failed
             } catch (e: Unavailable) {
                 Log.i(TAG, "${r.title}: ${e.message}")
                 OfflineStatus.Unavailable
@@ -311,6 +346,33 @@ object OfflineDownloader {
         running[r.trackId] = job
         job.join()
         running.remove(r.trackId, job)
+    }
+
+    private fun checkBudget() {
+        val context = Graph.app
+        val used = OfflineStore.totalBytes()
+        val max = com.adlen.sonora.app.data.preferences.maxDownloadBytes(context)
+        val free = context.filesDir.usableSpace
+        val keep = com.adlen.sonora.app.data.preferences.keepFreeBytes(context)
+        if (!withinDownloadBudget(used, free, max, keep)) {
+            throw StorageFull(if (max > 0 && used >= max) "download limit reached" else "not enough free space")
+        }
+    }
+
+    /** A transient failure gets two more tries, with a short backoff. */
+    private suspend fun retrying(r: Request): OfflineTrack {
+        var last: Throwable? = null
+        repeat(3) { attempt ->
+            try {
+                return download(r)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                last = e
+                if (attempt < 2) kotlinx.coroutines.delay(1_000L * (attempt + 1))
+            }
+        }
+        throw last ?: IOException("download failed")
     }
 
     private suspend fun download(r: Request): OfflineTrack {
@@ -381,6 +443,7 @@ object OfflineDownloader {
         val quality = qualityOf(r)
         val name = safeFileName(r.trackId)
         val tmp = File(OfflineStore.tmpDir, "$name.part")
+        val sourceFile = File(OfflineStore.tmpDir, "$name.part.src")
         try {
             setStatus(r.trackId, OfflineStatus.Downloading(-1f))
             // The quality asked for first, then the original file: a server without a
@@ -392,7 +455,16 @@ object OfflineDownloader {
             var asOriginal = false
             var lastError = "the server sent no audio"
             for ((index, url) in urls.withIndex()) {
-                tmp.delete()
+                // A retry of the same request resumes its partial; another quality starts over.
+                if (index > 0) {
+                    tmp.delete()
+                    sourceFile.delete()
+                }
+                if (sourceFile.exists() && sourceFile.readText() != url) {
+                    tmp.delete()
+                    sourceFile.delete()
+                }
+                sourceFile.writeText(url)
                 val ok = runCatching { fetchServerFile(r.trackId, url, tmp) }.getOrElse { e ->
                     lastError = e.message ?: "the server did not send the file"
                     false
@@ -428,7 +500,8 @@ object OfflineDownloader {
                 )
             }
         } finally {
-            tmp.delete()
+            // A complete file was moved out; a failed attempt keeps its partial for a retry.
+            if (!tmp.exists()) sourceFile.delete()
         }
     }
 
@@ -454,12 +527,25 @@ object OfflineDownloader {
         }
         try {
             return runInterruptible(Dispatchers.IO) {
-                val request = okhttp3.Request.Builder().url(url).build()
+                val start = if (out.exists()) out.length() else 0L
+                val request = okhttp3.Request.Builder().url(url).apply {
+                    if (start > 0) header("Range", "bytes=$start-")
+                }.build()
                 serverHttp.newCall(request).execute().use { res ->
+                    if (res.code == 416) {
+                        // The partial is not a prefix the server can continue: start over.
+                        out.delete()
+                        throw IOException("range not satisfiable")
+                    }
                     if (!res.isSuccessful) throw IOException("stream HTTP ${res.code}")
                     val body = res.body ?: throw IOException("empty body")
-                    total.set(body.contentLength())
-                    out.outputStream().use { output ->
+                    // 206 continues the partial; 200 (a server without Range) starts over.
+                    val append = start > 0 && res.code == 206
+                    if (!append && start > 0) out.delete()
+                    val already = if (append) start else 0L
+                    copied.set(already)
+                    total.set(if (body.contentLength() > 0) already + body.contentLength() else -1)
+                    java.io.FileOutputStream(out, append).use { output ->
                         body.byteStream().use { input ->
                             val buf = ByteArray(256 * 1024)
                             while (true) {

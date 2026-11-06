@@ -487,6 +487,30 @@ private fun StorageInfoRows(ctx: android.content.Context) {
         Text(stringResource(R.string.settings_storage_downloads_title), color = AppText, fontSize = 16.sp)
         Text(stringResource(R.string.settings_storage_downloads_detail, count, size), color = AppMuted, fontSize = 12.sp)
     }
+    var wifiOnly by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.isWifiOnly(ctx)) }
+    OptionRow(
+        label = stringResource(R.string.download_wifi_only),
+        detail = stringResource(R.string.download_wifi_only_detail),
+        checked = wifiOnly,
+        onChecked = {
+            wifiOnly = it
+            com.adlen.sonora.app.data.preferences.setWifiOnly(ctx, it)
+        },
+    )
+    val limits = listOf(2L, 8L, 32L, 0L)
+    var maxBytes by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.maxDownloadBytes(ctx)) }
+    val limitText = if (maxBytes <= 0) stringResource(R.string.download_storage_limit_unlimited)
+        else android.text.format.Formatter.formatShortFileSize(ctx, maxBytes)
+    Column(
+        Modifier.fillMaxWidth().clickable {
+            val next = limits[(limits.indexOf(maxBytes).takeIf { it >= 0 }?.plus(1) ?: 0) % limits.size]
+            maxBytes = next
+            com.adlen.sonora.app.data.preferences.setMaxDownloadBytes(ctx, next)
+        }.padding(horizontal = 20.dp, vertical = 10.dp),
+    ) {
+        Text(stringResource(R.string.download_storage_limit), color = AppText, fontSize = 16.sp)
+        Text(limitText, color = AppMuted, fontSize = 12.sp)
+    }
     Column(
         Modifier.fillMaxWidth().clickable {
             com.adlen.sonora.app.data.offline.StorageInfo.clearCache(ctx) { left ->

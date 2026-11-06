@@ -273,6 +273,8 @@ private fun DownloadsPage(navController: NavController, open: (SettingsPage) -> 
     val quality = getDownloadQuality(ctx)
     var ask by remember { mutableStateOf(false) }
     var cacheBytes by remember { mutableStateOf(com.adlen.sonora.app.data.offline.StorageInfo.cacheBytes(ctx)) }
+    var wifiOnly by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.isWifiOnly(ctx)) }
+    var maxBytes by remember { mutableStateOf(com.adlen.sonora.app.data.preferences.maxDownloadBytes(ctx)) }
     val size = android.text.format.Formatter.formatShortFileSize(ctx, com.adlen.sonora.app.data.offline.OfflineStore.totalBytes())
     val count = com.adlen.sonora.app.data.offline.OfflineStore.tracks.size
     val cache = android.text.format.Formatter.formatShortFileSize(ctx, cacheBytes)
@@ -314,6 +316,31 @@ private fun DownloadsPage(navController: NavController, open: (SettingsPage) -> 
                 ImmersiveGroupRow(
                     stringResource(R.string.settings_storage_downloads_title),
                     detail = stringResource(R.string.settings_storage_downloads_detail, count, size),
+                )
+            }
+            row {
+                ImmersiveSwitchRow(
+                    stringResource(R.string.download_wifi_only),
+                    checked = wifiOnly,
+                    onChecked = {
+                        wifiOnly = it
+                        com.adlen.sonora.app.data.preferences.setWifiOnly(ctx, it)
+                    },
+                    detail = stringResource(R.string.download_wifi_only_detail),
+                )
+            }
+            row {
+                val limits = listOf(2L, 8L, 32L, 0L)
+                val limitText = if (maxBytes <= 0) stringResource(R.string.download_storage_limit_unlimited)
+                    else android.text.format.Formatter.formatShortFileSize(ctx, maxBytes)
+                ImmersiveGroupRow(
+                    stringResource(R.string.download_storage_limit),
+                    detail = limitText,
+                    onClick = {
+                        val next = limits[(limits.indexOf(maxBytes).takeIf { it >= 0 }?.plus(1) ?: 0) % limits.size]
+                        maxBytes = next
+                        com.adlen.sonora.app.data.preferences.setMaxDownloadBytes(ctx, next)
+                    },
                 )
             }
             row {
