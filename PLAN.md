@@ -236,8 +236,8 @@ action.
       share URL, with a toast on success/failure.
 - [x] Scan status (`getScanStatus`, `startScan`) in Settings, both looks (the Immersive row
       starts a scan; the Classic row shows the status and starts one).
-- [~] Now playing (`getNowPlaying`) and avatar (`getAvatar`): the account avatar is wired;
-      the now-playing list has no screen yet.
+- [x] Now playing (`getNowPlaying`) and avatar (`getAvatar`): the account avatar is wired,
+      and Settings opens a sheet with what other clients are playing.
 - [x] Tests for bookmarks, shares, scan, now playing, and a Jellyfin bridge that is not
       asked for bookmarks.
 
@@ -343,6 +343,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 11 | `tools/server_contract.py`: live-server endpoint/capability probe | `test(tools)` |
 | 2026-11-06 | 8 | Bookmark long tracks on pause, with a threshold test | `feat(subsonic)` |
 | 2026-11-06 | 8 | Resume a long track from its bookmark on a new play | `feat(subsonic)` |
+| 2026-11-06 | 8 | Now-playing sheet in Settings, both looks | `feat(ui)` |
 
 ## Decisions and risks
 
