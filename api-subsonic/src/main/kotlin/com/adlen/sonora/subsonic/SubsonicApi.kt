@@ -98,6 +98,7 @@ class SubsonicApi(
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
         _capabilities.value = null
+        playerImpl.invalidateBookmarks()
         scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
         playerImpl.restoreServerQueueIfIdle()
     }
