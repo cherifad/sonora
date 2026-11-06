@@ -1,6 +1,7 @@
 // Subsonic/OpenSubsonic backend for Myspoti. GPL-3.0.
 package app.myspoti.subsonic
 
+import android.content.Context
 import app.myspoti.api.Account
 import app.myspoti.api.Album
 import app.myspoti.api.Artist
@@ -58,7 +59,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.LocalTime
 
-internal class SubsonicHome(private val client: SubsonicClient) : Home {
+internal class SubsonicHome(
+    private val client: SubsonicClient,
+    /** The app's context: the shelves and the greeting are words, not server data. */
+    context: Context,
+) : Home {
+
+    private val res = context.applicationContext.resources
 
     override suspend fun feed(filter: HomeFilter, itemsPerShelf: Int): HomeFeed {
         val newest = client.albums("newest", itemsPerShelf)
@@ -72,11 +79,11 @@ internal class SubsonicHome(private val client: SubsonicClient) : Home {
                 .take(6)
             if (shortcuts.isNotEmpty()) add(Shelf(null, null, shortcuts, shortcuts.size))
             val newItems = newest.map { it.toCard() }
-            if (newItems.isNotEmpty()) add(Shelf(null, "Nouveautés", newItems, newItems.size))
+            if (newItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_new_releases), newItems, newItems.size))
             val frequentItems = frequent.map { it.toCard() }
-            if (frequentItems.isNotEmpty()) add(Shelf(null, "Souvent écoutés", frequentItems, frequentItems.size))
+            if (frequentItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_frequently_played), frequentItems, frequentItems.size))
             val playlistItems = playlists.map { it.toCard() }
-            if (playlistItems.isNotEmpty()) add(Shelf(null, "Vos playlists", playlistItems, playlistItems.size))
+            if (playlistItems.isNotEmpty()) add(Shelf(null, res.getString(R.string.home_your_playlists), playlistItems, playlistItems.size))
         }
         return HomeFeed(
             greeting = greeting(),
@@ -95,9 +102,9 @@ internal class SubsonicHome(private val client: SubsonicClient) : Home {
         pageOf(client.albums("newest", 100), offset, limit)
 
     private fun greeting(): String = when (LocalTime.now().hour) {
-        in 5..11 -> "Bonjour"
-        in 12..17 -> "Bon après-midi"
-        else -> "Bonsoir"
+        in 5..11 -> res.getString(R.string.home_greeting_morning)
+        in 12..17 -> res.getString(R.string.home_greeting_afternoon)
+        else -> res.getString(R.string.home_greeting_evening)
     }
 }
 

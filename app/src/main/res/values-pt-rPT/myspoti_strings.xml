@@ -72,7 +72,7 @@
     <string name="playlist_not_found">Playlist não encontrada</string>
     <string name="browse_new_releases">Novidades</string>
     <string name="language_auto">Automático</string>
-    <string name="language_auto_detail">O idioma do teu telemóvel quando o Myspoti o tem (alemão, chinês, espanhol, francês, grego, inglês, italiano, polaco, português, russo); caso contrário, inglês</string>
+    <string name="language_auto_detail">O idioma do teu telemóvel quando o Sonora o tem (alemão, chinês, espanhol, francês, grego, inglês, italiano, polaco, português, russo); caso contrário, inglês</string>
     <string name="language_partial_note">Outras línguas: os rótulos do Spotify são traduzidos, os textos do Myspoti ficam em inglês.</string>
     <string name="restart_player_title">Reiniciar o leitor</string>
     <string name="restart_player_detail">Se a música deixar de responder: recarrega o leitor do Spotify</string>
