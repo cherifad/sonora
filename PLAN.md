@@ -148,8 +148,9 @@ TOFU TLS is the one remaining item.
       server, artists and playlists keep the server order.
 - [x] Cache the starred set briefly and invalidate on `star`/`unstar` instead of fetching it
       in every `contains()` call.
-- [ ] Add a `getMusicFolders` selector when the server exposes more than one folder.
-      Deferred: it needs a Settings row and a folder-scoped `musicFolderId` on every call.
+- [x] Add a `getMusicFolders` selector when the server exposes more than one folder: the
+      choice is stored, `musicFolderId` is added to later calls, and the row is hidden with
+      zero or one folder.
 - [x] Tests: page 2 of a 250-album library, page 2 of a 250-result search, >100-song
       playlist, one `getStarred2` for contains + liked songs, cache dropped on a mutation.
 
@@ -344,6 +345,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 8 | Bookmark long tracks on pause, with a threshold test | `feat(subsonic)` |
 | 2026-11-06 | 8 | Resume a long track from its bookmark on a new play | `feat(subsonic)` |
 | 2026-11-06 | 8 | Now-playing sheet in Settings, both looks | `feat(ui)` |
+| 2026-11-06 | 3 | Multi-library selector (`getMusicFolders` + `musicFolderId`), both looks | `feat(subsonic)` |
 
 ## Decisions and risks
 

@@ -120,6 +120,23 @@ class SubsonicServerExtrasTest {
     }
 
     @Test
+    fun `music folders parse and the selection is sent on later calls`() = runBlocking {
+        val urls = mutableListOf<HttpUrl>()
+        val client = testClient { url ->
+            urls += url
+            okEnvelope("\"musicFolders\":{\"musicFolder\":[{\"id\":\"f1\",\"name\":\"Music\"},{\"id\":\"f2\",\"name\":\"Audiobooks\"}]}")
+        }
+
+        val folders = SubsonicServerExtras(client).musicFolders()
+        assertEquals(listOf("f1", "f2"), folders.map { it.id })
+
+        client.setMusicFolder("f2")
+        client.call("getAlbumList2")
+
+        assertEquals("f2", urls.last().queryParameter("musicFolderId"))
+    }
+
+    @Test
     fun `a Jellyfin bridge is not asked for bookmarks`() = runBlocking {
         var calls = 0
         val client = testClient { url ->

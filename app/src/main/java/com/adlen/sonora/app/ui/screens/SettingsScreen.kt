@@ -115,6 +115,7 @@ fun SettingsScreen(navController: NavController) {
             }
             com.adlen.sonora.app.ui.components.ServerScanRow()
             com.adlen.sonora.app.ui.components.NowPlayingSettingsRow()
+            com.adlen.sonora.app.ui.components.MusicFolderSettingsRow()
             Divider()
             Section(R.string.settings_section_data)
             OptionRow(

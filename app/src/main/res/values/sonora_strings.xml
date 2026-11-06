@@ -708,4 +708,7 @@
     <string name="now_playing_error">The server did not answer.</string>
     <string name="now_playing_who">%1$s · %2$d min ago</string>
     <string name="now_playing_close">Close</string>
+    <string name="music_folder_title">Music library</string>
+    <string name="music_folder_all">All libraries</string>
+    <string name="music_folder_close">Close</string>
 </resources>
