@@ -276,6 +276,8 @@ interface TrackExtras {
     suspend fun credits(trackUri: Uri): Credits
     /** The track's radio, as a playlist uri to play. Works with artist uris too. */
     suspend fun radio(seedUri: Uri): Uri?
+    /** 0 clears, 1..5 sets. A server without ratings ignores it. */
+    suspend fun setRating(trackUri: Uri, rating: Int) = Unit
     /** Hide this track from recommendations, or show it again. */
     suspend fun setExcludedFromTaste(trackUri: Uri, excluded: Boolean)
     suspend fun isExcludedFromTaste(trackUris: List<Uri>): List<Boolean>

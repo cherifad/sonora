@@ -27,6 +27,8 @@ data class Track(
     val addedAt: String? = null,
     /** Spotify knows a music video of it (its own "switch to video"), when the answer says. */
     val hasVideo: Boolean = false,
+    /** 1..5 when the server exposes a user rating; null when unrated or unsupported. */
+    val rating: Int? = null,
 )
 
 data class Album(

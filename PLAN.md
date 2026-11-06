@@ -159,13 +159,17 @@ TOFU TLS is the one remaining item.
 
 ## Phase 4 — Close the dead ends
 
-- [ ] Genre page: `getSongsByGenre` behind `SubsonicHome.category`; genres also open from
-      search and the library.
-- [ ] Playlist search: fill `SubsonicSearch.playlists` and the Playlists tab.
-- [ ] Ratings: `setRating` + a 1–5 star control next to the heart (capability-gated).
+- [x] Genre page: `getAlbumList2?type=byGenre` and `getSongsByGenre` behind
+      `SubsonicHome.category`; the existing category screens now get Albums and Songs shelves.
+- [x] Playlist search: `SubsonicSearch.playlists` filters the server's list; the Playlists
+      tab and `all()` are no longer empty.
+- [~] Ratings: `setRating` is wired behind `ServerCapabilities.RATINGS`, `Track.rating` reads
+      `userRating`, and the client clamps 0..5. The 1–5 star control in the song sheet is the
+      remaining UI step.
 - [ ] Make every remaining stub return `Unsupported` and hide its entry point (podcasts,
       Connect, Jam, Blends, friends, history).
-- [ ] Tests: genre page, playlist search, rating round-trip, hidden entry points.
+- [x] Tests: genre albums/songs, playlist search, rating round-trip, Jellyfin rating skip.
+      Hidden-entry-point tests come with the stub cleanup.
 
 **Done when:** tapping every visible row on Home/Search/Library produces content or a
 clear "not supported by this server", never an empty screen.
@@ -290,6 +294,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 1 | Packages, classes, resources, manifests, tools and tests renamed to Sonora; prefs migration added; attribution kept in docs and license headers | `refactor(rename)!` |
 | 2026-11-06 | 2 | Typed Subsonic failures, cached capability probe, precise setup errors, optional-call cache, API-key auth; 8 new contract tests | `feat(subsonic)` |
 | 2026-11-06 | 3 | Server-side album/search paging, 30 s caches for artists/playlists/starred/playlist tracks, 5 paging tests | `fix(subsonic)` |
+| 2026-11-06 | 4 | Genre albums/songs, playlist search, rating backend + `Track.rating`, 5 browse tests; star control still to do | `feat(subsonic)` |
 
 ## Decisions and risks
 

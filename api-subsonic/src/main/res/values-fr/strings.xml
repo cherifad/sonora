@@ -6,4 +6,6 @@
     <string name="home_greeting_morning">Bonjour</string>
     <string name="home_greeting_afternoon">Bon après-midi</string>
     <string name="home_greeting_evening">Bonsoir</string>
+    <string name="genre_albums">Albums</string>
+    <string name="genre_songs">Titres</string>
 </resources>

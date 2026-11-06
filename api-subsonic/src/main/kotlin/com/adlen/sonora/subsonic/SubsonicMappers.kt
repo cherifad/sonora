@@ -58,6 +58,7 @@ internal fun SubsonicClient.trackOf(
         },
         playable = true,
         uid = id,
+        rating = json.optInt("userRating", 0).takeIf { it > 0 },
     )
 }
 
@@ -100,4 +101,12 @@ internal fun Playlist.toCard(): MediaCard = MediaCard(
     title = name,
     subtitle = owner,
     images = images,
+)
+
+internal fun Track.toCard(): MediaCard = MediaCard(
+    uri = uri,
+    kind = MediaKind.TRACK,
+    title = name,
+    subtitle = artists.joinToString(", ") { it.name },
+    images = album?.images.orEmpty(),
 )

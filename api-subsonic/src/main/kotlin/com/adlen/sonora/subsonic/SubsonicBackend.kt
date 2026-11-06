@@ -99,8 +99,20 @@ internal class SubsonicHome(
     override suspend fun categories(): List<Category> =
         client.genres().map { Category("spotify:genre:$it", it, emptyList(), null) }
 
-    override suspend fun category(uri: Uri): BrowsePage =
-        BrowsePage(uri, uri.substringAfterLast(':'), emptyList())
+    override suspend fun category(uri: Uri): BrowsePage {
+        val genre = uri.substringAfterLast(':')
+        val albums = client.genreAlbums(genre, 50)
+        val songs = client.genreSongs(genre, 50)
+        val shelves = buildList {
+            if (albums.isNotEmpty()) {
+                add(Shelf(null, res.getString(R.string.genre_albums), albums.map { it.toCard() }, albums.size))
+            }
+            if (songs.isNotEmpty()) {
+                add(Shelf(null, res.getString(R.string.genre_songs), songs.map { it.toCard() }, songs.size))
+            }
+        }
+        return BrowsePage(uri, genre, shelves)
+    }
 
     override suspend fun whatsNew(offset: Int, limit: Int): Page<Album> =
         serverPage(client.albums("newest", limit, offset), offset, limit)
@@ -131,7 +143,7 @@ internal class SubsonicSearch(private val client: SubsonicClient) : Search {
             tracks = serverPage(tracks, 0, limit),
             artists = serverPage(artists, 0, limit),
             albums = serverPage(albums, 0, limit),
-            playlists = emptyPage(),
+            playlists = playlists(query, 0, limit),
         )
     }
 
@@ -159,7 +171,15 @@ internal class SubsonicSearch(private val client: SubsonicClient) : Search {
         return serverPage(root?.array("album").orEmpty().map { client.albumOf(it) }, offset, limit)
     }
 
-    override suspend fun playlists(query: String, offset: Int, limit: Int): Page<Playlist> = emptyPage()
+    /**
+     * `search3` has no playlist result. The list is small enough to fetch and filter locally,
+     * and the UI's Playlists tab is then not a permanent empty page.
+     */
+    override suspend fun playlists(query: String, offset: Int, limit: Int): Page<Playlist> {
+        if (query.isBlank()) return emptyPage()
+        val all = client.playlists().filter { it.name.contains(query, ignoreCase = true) }
+        return pageOf(all, offset, limit)
+    }
 
     override suspend fun shows(query: String, offset: Int, limit: Int): Page<MediaCard> = emptyPage()
 
@@ -698,6 +718,13 @@ internal class SubsonicExtras(
         return null
     }
 
+    override suspend fun setRating(trackUri: Uri, rating: Int) {
+        if (capabilities()?.supports(ServerCapabilities.Feature.RATINGS) == false) return
+        val id = trackUri.substringAfterLast(':').substringBefore('|')
+        if (id.isBlank()) return
+        client.call("setRating", mapOf("id" to id, "rating" to rating.coerceIn(0, 5).toString()))
+    }
+
     override suspend fun canvas(trackUri: Uri): Canvas? = null
     override suspend fun credits(trackUri: Uri): Credits = Credits(emptyList())
     override suspend fun radio(seedUri: Uri): Uri? = null
@@ -759,6 +786,20 @@ internal class SubsonicRecents(private val client: SubsonicClient) : Recents {
         }
         return pageOf(entries, offset, limit)
     }
+}
+
+internal suspend fun SubsonicClient.genreAlbums(genre: String, size: Int): List<Album> {
+    val root = callOptional(
+        "getAlbumList2",
+        mapOf("type" to "byGenre", "genre" to genre, "size" to size.toString()),
+    ) ?: return emptyList()
+    return root.optJSONObject("albumList2")?.array("album").orEmpty().map { albumOf(it) }
+}
+
+internal suspend fun SubsonicClient.genreSongs(genre: String, size: Int): List<Track> {
+    val root = callOptional("getSongsByGenre", mapOf("genre" to genre, "count" to size.toString()))
+        ?: return emptyList()
+    return root.optJSONObject("songsByGenre")?.array("song").orEmpty().map { trackOf(it) }
 }
 
 private suspend fun SubsonicClient.albums(type: String, size: Int, offset: Int = 0): List<Album> {
