@@ -295,8 +295,9 @@ action.
       airplane mode, clock skew and self-signed TLS stay manual.
 - [ ] Migration tests: upgrade from the previous release APK; downloads/queue/settings
       survive.
-- [~] Opt-in crash/diagnostics: `Logbook`/`BetaLogs` and the debug report exist; no opt-in
-      remote reporter.
+- [x] Opt-in diagnostics: `Logbook.export` builds the redacted report the Settings row shares;
+      it now includes the server type/version and OpenSubsonic extensions. No remote reporter
+      is sent automatically; the report is only exported when the user asks.
 - [x] Release gates: the R8 release build (with lint-vital) now runs in CI; the signed APK
       stays in the release workflow.
 - [x] Issue template asking for server type/version + `ping` + debug log.
@@ -346,6 +347,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 8 | Resume a long track from its bookmark on a new play | `feat(subsonic)` |
 | 2026-11-06 | 8 | Now-playing sheet in Settings, both looks | `feat(ui)` |
 | 2026-11-06 | 3 | Multi-library selector (`getMusicFolders` + `musicFolderId`), both looks | `feat(subsonic)` |
+| 2026-11-06 | 11 | Debug report carries server type/version and OpenSubsonic extensions | `feat(diagnostics)` |
 
 ## Decisions and risks
 
