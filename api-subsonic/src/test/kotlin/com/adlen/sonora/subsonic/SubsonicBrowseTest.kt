@@ -131,6 +131,102 @@ class SubsonicBrowseTest {
     }
 
     @Test
+    fun `an album seed mixes from its first song`() = runBlocking {
+        var similarId: String? = null
+        val client = testClient { url ->
+            when {
+                url.encodedPath.endsWith("/getAlbum.view") ->
+                    okEnvelope("\"album\":{\"id\":\"al1\",\"name\":\"A\",\"song\":[{\"id\":\"a1\",\"title\":\"First\",\"duration\":10}]}")
+                url.encodedPath.endsWith("/getSimilarSongs2.view") -> {
+                    similarId = url.queryParameter("id")
+                    okEnvelope("\"similarSongs2\":{\"song\":[{\"id\":\"s2\",\"title\":\"Like\",\"duration\":10,\"artist\":\"A\"}]}")
+                }
+                else -> okEnvelope()
+            }
+        }
+
+        val tracks = SubsonicExtras(client).similarTracks("spotify:album:al1", 10)
+
+        assertEquals("a1", similarId)
+        assertEquals("spotify:track:s2", tracks.single().uri)
+    }
+
+    @Test
+    fun `an artist seed mixes from a top song`() = runBlocking {
+        var similarId: String? = null
+        val client = testClient { url ->
+            when {
+                url.encodedPath.endsWith("/getArtist.view") ->
+                    okEnvelope("\"artist\":{\"id\":\"ar1\",\"name\":\"Mira\",\"album\":[]}")
+                url.encodedPath.endsWith("/getTopSongs.view") ->
+                    okEnvelope("\"topSongs\":{\"song\":[{\"id\":\"t1\",\"title\":\"Top\",\"duration\":10}]}")
+                url.encodedPath.endsWith("/getSimilarSongs2.view") -> {
+                    similarId = url.queryParameter("id")
+                    okEnvelope("\"similarSongs2\":{\"song\":[{\"id\":\"s2\",\"title\":\"Like\",\"duration\":10}]}")
+                }
+                else -> okEnvelope()
+            }
+        }
+
+        val tracks = SubsonicExtras(client).similarTracks("spotify:artist:ar1", 10)
+
+        assertEquals("t1", similarId)
+        assertEquals("spotify:track:s2", tracks.single().uri)
+    }
+
+    @Test
+    fun `a track radio drops the seed itself`() = runBlocking {
+        val client = testClient { url ->
+            if (url.encodedPath.endsWith("/getSimilarSongs2.view")) {
+                okEnvelope(
+                    "\"similarSongs2\":{\"song\":[" +
+                        "{\"id\":\"s1\",\"title\":\"Seed\",\"duration\":10}," +
+                        "{\"id\":\"s2\",\"title\":\"Like\",\"duration\":10}]}",
+                )
+            } else {
+                okEnvelope()
+            }
+        }
+
+        val tracks = SubsonicExtras(client).similarTracks("spotify:track:s1", 10)
+
+        assertEquals(listOf("spotify:track:s2"), tracks.map { it.uri })
+    }
+
+    @Test
+    fun `similar albums are distinct and keep the row's album`() = runBlocking {
+        val client = testClient { url ->
+            if (url.encodedPath.endsWith("/getSimilarSongs2.view")) {
+                okEnvelope(
+                    "\"similarSongs2\":{\"song\":[" +
+                        "{\"id\":\"s2\",\"title\":\"A\",\"duration\":10,\"albumId\":\"al1\",\"album\":\"First\",\"artist\":\"Mira\",\"coverArt\":\"c1\"}," +
+                        "{\"id\":\"s3\",\"title\":\"B\",\"duration\":10,\"albumId\":\"al1\",\"album\":\"First\",\"artist\":\"Mira\",\"coverArt\":\"c1\"}," +
+                        "{\"id\":\"s4\",\"title\":\"C\",\"duration\":10,\"albumId\":\"al2\",\"album\":\"Second\",\"artist\":\"Mira\",\"coverArt\":\"c2\"}]}",
+                )
+            } else {
+                okEnvelope()
+            }
+        }
+
+        val albums = SubsonicCatalog(client).similarAlbums("spotify:track:s1", 12)
+
+        assertEquals(listOf("spotify:album:al1", "spotify:album:al2"), albums.map { it.uri })
+    }
+
+    @Test
+    fun `an empty similar-songs answer is an empty mix`() = runBlocking {
+        val client = testClient { url ->
+            if (url.encodedPath.endsWith("/getSimilarSongs2.view")) {
+                okEnvelope("\"similarSongs2\":{\"song\":[]}")
+            } else {
+                okEnvelope()
+            }
+        }
+
+        assertTrue(SubsonicExtras(client).similarTracks("spotify:track:s1", 10).isEmpty())
+    }
+
+    @Test
     fun `random songs are read from getRandomSongs`() = runBlocking {
         val client = testClient { url ->
             if (url.encodedPath.endsWith("/getRandomSongs.view")) {

@@ -302,7 +302,31 @@ internal class SubsonicCatalog(private val client: SubsonicClient) : Catalog {
 
     override suspend fun appearsOn(uri: Uri): List<Album> = emptyList()
 
-    override suspend fun similarAlbums(trackUri: Uri, limit: Int): List<Album> = emptyList()
+    override suspend fun similarAlbums(trackUri: Uri, limit: Int): List<Album> {
+        val id = trackUri.substringAfterLast(':').substringBefore('|')
+        if (id.isBlank()) return emptyList()
+        val root = client.callOptional(
+            "getSimilarSongs2",
+            mapOf("id" to id, "count" to (limit * 3).coerceAtMost(100).toString()),
+        ) ?: return emptyList()
+        return root.optJSONObject("similarSongs2")?.array("song").orEmpty()
+            .mapNotNull { song ->
+                val albumId = song.optString("albumId").takeIf { it.isNotBlank() }
+                    ?: return@mapNotNull null
+                // The similar-song row already carries the album fields: no getAlbum per row.
+                client.albumOf(
+                    JSONObject().apply {
+                        put("id", albumId)
+                        put("name", song.optString("album"))
+                        put("artist", song.optString("artist"))
+                        put("artistId", song.optString("artistId"))
+                        put("coverArt", song.optString("coverArt"))
+                    },
+                )
+            }
+            .distinctBy { it.uri }
+            .take(limit)
+    }
 }
 
 internal class SubsonicLibrary(private val client: SubsonicClient) : Library {
@@ -733,13 +757,37 @@ internal class SubsonicExtras(
 
     override suspend fun similarTracks(seedUri: Uri, limit: Int): List<Track> {
         if (capabilities()?.supports(ServerCapabilities.Feature.SIMILAR_SONGS) == false) return emptyList()
-        val id = seedUri.substringAfterLast(':').substringBefore('|')
-        if (id.isBlank()) return emptyList()
+        val seedId = seedUri.substringAfterLast(':').substringBefore('|')
+        if (seedId.isBlank()) return emptyList()
+        // getSimilarSongs2 wants a song id; an album or artist seed uses its first song.
+        val songId = when {
+            seedUri.startsWith("spotify:album:") -> firstTrackIdOfAlbum(seedId)
+            seedUri.startsWith("spotify:artist:") -> firstTopSongIdOfArtist(seedId)
+            else -> seedId
+        } ?: return emptyList()
         val root = client.callOptional(
             "getSimilarSongs2",
-            mapOf("id" to id, "count" to limit.coerceIn(1, 100).toString()),
+            mapOf("id" to songId, "count" to limit.coerceIn(1, 100).toString()),
         ) ?: return emptyList()
-        return root.optJSONObject("similarSongs2")?.array("song").orEmpty().map { client.trackOf(it) }
+        val tracks = root.optJSONObject("similarSongs2")?.array("song").orEmpty().map { client.trackOf(it) }
+        // A track radio never starts with the song it came from.
+        return if (seedUri.startsWith("spotify:track:")) tracks.filter { it.uri != seedUri } else tracks
+    }
+
+    private suspend fun firstTrackIdOfAlbum(albumId: String): String? =
+        client.callOptional("getAlbum", mapOf("id" to albumId))
+            ?.optJSONObject("album")?.array("song")?.firstOrNull()
+            ?.optString("id")?.takeIf { it.isNotBlank() }
+
+    private suspend fun firstTopSongIdOfArtist(artistId: String): String? {
+        val artist = client.callOptional("getArtist", mapOf("id" to artistId))
+            ?.optJSONObject("artist") ?: return null
+        val name = artist.optString("name").takeIf { it.isNotBlank() } ?: return null
+        val top = client.callOptional("getTopSongs", mapOf("artist" to name, "count" to "1"))
+            ?.optJSONObject("topSongs")?.array("song")?.firstOrNull()?.optString("id")
+        if (!top.isNullOrBlank()) return top
+        return artist.array("album").firstOrNull()?.optString("id")
+            ?.let { firstTrackIdOfAlbum(it) }
     }
 
     override suspend fun canvas(trackUri: Uri): Canvas? = null
