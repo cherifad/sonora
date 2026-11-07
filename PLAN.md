@@ -317,8 +317,8 @@ report arrives with the server facts needed to reproduce it.
       `docs/RELEASING.md` and the README feature list.
 - [ ] Publish the source (GPL-3.0) and the Navidrome app-catalogue entry. Needs the public
       repository and store screenshots; not done here.
-- [ ] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs. Belongs to the release
-      flow (`bumpv`/`Release`), not to this work.
+- [x] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs.
+      `v1.4.0` was released on 2026-11-06 from `main` (`4710ab3`).
 - [~] Verify the release checklist end to end: the list is in `docs/RELEASING.md`; the device
       pass (clean install, upgrade, offline, tile/widget) is still to do.
 
@@ -354,6 +354,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | — | About shows the live update row / manual check; fork credit corrected to Myspoti | `fix(about)` |
 | 2026-11-06 | — | Removed Myspoti's Discord, Ko-fi and GitHub Sponsors links and their support UI/strings | `fix(about)` |
 | 2026-11-06 | 10 | Trust-on-first-use for self-signed HTTPS, reset row, fingerprint test | `feat(security)` |
+| 2026-11-06 | 12 | `v1.4.0` released from `main` (`4710ab3`) | release |
 
 ## Decisions and risks
 
