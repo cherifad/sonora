@@ -28,8 +28,8 @@ services:
       INCOMING_PATH: /music/.sonora-ingest
       SERVER_TYPE: navidrome
       SCAN_URL: http://navidrome:4533
-      SCAN_USER: ${NAVIDROME_USER:-admin}
-      SCAN_PASSWORD: ${NAVIDROME_PASSWORD:?set NAVIDROME_PASSWORD}
+      SCAN_USER: "admin"
+      SCAN_PASSWORD: "1234"
     depends_on:
       - navidrome
     restart: unless-stopped
