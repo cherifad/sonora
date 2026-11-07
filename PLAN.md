@@ -355,6 +355,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | — | Removed Myspoti's Discord, Ko-fi and GitHub Sponsors links and their support UI/strings | `fix(about)` |
 | 2026-11-06 | 10 | Trust-on-first-use for self-signed HTTPS, reset row, fingerprint test | `feat(security)` |
 | 2026-11-06 | 12 | `v1.4.0` released from `main` (`4710ab3`) | release |
+| 2026-11-07 | 13 | Ingest e2e tests: upload, duplicate, review, collision, ZIP/short rejection | `test(ingest)` |
 
 ## Decisions and risks
 
@@ -386,4 +387,6 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       marked `UPLOADED / DUPLICATE` like a fresh upload.
 - [ ] App: Local Files badges, "Upload to server", summary, "delete local copies" guarded by
       server verification.
+- [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
+      (ffprobe true; short/non-audio rejected).
 - [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

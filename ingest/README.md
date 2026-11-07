@@ -154,6 +154,24 @@ Triggers the server scan manually.
 The service is deliberately conservative: WhatsApp voice notes, recordings and other
 short audio are rejected instead of polluting the library.
 
+## Tests
+
+```bash
+go test ./...
+```
+
+End-to-end, against a running service with a writable library:
+
+```bash
+TOKEN=test LIBRARY_PATH=/tmp/sonora-music INCOMING_PATH=/tmp/sonora-in \
+  /tmp/sonora-ingest &
+INGEST_URL=http://127.0.0.1:8088 INGEST_TOKEN=test python3 e2e_test.py
+```
+
+It checks health/auth, a new upload, the hash duplicate, a close-metadata `needs_review`,
+a path collision (` (2)`), a rejected ZIP and a rejected short file. The default songs are
+`music/test_songs/Album gratuit, vol. 8`; set `INGEST_SONGS` for another folder.
+
 ## Limits
 
 - No tag rewriting yet: the file is placed using the metadata the app sends. Upload good
