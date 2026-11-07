@@ -356,6 +356,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 10 | Trust-on-first-use for self-signed HTTPS, reset row, fingerprint test | `feat(security)` |
 | 2026-11-06 | 12 | `v1.4.0` released from `main` (`4710ab3`) | release |
 | 2026-11-07 | 13 | Ingest e2e tests: upload, duplicate, review, collision, ZIP/short rejection | `test(ingest)` |
+| 2026-11-07 | 13 | App upload target, client, index, worker, Local Files button/badges | `feat(upload)` |
 
 ## Decisions and risks
 
@@ -382,11 +383,11 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
 - [x] Path sanitization, no overwrite, 30 s minimum, audio stream check when `ffprobe` is
       present, atomic write, scan trigger, track verification.
 - [x] Dockerfile, Compose example (Navidrome), README, Go tests, live curl pass.
-- [ ] App: upload target settings (URL + token, encrypted), local SHA-256 index.
-- [ ] App: `UploadWorker` (WorkManager, Wi-Fi only, resumable, progress), duplicate answers
-      marked `UPLOADED / DUPLICATE` like a fresh upload.
-- [ ] App: Local Files badges, "Upload to server", summary, "delete local copies" guarded by
-      server verification.
+- [x] App: upload target settings (URL + token, encrypted), local state index.
+- [x] App: `UploadWorker` (WorkManager, Wi-Fi only, progress), SHA-256, duplicate answers
+      marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
+- [~] App: Local Files badge, "Upload to server" and live progress are in; "delete local
+      copies" guarded by server verification is still to do.
 - [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
       (ffprobe true; short/non-audio rejected).
 - [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

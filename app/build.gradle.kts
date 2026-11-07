@@ -185,6 +185,7 @@ dependencies {
     // YouTube music videos (search + streams), as in Spotui / NewPipe.
     implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
     implementation(libs.okhttp)
+    implementation(libs.security.crypto)
     implementation("androidx.media3:media3-ui:1.8.0")
     implementation("androidx.media3:media3-datasource:1.8.0")
     implementation("androidx.media3:media3-database:1.8.0")

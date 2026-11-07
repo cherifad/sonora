@@ -692,4 +692,24 @@
     <string name="tls_reset_title">Reset server certificate trust</string>
     <string name="tls_reset_detail">After the server\'s certificate changed: the next connection pins the new one.</string>
     <string name="tls_reset_done">Server trust reset</string>
+    <string name="upload_settings_title">Server upload</string>
+    <string name="upload_settings_not_set">Not configured</string>
+    <string name="upload_settings_url">Ingest URL</string>
+    <string name="upload_settings_token">Ingest token</string>
+    <string name="upload_settings_wifi">Wi-Fi only</string>
+    <string name="upload_settings_wifi_detail">Uploads wait for an unmetered network.</string>
+    <string name="upload_settings_save">Save</string>
+    <string name="upload_settings_cancel">Cancel</string>
+    <string name="upload_settings_saved">Upload target saved</string>
+    <string name="upload_settings_missing">The URL and the token are both required.</string>
+    <string name="local_files_upload_button">Upload</string>
+    <string name="local_files_uploading">Uploading %1$d/%2$d — %3$s</string>
+    <string name="upload_state_queued">Queued</string>
+    <string name="upload_state_uploading">Uploading</string>
+    <string name="upload_state_scan">Scanning</string>
+    <string name="upload_state_uploaded">Uploaded</string>
+    <string name="upload_state_duplicate">On server</string>
+    <string name="upload_state_review">Review</string>
+    <string name="upload_state_failed">Failed</string>
+    <string name="upload_state_skipped">Skipped</string>
 </resources>

@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +67,13 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.adlen.sonora.app.data.local.LocalMusic
 import com.adlen.sonora.app.data.local.LocalTrack
+import com.adlen.sonora.app.data.upload.LocalUploadIndex
+import com.adlen.sonora.app.data.upload.UploadEntry
+import com.adlen.sonora.app.data.upload.UploadManager
+import com.adlen.sonora.app.data.upload.UploadOrigin
+import com.adlen.sonora.app.data.upload.UploadSettings
+import com.adlen.sonora.app.data.upload.UploadState
+import com.adlen.sonora.app.ui.components.ServerUploadDialog
 import com.adlen.sonora.app.di.LocalPlayer
 import com.adlen.sonora.app.di.SongPlayer
 import com.adlen.sonora.app.ui.components.pressable
@@ -88,6 +96,13 @@ fun LocalFilesScreen(navController: NavController) {
 
     val np by SongPlayer.nowPlaying
     val playingLocal = LocalPlayer.active.value
+    val uploads by LocalUploadIndex.entries.collectAsState()
+    val uploadProgress by UploadManager.progress.collectAsState()
+    var showUploadSettings by remember { mutableStateOf(false) }
+    if (showUploadSettings) ServerUploadDialog(
+        onDismiss = { showUploadSettings = false },
+        onSaved = { showUploadSettings = false },
+    )
     var adding by remember { mutableStateOf<LocalTrack?>(null) }
     adding?.let { t -> AddLocalToPlaylistSheet(t, onDismiss = { adding = null }) }
     var choosingFolders by remember { mutableStateOf(false) }
@@ -128,11 +143,26 @@ fun LocalFilesScreen(navController: NavController) {
                         val n = tracks?.size ?: 0
                         Text(pluralStringResource(R.plurals.local_files_count, n, n), color = AppMuted, fontSize = 14.sp,
                             modifier = Modifier.padding(top = 4.dp))
+                        uploadProgress?.let { progress ->
+                            Text(
+                                stringResource(R.string.local_files_uploading, progress.done + 1, progress.total, progress.title),
+                                color = AppAccent, fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                         Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             androidx.compose.material3.OutlinedButton(
                                 onClick = { choosingFolders = true },
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF7F7F7F)),
                             ) { Text(stringResource(R.string.local_folders_button), color = AppText, fontSize = 13.sp) }
+                            Spacer(Modifier.width(8.dp))
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = {
+                                    if (UploadSettings.load(context) == null) showUploadSettings = true
+                                    else tracks?.let { UploadManager.enqueue(context, it) }
+                                },
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF7F7F7F)),
+                            ) { Text(stringResource(R.string.local_files_upload_button), color = AppText, fontSize = 13.sp) }
                             Spacer(Modifier.weight(1f))
                             Icon(painterResource(R.drawable.ic_player_shuffle), stringResource(R.string.play_mode_item_shuffle_title), tint = AppText,
                                 modifier = Modifier.size(28.dp).pressable { tracks?.let { if (it.isNotEmpty()) LocalPlayer.play(it, it.indices.random(), shuffle = true) } })
@@ -181,6 +211,14 @@ fun LocalFilesScreen(navController: NavController) {
                             Text(t.title, color = if (current) com.adlen.sonora.app.ui.theme.AppAccent else AppText, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (t.artist.isNotBlank()) Text(t.artist, color = AppMuted, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
+                        uploads[LocalUploadIndex.key(t)]?.let { entry ->
+                            Text(
+                                text = uploadLabel(entry),
+                                color = if (entry.state == UploadState.UPLOADED) AppAccent else AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            )
+                        }
                         Icon(painterResource(R.drawable.ic_add), stringResource(R.string.context_menu_add_to_playlist), tint = AppText,
                             modifier = Modifier.size(24.dp).pressable(0.92f) { adding = t })
                     }
@@ -196,6 +234,19 @@ fun LocalFilesScreen(navController: NavController) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.accessibility_navigate_back), tint = AppText)
         }
     }
+}
+
+@Composable
+private fun uploadLabel(entry: UploadEntry): String = when (entry.state) {
+    UploadState.QUEUED -> stringResource(R.string.upload_state_queued)
+    UploadState.UPLOADING -> stringResource(R.string.upload_state_uploading)
+    UploadState.WAITING_SCAN -> stringResource(R.string.upload_state_scan)
+    UploadState.UPLOADED -> stringResource(
+        if (entry.origin == UploadOrigin.DUPLICATE) R.string.upload_state_duplicate else R.string.upload_state_uploaded,
+    )
+    UploadState.NEEDS_REVIEW -> stringResource(R.string.upload_state_review)
+    UploadState.SKIPPED -> stringResource(R.string.upload_state_skipped)
+    UploadState.FAILED -> stringResource(R.string.upload_state_failed)
 }
 
 @Composable
