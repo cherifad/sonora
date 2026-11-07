@@ -49,6 +49,8 @@ import com.adlen.sonora.subsonic.SubsonicClient
 import com.adlen.sonora.subsonic.SubsonicConfig
 import com.adlen.sonora.subsonic.SubsonicFailure
 import com.adlen.sonora.subsonic.SubsonicSettings
+import com.adlen.sonora.app.data.upload.UploadSettings
+import com.adlen.sonora.app.ui.components.UploadConnectForm
 import com.adlen.sonora.app.ui.theme.AppAccent
 import com.adlen.sonora.app.ui.theme.AppBackground
 import com.adlen.sonora.app.ui.theme.AppMuted
@@ -56,9 +58,11 @@ import com.adlen.sonora.app.ui.theme.AppSans
 import com.adlen.sonora.app.ui.theme.AppText
 import kotlinx.coroutines.launch
 
-/** First-run setup: no Spotify login, just the Subsonic server. */
+/** First-run setup: no Spotify login, just the Subsonic server, then the optional upload target. */
 @Composable
 fun SubsonicSetupScreen(onDone: () -> Unit) {
+    val context = LocalContext.current
+    var step by remember { mutableStateOf(0) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -74,27 +78,70 @@ fun SubsonicSetupScreen(onDone: () -> Unit) {
                 .padding(horizontal = 24.dp, vertical = 32.dp),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = "Connect to your server",
-                color = AppText,
-                fontFamily = AppSans,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 30.sp,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "Subsonic / OpenSubsonic. Jellyfin + Subfin: http://<host>:8096/subfin/ — Navidrome: http://<host>:4533/",
-                color = AppMuted,
-                fontFamily = AppSans,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-            )
-            Spacer(Modifier.height(24.dp))
-            SubsonicServerForm(
-                initial = SubsonicSettings.load(LocalContext.current),
-                onCancel = null,
-                onSaved = { onDone() },
-            )
+            if (step == 0) {
+                Text(
+                    text = "Connect to your server",
+                    color = AppText,
+                    fontFamily = AppSans,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 30.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Subsonic / OpenSubsonic. Jellyfin + Subfin: http://<host>:8096/subfin/ — Navidrome: http://<host>:4533/",
+                    color = AppMuted,
+                    fontFamily = AppSans,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                )
+                Spacer(Modifier.height(24.dp))
+                SubsonicServerForm(
+                    initial = SubsonicSettings.load(context),
+                    onCancel = null,
+                    onSaved = { step = 1 },
+                )
+            } else {
+                val server = SubsonicSettings.load(context)
+                val suggestion = UploadSettings.suggestUrl(server?.baseUrl.orEmpty())
+                val suggestedHost = suggestion.removePrefix("http://").removePrefix("https://").substringBefore('/')
+                val rule = if (suggestedHost.contains("-upload.")) {
+                    "your server name with -upload before the domain"
+                } else {
+                    "the same host on port 8088"
+                }
+                Text(
+                    text = "Upload your music (optional)",
+                    color = AppText,
+                    fontFamily = AppSans,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 30.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Run the companion ingest service next to your server, then connect it here so Sonora " +
+                        "can send your local files to the library. Recommended address: $suggestion ($rule).",
+                    color = AppMuted,
+                    fontFamily = AppSans,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                )
+                Spacer(Modifier.height(24.dp))
+                UploadConnectForm(
+                    initialUrl = UploadSettings.load(context)?.baseUrl
+                        ?: UploadSettings.url(context)
+                        ?: suggestion,
+                    onConnected = {},
+                    trailing = { connected ->
+                        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                if (connected) "Continue" else "Skip for now",
+                                color = AppMuted,
+                                fontFamily = AppSans,
+                            )
+                        }
+                    },
+                )
+            }
         }
     }
 }

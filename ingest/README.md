@@ -18,7 +18,7 @@ access to the library — that is this service.
 
 1. Create the Navidrome admin user first (its web UI), and a music folder shared by both
    containers.
-2. Copy `docker-compose.example.yml` to `docker-compose.yml`.
+2. Open `docker-compose.yml` (copy it to a local file if you keep secrets there).
 3. Set the secrets:
    ```bash
    export INGEST_TOKEN="$(openssl rand -hex 32)"

@@ -57,6 +57,25 @@ object UploadSettings {
         return value
     }
 
+    /**
+     * A sensible ingest address for a music server: the same host name with `-upload`
+     * before the domain (`music.example.com` -> `music-upload.example.com`). A bare IP or
+     * a single-label host keeps the host and takes the ingest default port.
+     */
+    fun suggestUrl(serverBaseUrl: String): String {
+        if (serverBaseUrl.isBlank()) return "http://<ingest-host>:8088"
+        val uri = runCatching { java.net.URI(normalize(serverBaseUrl)) }.getOrNull()
+            ?: return "http://<ingest-host>:8088"
+        val scheme = if (uri.scheme == "https") "https" else "http"
+        val host = uri.host?.takeIf { it.isNotBlank() } ?: return "http://<ingest-host>:8088"
+        val ipv4 = Regex("""\d{1,3}(\.\d{1,3}){3}""")
+        if (host.contains(':') || ipv4.matches(host)) return "http://$host:8088"
+        val labels = host.split('.').filter { it.isNotBlank() }
+        if (labels.size < 2) return "http://$host:8088"
+        val suggested = labels.first() + "-upload." + labels.drop(1).joinToString(".")
+        return "$scheme://$suggested"
+    }
+
     private fun prefs(context: Context): SharedPreferences {
         cached?.let { return it }
         synchronized(this) {

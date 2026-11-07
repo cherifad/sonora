@@ -359,6 +359,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-07 | 13 | App upload target, client, index, worker, Local Files button/badges | `feat(upload)` |
 | 2026-11-07 | 13 | Token exchange: ingest `/auth/exchange`, app URL + Connect, auto re-exchange | `feat(auth)` |
 | 2026-11-07 | 13 | Delete local copies after a server check, through MediaStore | `feat(upload)` |
+| 2026-11-07 | 13 | Onboarding upload step, prefilled `<server>-upload.<domain>`, compose fixes | `feat(setup)` |
 
 ## Decisions and risks
 
@@ -394,6 +395,8 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
 - [x] App: Local Files badge, "Upload to server", live progress, and "delete local copies"
       after a server check, through the system MediaStore delete dialog (Android 11+).
+- [x] Onboarding: an optional upload step after the server, prefilled with the recommended
+      `<server-name>-upload.<domain>` address (or `<host>:8088` for an IP).
 - [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
       (ffprobe true; short/non-audio rejected).
 - [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

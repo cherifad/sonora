@@ -1,13 +1,14 @@
-# Example: Navidrome + sonora-ingest, sharing one music folder.
-# Copy to docker-compose.yml, set INGEST_TOKEN and NAVIDROME_PASSWORD, then:
+# Navidrome + sonora-ingest, sharing one music folder.
+# Set INGEST_TOKEN and NAVIDROME_PASSWORD, then:
 #   docker compose up -d
+# The scanned library lives in ./music/navidrome; test fixtures can stay in ./music.
 services:
   navidrome:
     image: deluan/navidrome:0.64.2
     ports:
       - "4533:4533"
     volumes:
-      - ./music:/music
+      - ./music/navidrome:/music
     environment:
       ND_MUSICFOLDER: /music
       # The app triggers scans itself; the periodic scan can stay off.
@@ -24,12 +25,12 @@ services:
       - ./music:/music
     environment:
       TOKEN: ${INGEST_TOKEN:?set INGEST_TOKEN}
-      LIBRARY_PATH: /music
-      INCOMING_PATH: /music/.sonora-ingest
+      LIBRARY_PATH: /music/navidrome
+      INCOMING_PATH: /music/navidrome/.sonora-ingest
       SERVER_TYPE: navidrome
       SCAN_URL: http://navidrome:4533
-      SCAN_USER: "admin"
-      SCAN_PASSWORD: "1234"
+      SCAN_USER: "${NAVIDROME_USER:-admin}"
+      SCAN_PASSWORD: ${NAVIDROME_PASSWORD:?set NAVIDROME_PASSWORD}
     depends_on:
       - navidrome
     restart: unless-stopped
