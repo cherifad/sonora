@@ -365,3 +365,24 @@ report arrives with the server facts needed to reproduce it.
   `MYSPOTI_*` so existing repository secrets keep working.
 - **Capability probe is the keystone.** It turns silent `runCatching` fallbacks into
   explicit, testable behaviour.
+
+---
+
+## Phase 13 — Local library upload (companion ingest)
+
+Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
+(`ingest/`) writes into the scanned music folder and triggers the scan.
+
+- [x] Service MVP: `/health`, `/library/match`, `/uploads` (create, chunked
+      `Content-Range`, complete, status, delete), `/scan`.
+- [x] Dedup: SHA-256, ISRC, MBID; close metadata is `needs_review`, never uploaded
+      automatically.
+- [x] Path sanitization, no overwrite, 30 s minimum, audio stream check when `ffprobe` is
+      present, atomic write, scan trigger, track verification.
+- [x] Dockerfile, Compose example (Navidrome), README, Go tests, live curl pass.
+- [ ] App: upload target settings (URL + token, encrypted), local SHA-256 index.
+- [ ] App: `UploadWorker` (WorkManager, Wi-Fi only, resumable, progress), duplicate answers
+      marked `UPLOADED / DUPLICATE` like a fresh upload.
+- [ ] App: Local Files badges, "Upload to server", summary, "delete local copies" guarded by
+      server verification.
+- [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.
