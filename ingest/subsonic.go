@@ -27,16 +27,24 @@ type SubsonicScanner struct {
 	http *http.Client
 }
 
-func (s *SubsonicScanner) endpoint(method string, params url.Values) string {
-	salt := randomSalt()
-	sum := md5.Sum([]byte(s.pass + salt))
+func (s *SubsonicScanner) endpoint(method string, params, auth url.Values) string {
 	q := url.Values{}
-	q.Set("u", s.user)
-	q.Set("t", hex.EncodeToString(sum[:]))
-	q.Set("s", salt)
 	q.Set("v", "1.16.1")
 	q.Set("c", "sonora-ingest")
 	q.Set("f", "json")
+	if len(auth) == 0 {
+		salt := randomSalt()
+		sum := md5.Sum([]byte(s.pass + salt))
+		q.Set("u", s.user)
+		q.Set("t", hex.EncodeToString(sum[:]))
+		q.Set("s", salt)
+	} else {
+		for key, values := range auth {
+			for _, value := range values {
+				q.Add(key, value)
+			}
+		}
+	}
 	for key, values := range params {
 		for _, value := range values {
 			q.Add(key, value)
@@ -64,8 +72,8 @@ type subsonicEnvelope struct {
 	} `json:"subsonic-response"`
 }
 
-func (s *SubsonicScanner) get(ctx context.Context, method string, params url.Values) (*subsonicEnvelope, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.endpoint(method, params), nil)
+func (s *SubsonicScanner) getWith(ctx context.Context, method string, params, auth url.Values) (*subsonicEnvelope, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.endpoint(method, params, auth), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +96,17 @@ func (s *SubsonicScanner) get(ctx context.Context, method string, params url.Val
 		return nil, fmt.Errorf("subsonic status %s", env.Response.Status)
 	}
 	return &env, nil
+}
+
+func (s *SubsonicScanner) get(ctx context.Context, method string, params url.Values) (*subsonicEnvelope, error) {
+	return s.getWith(ctx, method, params, nil)
+}
+
+// Ping proves a user's credentials: the app sends its own u/t/s (or an API key) and the
+// service only sees whether the server accepts them.
+func (s *SubsonicScanner) Ping(ctx context.Context, auth url.Values) error {
+	_, err := s.getWith(ctx, "ping", url.Values{}, auth)
+	return err
 }
 
 func (s *SubsonicScanner) Trigger(ctx context.Context) error {

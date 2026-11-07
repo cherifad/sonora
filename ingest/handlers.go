@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,10 +21,13 @@ import (
 )
 
 type Server struct {
-	cfg     Config
-	store   *Store
-	scanner Scanner
-	http    *http.Client
+	cfg          Config
+	store        *Store
+	scanner      Scanner
+	authClient   *SubsonicScanner
+	issuer       *TokenIssuer
+	limiter      *rateLimiter
+	allowedUsers map[string]bool
 }
 
 func writeJSON(w http.ResponseWriter, code int, value any) {
@@ -32,12 +38,91 @@ func writeJSON(w http.ResponseWriter, code int, value any) {
 
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.Token != "" && r.Header.Get("Authorization") != "Bearer "+s.cfg.Token {
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		staticOK := s.cfg.Token != "" && subtle.ConstantTimeCompare([]byte(token), []byte(s.cfg.Token)) == 1
+		signedOK := false
+		if !staticOK && token != "" && s.issuer != nil {
+			_, err := s.issuer.Verify(token)
+			signedOK = err == nil
+		}
+		if !staticOK && !signedOK {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
 		next(w, r)
 	}
+}
+
+type exchangeRequest struct {
+	U      string `json:"u"`
+	T      string `json:"t"`
+	S      string `json:"s"`
+	APIKey string `json:"apiKey"`
+}
+
+// handleExchange trades the app's existing Subsonic credentials for an upload token.
+// The password never reaches the service: the app sends the same u/t/s it would send to
+// the server, and the service forwards them to ping.
+func (s *Server) handleExchange(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST only"})
+		return
+	}
+	if s.limiter != nil && !s.limiter.allow(clientIP(r)) {
+		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts"})
+		return
+	}
+	var req exchangeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	auth := url.Values{}
+	user := req.U
+	if req.APIKey != "" {
+		auth.Set("apiKey", req.APIKey)
+		if user == "" {
+			user = "api-key"
+		}
+	} else {
+		if req.U == "" || req.T == "" || req.S == "" {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "u, t and s are required"})
+			return
+		}
+		auth.Set("u", req.U)
+		auth.Set("t", req.T)
+		auth.Set("s", req.S)
+	}
+	if s.authClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "no Subsonic endpoint configured"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	if err := s.authClient.Ping(ctx, auth); err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "the server refused these credentials"})
+		return
+	}
+	if len(s.allowedUsers) > 0 && !s.allowedUsers[user] {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "this user is not allowed to upload"})
+		return
+	}
+	token, expires, err := s.issuer.Issue(user, serverID(s.cfg))
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"token": token, "expiresAt": expires, "user": user, "server": s.cfg.ServerType,
+	})
+}
+
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {

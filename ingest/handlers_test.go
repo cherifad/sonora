@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 type fakeScanner struct {
@@ -52,6 +53,19 @@ func call(server *Server, method, path string, body []byte, headers map[string]s
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
+	rec := httptest.NewRecorder()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/auth/exchange", server.handleExchange)
+	mux.HandleFunc("/library/match", server.auth(server.handleMatch))
+	mux.HandleFunc("/uploads", server.auth(server.handleUploads))
+	mux.HandleFunc("/uploads/", server.auth(server.handleUploads))
+	mux.ServeHTTP(rec, req)
+	return rec
+}
+
+func callWithToken(server *Server, method, path, token string, body []byte) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/library/match", server.auth(server.handleMatch))
@@ -138,6 +152,65 @@ func TestCloseMetadataIsReviewNotUpload(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &match)
 	if match.Decision != "needs_review" {
 		t.Fatalf("close metadata = %+v", match)
+	}
+}
+
+func TestExchangeIssuesAWorkingToken(t *testing.T) {
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/rest/ping.view" {
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("u") != "me" || r.URL.Query().Get("t") != "token" || r.URL.Query().Get("s") != "salt" {
+			t.Errorf("exchange did not forward u/t/s: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"subsonic-response":{"status":"ok"}}`))
+	}))
+	defer fake.Close()
+
+	server, _ := newTestServer(t)
+	server.authClient = &SubsonicScanner{base: fake.URL, http: http.DefaultClient}
+	server.issuer = NewTokenIssuer("secret", time.Hour)
+	server.limiter = newRateLimiter(5, time.Minute)
+	server.allowedUsers = map[string]bool{"me": true}
+
+	rec := call(server, http.MethodPost, "/auth/exchange", []byte(`{"u":"me","t":"token","s":"salt"}`), nil, false)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("exchange: %d %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Token string `json:"token"`
+		User  string `json:"user"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.Token == "" || response.User != "me" {
+		t.Fatalf("exchange response = %+v", response)
+	}
+
+	rec = callWithToken(server, http.MethodPost, "/library/match",
+		response.Token, []byte(`{"sha256":"sha","metadata":{"title":"T","artist":"A"}}`))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("signed token refused: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestExchangeRefusesBadCredentials(t *testing.T) {
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"subsonic-response":{"status":"failed","error":{"code":40,"message":"bad"}}}`))
+	}))
+	defer fake.Close()
+
+	server, _ := newTestServer(t)
+	server.authClient = &SubsonicScanner{base: fake.URL, http: http.DefaultClient}
+	server.issuer = NewTokenIssuer("secret", time.Hour)
+	server.limiter = newRateLimiter(5, time.Minute)
+
+	rec := call(server, http.MethodPost, "/auth/exchange", []byte(`{"u":"me","t":"token","s":"salt"}`), nil, false)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("bad exchange = %d %s", rec.Code, rec.Body.String())
 	}
 }
 

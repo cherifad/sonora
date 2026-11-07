@@ -16,6 +16,7 @@ class UploadClientTest {
     private var lastRange = ""
     private var lastPath = ""
     private var matchDecision = "new"
+    private var unauthorized = false
 
     @Before
     fun start() {
@@ -27,6 +28,7 @@ class UploadClientTest {
             val body = exchange.requestBody.readBytes().toString(Charsets.UTF_8)
             lastRange = exchange.requestHeaders.getFirst("Content-Range").orEmpty()
             val response = when {
+                unauthorized -> """{"error":"unauthorized"}"""
                 path == "/health" -> """{"ok":true}"""
                 path == "/library/match" && matchDecision == "duplicate" ->
                     """{"decision":"duplicate","match":"hash","serverTrackId":"42"}"""
@@ -40,7 +42,7 @@ class UploadClientTest {
             }
             val bytes = response.toByteArray()
             exchange.responseHeaders.add("Content-Type", "application/json")
-            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.sendResponseHeaders(if (unauthorized) 401 else 200, bytes.size.toLong())
             exchange.responseBody.use { it.write(bytes) }
         }
         server.start()
@@ -86,5 +88,12 @@ class UploadClientTest {
         val decision = client().match("sha", metadata)
         assertTrue(decision is UploadClient.Decision.Duplicate)
         assertEquals("42", (decision as UploadClient.Decision.Duplicate).serverTrackId)
+    }
+
+    @Test
+    fun `a refused token raises UploadUnauthorized`() = runBlocking {
+        unauthorized = true
+        val error = runCatching { client().status("u1") }.exceptionOrNull()
+        assertTrue(error is UploadUnauthorized)
     }
 }

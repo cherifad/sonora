@@ -357,6 +357,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 12 | `v1.4.0` released from `main` (`4710ab3`) | release |
 | 2026-11-07 | 13 | Ingest e2e tests: upload, duplicate, review, collision, ZIP/short rejection | `test(ingest)` |
 | 2026-11-07 | 13 | App upload target, client, index, worker, Local Files button/badges | `feat(upload)` |
+| 2026-11-07 | 13 | Token exchange: ingest `/auth/exchange`, app URL + Connect, auto re-exchange | `feat(auth)` |
 
 ## Decisions and risks
 
@@ -383,7 +384,11 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
 - [x] Path sanitization, no overwrite, 30 s minimum, audio stream check when `ffprobe` is
       present, atomic write, scan trigger, track verification.
 - [x] Dockerfile, Compose example (Navidrome), README, Go tests, live curl pass.
-- [x] App: upload target settings (URL + token, encrypted), local state index.
+- [x] App: upload target settings (URL only, encrypted token), local state index.
+- [x] Token exchange: `POST /auth/exchange` verifies the app's own Subsonic `u/t/s` (or API
+      key) through `ping`, then issues an HMAC token (TTL, rate limit, `ALLOWED_USERS`); the
+      password never leaves the phone. The app stores only URL + issued token and re-exchanges
+      automatically on 401.
 - [x] App: `UploadWorker` (WorkManager, Wi-Fi only, progress), SHA-256, duplicate answers
       marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
 - [~] App: Local Files badge, "Upload to server" and live progress are in; "delete local

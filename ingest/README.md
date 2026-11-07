@@ -29,7 +29,9 @@ access to the library — that is this service.
    ```bash
    curl -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:8088/health
    ```
-5. In Sonora, Settings → Server upload: URL `http://<host>:8088`, token `$INGEST_TOKEN`.
+5. In Sonora, Settings → Server upload: enter the URL `http://<host>:8088` and press
+   **Connect**. The app proves the Subsonic account it already uses and stores the token the
+   ingest issues; nothing to copy. `$INGEST_TOKEN` stays for curl and admin use.
 
 For Jellyfin:
 
@@ -48,7 +50,9 @@ environment:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `TOKEN` | required | Bearer token the app sends |
+| `TOKEN` | required | Static bearer token (curl/admin) and HMAC secret for issued tokens |
+| `TOKEN_TTL_HOURS` | `720` | Lifetime of a token issued by `/auth/exchange` (30 days) |
+| `ALLOWED_USERS` | all | Comma-separated Subsonic usernames allowed to exchange a token |
 | `PORT` | `8088` | HTTP port |
 | `LIBRARY_PATH` | `/music` | Folder the music server scans |
 | `INCOMING_PATH` | `$LIBRARY_PATH/.sonora-ingest` | Temporary files and state |
@@ -65,7 +69,28 @@ LAN. Never expose it directly to the internet.
 
 ## API
 
-All endpoints require `Authorization: Bearer <TOKEN>`.
+All endpoints require `Authorization: Bearer <TOKEN>` (the static token or one issued by
+`/auth/exchange`), except `/auth/exchange` itself.
+
+### `POST /auth/exchange`
+
+Trades the app's Subsonic credentials for an upload token. The app sends either the same
+`u`/`t`/`s` it would send to the server, or its OpenSubsonic API key; the ingest forwards
+them to `ping` and only issues a token when the server accepts them. The password never
+reaches the service.
+
+```bash
+curl -X POST http://localhost:8088/auth/exchange \
+  -H 'Content-Type: application/json' \
+  -d '{"u":"adlen","t":"<md5(password+salt)>","s":"<salt>"}'
+```
+
+```json
+{"token":"<payload>.<signature>","expiresAt":"2026-12-07T12:00:00Z","user":"adlen","server":"navidrome"}
+```
+
+The token is HMAC-SHA256 signed (key derived from `TOKEN`); changing `TOKEN` revokes every
+issued token. The endpoint is rate-limited to 5 attempts per minute per IP.
 
 ### `GET /health`
 

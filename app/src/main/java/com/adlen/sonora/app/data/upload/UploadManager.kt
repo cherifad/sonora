@@ -51,7 +51,8 @@ object UploadManager {
         try {
             val target = UploadSettings.load(context) ?: return
             if (UploadSettings.isWifiOnly(context) && DataSaver.metered) return
-            val client = UploadClient(target)
+            var client = UploadClient(target)
+            var refreshed = false
             val tracks = LocalMusic.tracks(context)
             val queued = LocalUploadIndex.entries.value
                 .filterValues { it.state == UploadState.QUEUED || it.state == UploadState.WAITING_SCAN }
@@ -60,13 +61,26 @@ object UploadManager {
                 val track = tracks.firstOrNull { LocalUploadIndex.key(it) == key } ?: continue
                 _progress.value = Progress(done, queued.size, track.title)
                 try {
-                    if (entry.state == UploadState.WAITING_SCAN && entry.uploadId != null) {
-                        poll(context, client, key, entry.uploadId)
-                    } else {
-                        uploadOne(context, client, track)
-                    }
+                    process(context, client, key, entry, track)
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
+                } catch (e: UploadUnauthorized) {
+                    // The token expired (or the ingest secret changed): exchange once more with
+                    // the Subsonic credentials the app already holds, then retry this file.
+                    val renewed = if (refreshed) null else UploadAuth.refresh(context)
+                    if (renewed == null) {
+                        mark(key, UploadState.FAILED, reason = e.message ?: "unauthorized")
+                    } else {
+                        refreshed = true
+                        client = UploadClient(renewed)
+                        try {
+                            process(context, client, key, entry, track)
+                        } catch (retry: kotlinx.coroutines.CancellationException) {
+                            throw retry
+                        } catch (retry: Throwable) {
+                            mark(key, UploadState.FAILED, reason = retry.message ?: retry.javaClass.simpleName)
+                        }
+                    }
                 } catch (e: Throwable) {
                     mark(key, UploadState.FAILED, reason = e.message ?: e.javaClass.simpleName)
                 }
@@ -75,6 +89,20 @@ object UploadManager {
             _progress.value = null
         } finally {
             running.set(false)
+        }
+    }
+
+    private suspend fun process(
+        context: Context,
+        client: UploadClient,
+        key: String,
+        entry: UploadEntry,
+        track: LocalTrack,
+    ) {
+        if (entry.state == UploadState.WAITING_SCAN && entry.uploadId != null) {
+            poll(context, client, key, entry.uploadId)
+        } else {
+            uploadOne(context, client, track)
         }
     }
 

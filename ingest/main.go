@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -68,8 +69,33 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := &Server{cfg: cfg, store: store, scanner: NewScanner(cfg)}
+	authBase := cfg.SubsonicURL
+	if authBase == "" {
+		authBase = cfg.ScanURL
+	}
+	var authClient *SubsonicScanner
+	if authBase != "" {
+		authClient = &SubsonicScanner{base: authBase, http: &http.Client{Timeout: 20 * time.Second}}
+	}
+	ttl := 30 * 24 * time.Hour
+	if raw := os.Getenv("TOKEN_TTL_HOURS"); raw != "" {
+		if hours, err := strconv.Atoi(raw); err == nil && hours > 0 {
+			ttl = time.Duration(hours) * time.Hour
+		}
+	}
+	allowed := map[string]bool{}
+	for _, user := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
+		if user = strings.TrimSpace(user); user != "" {
+			allowed[user] = true
+		}
+	}
+	server := &Server{
+		cfg: cfg, store: store, scanner: NewScanner(cfg),
+		authClient: authClient, issuer: NewTokenIssuer(cfg.Token, ttl),
+		limiter: newRateLimiter(5, time.Minute), allowedUsers: allowed,
+	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("/auth/exchange", server.handleExchange)
 	mux.HandleFunc("/health", server.auth(server.handleHealth))
 	mux.HandleFunc("/library/match", server.auth(server.handleMatch))
 	mux.HandleFunc("/uploads", server.auth(server.handleUploads))

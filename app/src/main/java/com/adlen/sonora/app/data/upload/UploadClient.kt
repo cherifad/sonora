@@ -11,6 +11,9 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+/** The ingest refused the token; the caller should exchange again and retry. */
+class UploadUnauthorized(message: String) : IOException(message)
+
 /** The ingest API (`ingest/`), as the app uses it. */
 class UploadClient(
     private val target: UploadTarget,
@@ -94,6 +97,7 @@ class UploadClient(
             .build()
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
+            if (response.code == 401 || response.code == 403) throw UploadUnauthorized(text)
             if (!response.isSuccessful) throw IOException("upload HTTP ${response.code}: $text")
             JSONObject(text).getLong("offset")
         }
@@ -120,6 +124,7 @@ class UploadClient(
     private fun call(method: String, path: String, body: String?): JSONObject {
         http.newCall(request(method, path, body)).execute().use { response ->
             val text = response.body?.string().orEmpty()
+            if (response.code == 401 || response.code == 403) throw UploadUnauthorized(text)
             if (!response.isSuccessful) throw IOException("upload HTTP ${response.code}: $text")
             return JSONObject(text)
         }

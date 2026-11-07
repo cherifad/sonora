@@ -28,6 +28,10 @@ object UploadSettings {
         return UploadTarget(normalize(url), token)
     }
 
+    /** The saved ingest URL, even before a token was issued. */
+    fun url(context: Context): String? =
+        prefs(context).getString(KEY_URL, null)?.takeIf { it.isNotBlank() }?.let(::normalize)
+
     fun save(context: Context, target: UploadTarget, wifiOnly: Boolean) {
         prefs(context).edit()
             .putString(KEY_URL, normalize(target.baseUrl))
