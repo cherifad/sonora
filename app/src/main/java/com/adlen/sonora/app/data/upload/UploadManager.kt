@@ -38,6 +38,15 @@ object UploadManager {
         return deniedFolders.none { folder.contains(it) }
     }
 
+    /** True when the server still returns the track the ingest registered for this file. */
+    suspend fun isOnServer(serverTrackId: String?): Boolean {
+        if (serverTrackId.isNullOrBlank()) return false
+        val api = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi ?: return false
+        return runCatching {
+            api.catalog.track("spotify:track:$serverTrackId")
+        }.isSuccess
+    }
+
     fun enqueue(context: Context, tracks: List<LocalTrack>) {
         if (UploadSettings.load(context) == null) return
         tracks.filter(::isLikelyMusic).forEach { track ->

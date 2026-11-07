@@ -358,6 +358,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-07 | 13 | Ingest e2e tests: upload, duplicate, review, collision, ZIP/short rejection | `test(ingest)` |
 | 2026-11-07 | 13 | App upload target, client, index, worker, Local Files button/badges | `feat(upload)` |
 | 2026-11-07 | 13 | Token exchange: ingest `/auth/exchange`, app URL + Connect, auto re-exchange | `feat(auth)` |
+| 2026-11-07 | 13 | Delete local copies after a server check, through MediaStore | `feat(upload)` |
 
 ## Decisions and risks
 
@@ -391,8 +392,8 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       automatically on 401.
 - [x] App: `UploadWorker` (WorkManager, Wi-Fi only, progress), SHA-256, duplicate answers
       marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
-- [~] App: Local Files badge, "Upload to server" and live progress are in; "delete local
-      copies" guarded by server verification is still to do.
+- [x] App: Local Files badge, "Upload to server", live progress, and "delete local copies"
+      after a server check, through the system MediaStore delete dialog (Android 11+).
 - [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
       (ffprobe true; short/non-audio rejected).
 - [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

@@ -62,6 +62,18 @@
         <item quantity="one">%d track</item>
         <item quantity="other">%d tracks</item>
     </plurals>
+    <plurals name="local_files_delete_message">
+        <item quantity="one">%d file is on the server. Remove it from this phone? It stays on the server.</item>
+        <item quantity="other">%d files are on the server. Remove them from this phone? They stay on the server.</item>
+    </plurals>
+    <string name="local_files_delete_button">Delete local copies</string>
+    <string name="local_files_delete_title">Delete local copies</string>
+    <string name="local_files_delete_confirm">Delete</string>
+    <string name="local_files_delete_cancel">Cancel</string>
+    <string name="local_files_delete_checking">Checking the server…</string>
+    <string name="local_files_delete_none">None of these files could be confirmed on the server, so nothing was deleted.</string>
+    <string name="local_files_delete_unsupported">Deleting local files needs Android 11 or newer.</string>
+    <string name="local_files_delete_done">Deleted %d local files</string>
     <string name="local_files_none_subtitle">We didn\'t find any playable audio files on this device. When there are some, they\'ll show up here.</string>
     <string name="downloads_empty_title">Download to listen offline</string>
     <string name="downloads_empty_subtitle">Tap Download in a song\'s menu, or the download button of an album or playlist.</string>

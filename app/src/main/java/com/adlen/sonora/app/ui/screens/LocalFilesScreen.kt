@@ -7,6 +7,9 @@ import com.adlen.sonora.app.ui.theme.AppMuted
 import com.adlen.sonora.app.ui.theme.AppAccent
 
 import kotlinx.coroutines.launch
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.result.IntentSenderRequest
 import androidx.compose.foundation.layout.navigationBarsPadding
 import android.content.Intent
 import android.net.Uri
@@ -33,8 +36,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -98,15 +105,78 @@ fun LocalFilesScreen(navController: NavController) {
     val playingLocal = LocalPlayer.active.value
     val uploads by LocalUploadIndex.entries.collectAsState()
     val uploadProgress by UploadManager.progress.collectAsState()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val uploaded = tracks.orEmpty().filter {
+        uploads[LocalUploadIndex.key(it)]?.state == UploadState.UPLOADED
+    }
     var showUploadSettings by remember { mutableStateOf(false) }
     if (showUploadSettings) ServerUploadDialog(
         onDismiss = { showUploadSettings = false },
         onSaved = { showUploadSettings = false },
     )
+    var showDelete by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<List<LocalTrack>>(emptyList()) }
+    val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        val removed = pendingDelete
+        pendingDelete = emptyList()
+        if (result.resultCode == Activity.RESULT_OK && removed.isNotEmpty()) {
+            removed.forEach { LocalUploadIndex.remove(LocalUploadIndex.key(it)) }
+            scope.launch { tracks = LocalMusic.tracks(context, refresh = true) }
+            Toast.makeText(
+                context,
+                context.getString(R.string.local_files_delete_done, removed.size),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+    if (showDelete) AlertDialog(
+        onDismissRequest = { showDelete = false },
+        title = { Text(stringResource(R.string.local_files_delete_title)) },
+        text = {
+            Text(pluralStringResource(R.plurals.local_files_delete_message, uploaded.size, uploaded.size))
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    showDelete = false
+                    deleting = true
+                    scope.launch {
+                        try {
+                            // Only files the server still knows are offered to the system dialog.
+                            val verified = uploaded.filter { track ->
+                                UploadManager.isOnServer(uploads[LocalUploadIndex.key(track)]?.serverTrackId)
+                            }
+                            if (verified.isEmpty()) {
+                                Toast.makeText(context, R.string.local_files_delete_none, Toast.LENGTH_SHORT).show()
+                            } else {
+                                // MediaStore refuses a delete request with more than 2000 URIs.
+                                val request = LocalMusic.deleteRequest(context, verified.take(2000))
+                                if (request == null) {
+                                    Toast.makeText(context, R.string.local_files_delete_unsupported, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    pendingDelete = verified
+                                    deleteLauncher.launch(
+                                        IntentSenderRequest.Builder(request.intentSender).build(),
+                                    )
+                                }
+                            }
+                        } finally {
+                            deleting = false
+                        }
+                    }
+                },
+            ) { Text(stringResource(R.string.local_files_delete_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { showDelete = false }) {
+                Text(stringResource(R.string.local_files_delete_cancel))
+            }
+        },
+    )
     var adding by remember { mutableStateOf<LocalTrack?>(null) }
     adding?.let { t -> AddLocalToPlaylistSheet(t, onDismiss = { adding = null }) }
     var choosingFolders by remember { mutableStateOf(false) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
     if (choosingFolders) LocalFoldersSheet(
         onChanged = { scope.launch { tracks = LocalMusic.tracks(context) } },
         onDismiss = { choosingFolders = false },
@@ -150,6 +220,13 @@ fun LocalFilesScreen(navController: NavController) {
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                         }
+                        if (deleting) {
+                            Text(
+                                stringResource(R.string.local_files_delete_checking),
+                                color = AppMuted, fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                         Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             androidx.compose.material3.OutlinedButton(
                                 onClick = { choosingFolders = true },
@@ -163,6 +240,17 @@ fun LocalFilesScreen(navController: NavController) {
                                 },
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF7F7F7F)),
                             ) { Text(stringResource(R.string.local_files_upload_button), color = AppText, fontSize = 13.sp) }
+                            if (uploaded.isNotEmpty()) {
+                                Spacer(Modifier.width(4.dp))
+                                IconButton(onClick = { showDelete = true }, enabled = !deleting) {
+                                    Icon(
+                                        Icons.Rounded.DeleteSweep,
+                                        contentDescription = stringResource(R.string.local_files_delete_button),
+                                        tint = AppText,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                }
+                            }
                             Spacer(Modifier.weight(1f))
                             Icon(painterResource(R.drawable.ic_player_shuffle), stringResource(R.string.play_mode_item_shuffle_title), tint = AppText,
                                 modifier = Modifier.size(28.dp).pressable { tracks?.let { if (it.isNotEmpty()) LocalPlayer.play(it, it.indices.random(), shuffle = true) } })

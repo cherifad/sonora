@@ -35,6 +35,15 @@ object LocalMusic {
     fun hasPermission(context: Context) =
         context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
+    /**
+     * The system dialog that lets the user delete these files (Android 11+). Null on
+     * Android 10, where the app cannot ask MediaStore to remove another app's files.
+     */
+    fun deleteRequest(context: Context, tracks: List<LocalTrack>): android.app.PendingIntent? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || tracks.isEmpty()) return null
+        return MediaStore.createDeleteRequest(context.contentResolver, tracks.map { it.uri })
+    }
+
     @Volatile private var cache: List<LocalTrack>? = null
 
     /** The tracks shown in Local Files: all of them but those of the folders left out ([LocalFolders]). */
