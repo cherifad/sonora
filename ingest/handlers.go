@@ -331,14 +331,17 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 		Metadata: upload.Metadata, CreatedAt: now,
 	})
 	s.store.SetPath(id, rel)
-	if s.scanner != nil {
+	if s.scanner == nil {
+		s.store.SetStatus(id, "waiting_scan", "no scanner configured: set SCAN_URL and SCAN_USER/SCAN_PASSWORD")
+	} else {
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 		if err := s.scanner.Trigger(ctx); err != nil {
 			s.store.SetStatus(id, "waiting_scan", "scan trigger failed: "+err.Error())
+		} else {
+			s.store.SetStatus(id, "waiting_scan", "")
 		}
 	}
-	s.store.SetStatus(id, "waiting_scan", "")
 	updated, _ := s.store.Upload(id)
 	writeJSON(w, http.StatusOK, updated)
 }
@@ -349,17 +352,22 @@ func (s *Server) statusUpload(w http.ResponseWriter, r *http.Request, id string)
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "unknown upload"})
 		return
 	}
-	if upload.Status == "waiting_scan" && s.scanner != nil {
-		ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
-		defer cancel()
-		if trackID, err := s.scanner.Verify(ctx, upload.Metadata); err == nil && trackID != "" {
-			s.store.SetServerTrackID(id, trackID)
-			s.store.SetFileServerTrackID(upload.SHA256, trackID)
+	if upload.Status == "waiting_scan" {
+		if s.scanner == nil {
+			s.store.SetStatus(id, "waiting_scan", "no scanner configured: set SCAN_URL and SCAN_USER/SCAN_PASSWORD")
 			upload, _ = s.store.Upload(id)
-		} else if err != nil {
-			// Keep waiting, but tell the app why the scan has not produced the track yet.
-			s.store.SetStatus(id, "waiting_scan", err.Error())
-			upload, _ = s.store.Upload(id)
+		} else {
+			ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+			defer cancel()
+			if trackID, err := s.scanner.Verify(ctx, upload.Metadata); err == nil && trackID != "" {
+				s.store.SetServerTrackID(id, trackID)
+				s.store.SetFileServerTrackID(upload.SHA256, trackID)
+				upload, _ = s.store.Upload(id)
+			} else if err != nil {
+				// Keep waiting, but tell the app why the scan has not produced the track yet.
+				s.store.SetStatus(id, "waiting_scan", err.Error())
+				upload, _ = s.store.Upload(id)
+			}
 		}
 	}
 	writeJSON(w, http.StatusOK, upload)
