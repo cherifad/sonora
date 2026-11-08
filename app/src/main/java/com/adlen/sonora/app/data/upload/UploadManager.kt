@@ -50,7 +50,13 @@ object UploadManager {
     fun enqueue(context: Context, tracks: List<LocalTrack>) {
         if (UploadSettings.load(context) == null) return
         tracks.filter(::isLikelyMusic).forEach { track ->
-            LocalUploadIndex.set(LocalUploadIndex.key(track), UploadEntry(UploadState.QUEUED))
+            val key = LocalUploadIndex.key(track)
+            val current = LocalUploadIndex.entry(key)
+            // Pressing Upload again must not re-send a file the server already confirmed, or
+            // one waiting for its scan: keep those states and let the worker poll them.
+            if (current == null || current.state == UploadState.FAILED || current.state == UploadState.SKIPPED) {
+                LocalUploadIndex.set(key, UploadEntry(UploadState.QUEUED))
+            }
         }
         UploadWork.enqueue(context)
     }
@@ -109,7 +115,7 @@ object UploadManager {
         track: LocalTrack,
     ) {
         if (entry.state == UploadState.WAITING_SCAN && entry.uploadId != null) {
-            poll(context, client, key, entry.uploadId)
+            poll(context, client, key, entry.uploadId, complete = false)
         } else {
             uploadOne(context, client, track)
         }
@@ -155,13 +161,19 @@ object UploadManager {
                     offset = client.patch(created.uploadId, offset, bytes.size.toLong(), chunk)
                 }
                 mark(key, UploadState.UPLOADING, uploadId = created.uploadId, sha256 = sha)
-                poll(context, client, key, created.uploadId)
+                poll(context, client, key, created.uploadId, complete = true)
             }
         }
     }
 
-    private suspend fun poll(context: Context, client: UploadClient, key: String, uploadId: String) {
-        var status = client.complete(uploadId)
+    private suspend fun poll(
+        context: Context,
+        client: UploadClient,
+        key: String,
+        uploadId: String,
+        complete: Boolean,
+    ) {
+        var status = if (complete) client.complete(uploadId) else client.status(uploadId)
         for (attempt in 0 until 30) {
             if (status.status == "done") break
             delay(2_000)
@@ -169,7 +181,7 @@ object UploadManager {
         }
         when (status.status) {
             "done" -> mark(key, UploadState.UPLOADED, UploadOrigin.NEW, status.serverTrackId, status.path, uploadId = uploadId)
-            "waiting_scan" -> mark(key, UploadState.WAITING_SCAN, path = status.path, uploadId = uploadId)
+            "waiting_scan" -> mark(key, UploadState.WAITING_SCAN, path = status.path, reason = status.error, uploadId = uploadId)
             else -> mark(key, UploadState.FAILED, reason = status.error ?: status.status, uploadId = uploadId)
         }
     }

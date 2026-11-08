@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloudUpload
+import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -64,8 +66,15 @@ import com.adlen.sonora.engine.R
 import com.adlen.sonora.host.android.SonoraRuntime
 import com.adlen.sonora.app.data.local.LocalMusic
 import com.adlen.sonora.app.data.local.LocalTrack
+import com.adlen.sonora.app.data.upload.LocalUploadIndex
+import com.adlen.sonora.app.data.upload.UploadManager
+import com.adlen.sonora.app.data.upload.UploadSettings
+import com.adlen.sonora.app.data.upload.UploadState
 import com.adlen.sonora.app.di.LocalPlayer
 import com.adlen.sonora.app.di.SongPlayer
+import com.adlen.sonora.app.ui.components.LocalDeleteFlow
+import com.adlen.sonora.app.ui.components.ServerUploadDialog
+import com.adlen.sonora.app.ui.components.uploadStateLabel
 import com.adlen.sonora.app.ui.components.EpisodeDownloadButton
 import com.adlen.sonora.app.ui.components.EpisodeOptionsSheet
 import com.adlen.sonora.app.ui.components.episodeClock
@@ -156,10 +165,31 @@ fun ImmersiveLocalFilesScreen(navController: NavController) {
 
     val np by SongPlayer.nowPlaying
     val playingLocal = LocalPlayer.active.value
+    val uploads by LocalUploadIndex.entries.collectAsState()
+    val uploadProgress by UploadManager.progress.collectAsState()
+    val uploaded = tracks.orEmpty().filter {
+        uploads[LocalUploadIndex.key(it)]?.state == UploadState.UPLOADED
+    }
+    var showUploadSettings by remember { mutableStateOf(false) }
+    if (showUploadSettings) ServerUploadDialog(
+        onDismiss = { showUploadSettings = false },
+        onSaved = { showUploadSettings = false },
+    )
     var adding by remember { mutableStateOf<LocalTrack?>(null) }
     adding?.let { t -> AddLocalToPlaylistSheet(t, onDismiss = { adding = null }) }
     var choosingFolders by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var showDelete by remember { mutableStateOf(false) }
+    val delete = LocalDeleteFlow(
+        candidates = uploaded,
+        uploads = uploads,
+        showDialog = showDelete,
+        onDismiss = { showDelete = false },
+        onDeleted = { removed ->
+            removed.forEach { LocalUploadIndex.remove(LocalUploadIndex.key(it)) }
+            scope.launch { tracks = LocalMusic.tracks(context, refresh = true) }
+        },
+    )
     if (choosingFolders) LocalFoldersSheet(
         onChanged = { scope.launch { tracks = LocalMusic.tracks(context) } },
         onDismiss = { choosingFolders = false },
@@ -172,7 +202,20 @@ fun ImmersiveLocalFilesScreen(navController: NavController) {
         subtitle = if (granted && tracks != null) pluralStringResource(R.plurals.local_files_count, n, n) else null,
         onBack = { navController.popBackStack() },
         actions = if (granted) {
-            { ImmersiveBarAction(Icons.Rounded.Folder, stringResource(R.string.local_folders_button), onClick = { choosingFolders = true }) }
+            {
+                ImmersiveBarAction(Icons.Rounded.Folder, stringResource(R.string.local_folders_button), onClick = { choosingFolders = true })
+                ImmersiveBarAction(Icons.Rounded.CloudUpload, stringResource(R.string.local_files_upload_button), onClick = {
+                    if (UploadSettings.load(context) == null) showUploadSettings = true
+                    else tracks?.let { UploadManager.enqueue(context, it) }
+                })
+                if (uploaded.isNotEmpty()) {
+                    ImmersiveBarAction(
+                        Icons.Rounded.DeleteSweep,
+                        stringResource(R.string.local_files_delete_button),
+                        onClick = { showDelete = true },
+                    )
+                }
+            }
         } else null,
     ) {
         when {
@@ -211,6 +254,26 @@ fun ImmersiveLocalFilesScreen(navController: NavController) {
                         modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 6.dp),
                     )
                 }
+                uploadProgress?.let { progress ->
+                    item(key = "upload-progress") {
+                        Text(
+                            stringResource(R.string.local_files_uploading, progress.done + 1, progress.total, progress.title),
+                            style = Immersive.Caption,
+                            color = Immersive.Accent,
+                            modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 4.dp),
+                        )
+                    }
+                }
+                if (delete.deleting) {
+                    item(key = "delete-progress") {
+                        Text(
+                            stringResource(R.string.local_files_delete_checking),
+                            style = Immersive.Caption,
+                            color = Immersive.TextSecondary,
+                            modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 4.dp),
+                        )
+                    }
+                }
                 val shown = tracks.orEmpty().filter { com.adlen.sonora.app.ui.components.matchesFind(find, it.title, it.artist, it.album) }
                 if (shown.isEmpty() && find.isNotBlank()) item(key = "find-empty") {
                     ImmersiveMessageState(stringResource(R.string.assisted_curation_search_empty_view_no_result_title, find.trim()))
@@ -224,6 +287,15 @@ fun ImmersiveLocalFilesScreen(navController: NavController) {
                             // The whole folder plays from this song, even when the list is filtered.
                             onClick = { tracks?.let { all -> LocalPlayer.play(all, all.indexOf(t).coerceAtLeast(0)) } },
                             onMore = { adding = t },
+                            trailing = if (uploads[LocalUploadIndex.key(t)] != null) ({
+                                val entry = uploads.getValue(LocalUploadIndex.key(t))
+                                Text(
+                                    uploadStateLabel(entry),
+                                    style = Immersive.Caption,
+                                    color = if (entry.state == UploadState.UPLOADED) Immersive.Accent else Immersive.TextSecondary,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                )
+                            }) else null,
                         )
                     }
                 }

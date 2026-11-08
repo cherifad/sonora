@@ -154,7 +154,28 @@ func (s *Server) handleMatch(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
-	writeJSON(w, http.StatusOK, s.store.Match(strings.ToLower(req.SHA256), req.Metadata))
+	match := s.store.Match(strings.ToLower(req.SHA256), req.Metadata)
+	if match.Decision == "new" && s.serverHasCloseMatch(r.Context(), req.Metadata) {
+		match = MatchResult{
+			Decision: "needs_review",
+			Match:    "server",
+			Reason:   "a close match already exists on the server; not uploaded automatically",
+		}
+	}
+	writeJSON(w, http.StatusOK, match)
+}
+
+// serverHasCloseMatch asks the music server's own index. The ingest state only knows the
+// files it uploaded itself: an album that was already in the library must not be uploaded
+// a second time just because the service has never seen it.
+func (s *Server) serverHasCloseMatch(ctx context.Context, meta Metadata) bool {
+	if s.scanner == nil || meta.Title == "" {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	_, err := s.scanner.Verify(ctx, meta)
+	return err == nil
 }
 
 type createRequest struct {
@@ -180,6 +201,14 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Metadata.Title == "" || (req.Metadata.Artist == "" && req.Metadata.AlbumArtist == "") {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "title and artist are required"})
+		return
+	}
+	if local := s.store.Match(strings.ToLower(req.SHA256), req.Metadata); local.Decision == "new" &&
+		s.serverHasCloseMatch(r.Context(), req.Metadata) {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"decision": "needs_review",
+			"reason":   "a close match already exists on the server; not uploaded automatically",
+		})
 		return
 	}
 	upload, match, err := s.store.CreateUpload(req.Filename, req.Size, strings.ToLower(req.SHA256), req.Metadata)
@@ -326,6 +355,10 @@ func (s *Server) statusUpload(w http.ResponseWriter, r *http.Request, id string)
 		if trackID, err := s.scanner.Verify(ctx, upload.Metadata); err == nil && trackID != "" {
 			s.store.SetServerTrackID(id, trackID)
 			s.store.SetFileServerTrackID(upload.SHA256, trackID)
+			upload, _ = s.store.Upload(id)
+		} else if err != nil {
+			// Keep waiting, but tell the app why the scan has not produced the track yet.
+			s.store.SetStatus(id, "waiting_scan", err.Error())
 			upload, _ = s.store.Upload(id)
 		}
 	}

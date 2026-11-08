@@ -80,7 +80,9 @@ import com.adlen.sonora.app.data.upload.UploadManager
 import com.adlen.sonora.app.data.upload.UploadOrigin
 import com.adlen.sonora.app.data.upload.UploadSettings
 import com.adlen.sonora.app.data.upload.UploadState
+import com.adlen.sonora.app.ui.components.LocalDeleteFlow
 import com.adlen.sonora.app.ui.components.ServerUploadDialog
+import com.adlen.sonora.app.ui.components.uploadStateLabel
 import com.adlen.sonora.app.di.LocalPlayer
 import com.adlen.sonora.app.di.SongPlayer
 import com.adlen.sonora.app.ui.components.pressable
@@ -115,63 +117,14 @@ fun LocalFilesScreen(navController: NavController) {
         onSaved = { showUploadSettings = false },
     )
     var showDelete by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf(false) }
-    var pendingDelete by remember { mutableStateOf<List<LocalTrack>>(emptyList()) }
-    val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        val removed = pendingDelete
-        pendingDelete = emptyList()
-        if (result.resultCode == Activity.RESULT_OK && removed.isNotEmpty()) {
+    val delete = LocalDeleteFlow(
+        candidates = uploaded,
+        uploads = uploads,
+        showDialog = showDelete,
+        onDismiss = { showDelete = false },
+        onDeleted = { removed ->
             removed.forEach { LocalUploadIndex.remove(LocalUploadIndex.key(it)) }
             scope.launch { tracks = LocalMusic.tracks(context, refresh = true) }
-            Toast.makeText(
-                context,
-                context.getString(R.string.local_files_delete_done, removed.size),
-                Toast.LENGTH_SHORT,
-            ).show()
-        }
-    }
-    if (showDelete) AlertDialog(
-        onDismissRequest = { showDelete = false },
-        title = { Text(stringResource(R.string.local_files_delete_title)) },
-        text = {
-            Text(pluralStringResource(R.plurals.local_files_delete_message, uploaded.size, uploaded.size))
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    showDelete = false
-                    deleting = true
-                    scope.launch {
-                        try {
-                            // Only files the server still knows are offered to the system dialog.
-                            val verified = uploaded.filter { track ->
-                                UploadManager.isOnServer(uploads[LocalUploadIndex.key(track)]?.serverTrackId)
-                            }
-                            if (verified.isEmpty()) {
-                                Toast.makeText(context, R.string.local_files_delete_none, Toast.LENGTH_SHORT).show()
-                            } else {
-                                // MediaStore refuses a delete request with more than 2000 URIs.
-                                val request = LocalMusic.deleteRequest(context, verified.take(2000))
-                                if (request == null) {
-                                    Toast.makeText(context, R.string.local_files_delete_unsupported, Toast.LENGTH_SHORT).show()
-                                } else {
-                                    pendingDelete = verified
-                                    deleteLauncher.launch(
-                                        IntentSenderRequest.Builder(request.intentSender).build(),
-                                    )
-                                }
-                            }
-                        } finally {
-                            deleting = false
-                        }
-                    }
-                },
-            ) { Text(stringResource(R.string.local_files_delete_confirm)) }
-        },
-        dismissButton = {
-            TextButton(onClick = { showDelete = false }) {
-                Text(stringResource(R.string.local_files_delete_cancel))
-            }
         },
     )
     var adding by remember { mutableStateOf<LocalTrack?>(null) }
@@ -220,7 +173,7 @@ fun LocalFilesScreen(navController: NavController) {
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                         }
-                        if (deleting) {
+                        if (delete.deleting) {
                             Text(
                                 stringResource(R.string.local_files_delete_checking),
                                 color = AppMuted, fontSize = 12.sp,
@@ -242,7 +195,7 @@ fun LocalFilesScreen(navController: NavController) {
                             ) { Text(stringResource(R.string.local_files_upload_button), color = AppText, fontSize = 13.sp) }
                             if (uploaded.isNotEmpty()) {
                                 Spacer(Modifier.width(4.dp))
-                                IconButton(onClick = { showDelete = true }, enabled = !deleting) {
+                                IconButton(onClick = { showDelete = true }, enabled = !delete.deleting) {
                                     Icon(
                                         Icons.Rounded.DeleteSweep,
                                         contentDescription = stringResource(R.string.local_files_delete_button),
@@ -301,7 +254,7 @@ fun LocalFilesScreen(navController: NavController) {
                         }
                         uploads[LocalUploadIndex.key(t)]?.let { entry ->
                             Text(
-                                text = uploadLabel(entry),
+                                text = uploadStateLabel(entry),
                                 color = if (entry.state == UploadState.UPLOADED) AppAccent else AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp),
@@ -322,19 +275,6 @@ fun LocalFilesScreen(navController: NavController) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.accessibility_navigate_back), tint = AppText)
         }
     }
-}
-
-@Composable
-private fun uploadLabel(entry: UploadEntry): String = when (entry.state) {
-    UploadState.QUEUED -> stringResource(R.string.upload_state_queued)
-    UploadState.UPLOADING -> stringResource(R.string.upload_state_uploading)
-    UploadState.WAITING_SCAN -> stringResource(R.string.upload_state_scan)
-    UploadState.UPLOADED -> stringResource(
-        if (entry.origin == UploadOrigin.DUPLICATE) R.string.upload_state_duplicate else R.string.upload_state_uploaded,
-    )
-    UploadState.NEEDS_REVIEW -> stringResource(R.string.upload_state_review)
-    UploadState.SKIPPED -> stringResource(R.string.upload_state_skipped)
-    UploadState.FAILED -> stringResource(R.string.upload_state_failed)
 }
 
 @Composable

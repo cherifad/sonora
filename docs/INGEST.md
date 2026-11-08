@@ -147,10 +147,14 @@ The ingest decides, the app only reports:
 | same ISRC | duplicate | `Uploaded` / `On server` |
 | same MusicBrainz recording id | duplicate | `Uploaded` / `On server` |
 | same normalised title + artist, duration ±2 s | `needs_review` | `Review`, **not uploaded** |
+| same track already in the server's library | `needs_review` | `Review`, **not uploaded** |
 | otherwise | new | upload |
 
-A `needs_review` file stays on the phone; resolve it by checking the tags or by removing the
-existing server copy, then upload again. There is no per-file choice dialog by design.
+The ingest checks its own state first (hash, ISRC, MBID), then the server's `search3` index:
+an album that was already in the library before the ingest was deployed is never uploaded a
+second time. A `needs_review` file stays on the phone; resolve it by checking the tags or by
+removing the existing server copy, then upload again. There is no per-file choice dialog by
+design.
 
 ### Deleting local copies
 

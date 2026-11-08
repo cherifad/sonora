@@ -214,6 +214,51 @@ func TestExchangeRefusesBadCredentials(t *testing.T) {
 	}
 }
 
+func TestAServerMatchIsNeedsReview(t *testing.T) {
+	server, scanner := newTestServer(t)
+	scanner.trackID = "42"
+	body := `{"sha256":"new-hash","metadata":{"title":"T","artist":"A","durationMs":60000}}`
+	rec := call(server, http.MethodPost, "/library/match", []byte(body), nil, true)
+	var match MatchResult
+	_ = json.Unmarshal(rec.Body.Bytes(), &match)
+	if match.Decision != "needs_review" {
+		t.Fatalf("server match = %+v", match)
+	}
+}
+
+func TestCreateUploadRefusesAServerMatch(t *testing.T) {
+	server, scanner := newTestServer(t)
+	scanner.trackID = "42"
+	body := `{"filename":"a.flac","size":5,"sha256":"new-hash","metadata":{"title":"T","artist":"A","durationMs":60000}}`
+	rec := call(server, http.MethodPost, "/uploads", []byte(body), nil, true)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create = %d %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Decision string `json:"decision"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &response)
+	if response.Decision != "needs_review" {
+		t.Fatalf("create response = %s", rec.Body.String())
+	}
+}
+
+func TestALocalHashDuplicateBeatsTheServerCheck(t *testing.T) {
+	server, scanner := newTestServer(t)
+	scanner.trackID = "42"
+	server.store.AddFile(&FileRecord{
+		SHA256: "known-hash", ServerTrackID: "7",
+		Metadata: Metadata{Title: "T", Artist: "A", DurationMs: 60000},
+	})
+	body := `{"sha256":"known-hash","metadata":{"title":"T","artist":"A","durationMs":60000}}`
+	rec := call(server, http.MethodPost, "/library/match", []byte(body), nil, true)
+	var match MatchResult
+	_ = json.Unmarshal(rec.Body.Bytes(), &match)
+	if match.Decision != "duplicate" || match.ServerTrackID != "7" {
+		t.Fatalf("local duplicate = %+v", match)
+	}
+}
+
 func TestAuthIsRequired(t *testing.T) {
 	server, _ := newTestServer(t)
 	rec := call(server, http.MethodPost, "/library/match", []byte(`{}`), nil, false)
