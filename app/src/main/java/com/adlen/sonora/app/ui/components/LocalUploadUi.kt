@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,11 +22,14 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.adlen.sonora.app.data.local.LocalMusic
 import com.adlen.sonora.app.data.local.LocalTrack
+import com.adlen.sonora.app.data.preferences.Look
+import com.adlen.sonora.app.data.preferences.LookPref
 import com.adlen.sonora.app.data.upload.LocalUploadIndex
 import com.adlen.sonora.app.data.upload.UploadEntry
 import com.adlen.sonora.app.data.upload.UploadManager
 import com.adlen.sonora.app.data.upload.UploadOrigin
 import com.adlen.sonora.app.data.upload.UploadState
+import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.engine.R
 import kotlinx.coroutines.launch
 
@@ -60,6 +65,7 @@ fun LocalDeleteFlow(
 ): LocalDeleteHandle {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val immersive = LookPref.look == Look.IMMERSIVE
     var deleting by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<List<LocalTrack>>(emptyList()) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -105,18 +111,33 @@ fun LocalDeleteFlow(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(stringResource(R.string.local_files_delete_title)) },
+            containerColor = if (immersive) Immersive.Raised else AlertDialogDefaults.containerColor,
+            title = {
+                Text(
+                    stringResource(R.string.local_files_delete_title),
+                    style = if (immersive) Immersive.Headline else LocalTextStyle.current,
+                )
+            },
             text = {
-                Text(pluralStringResource(R.plurals.local_files_delete_message, candidates.size, candidates.size))
+                Text(
+                    pluralStringResource(R.plurals.local_files_delete_message, candidates.size, candidates.size),
+                    style = if (immersive) Immersive.Body else LocalTextStyle.current,
+                )
             },
             confirmButton = {
                 TextButton(onClick = { onDismiss(); request() }) {
-                    Text(stringResource(R.string.local_files_delete_confirm))
+                    Text(
+                        stringResource(R.string.local_files_delete_confirm),
+                        style = if (immersive) Immersive.BodyStrong.copy(color = Immersive.Accent) else LocalTextStyle.current,
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.local_files_delete_cancel))
+                    Text(
+                        stringResource(R.string.local_files_delete_cancel),
+                        style = if (immersive) Immersive.BodyStrong else LocalTextStyle.current,
+                    )
                 }
             },
         )

@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -49,8 +50,11 @@ import com.adlen.sonora.subsonic.SubsonicClient
 import com.adlen.sonora.subsonic.SubsonicConfig
 import com.adlen.sonora.subsonic.SubsonicFailure
 import com.adlen.sonora.subsonic.SubsonicSettings
+import com.adlen.sonora.app.data.preferences.Look
+import com.adlen.sonora.app.data.preferences.LookPref
 import com.adlen.sonora.app.data.upload.UploadSettings
 import com.adlen.sonora.app.ui.components.UploadConnectForm
+import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.app.ui.theme.AppAccent
 import com.adlen.sonora.app.ui.theme.AppBackground
 import com.adlen.sonora.app.ui.theme.AppMuted
@@ -149,6 +153,7 @@ fun SubsonicSetupScreen(onDone: () -> Unit) {
 /** Re-open the server form from Settings. */
 @Composable
 fun SubsonicSetupDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
+    val immersive = LookPref.look == Look.IMMERSIVE
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -162,17 +167,21 @@ fun SubsonicSetupDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
             Column(
                 modifier = Modifier
                     .widthIn(max = 520.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(AppBackground)
+                    .clip(if (immersive) Immersive.Card else RoundedCornerShape(16.dp))
+                    .background(if (immersive) Immersive.Raised else AppBackground)
                     .padding(24.dp),
             ) {
-                Text(
-                    text = "Server",
-                    color = AppText,
-                    fontFamily = AppSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                )
+                if (immersive) {
+                    Text(text = "Server", style = Immersive.Title)
+                } else {
+                    Text(
+                        text = "Server",
+                        color = AppText,
+                        fontFamily = AppSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 SubsonicServerForm(
                     initial = SubsonicSettings.load(LocalContext.current),
@@ -192,6 +201,7 @@ internal fun SubsonicServerForm(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val immersive = LookPref.look == Look.IMMERSIVE
     var url by remember { mutableStateOf(initial?.baseUrl.orEmpty()) }
     var username by remember { mutableStateOf(initial?.username.orEmpty()) }
     var password by remember { mutableStateOf(initial?.password.orEmpty()) }
@@ -199,17 +209,31 @@ internal fun SubsonicServerForm(
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = AppText,
-        unfocusedTextColor = AppText,
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        cursorColor = AppAccent,
-        focusedBorderColor = AppAccent,
-        unfocusedBorderColor = AppMuted,
-        focusedLabelColor = AppAccent,
-        unfocusedLabelColor = AppMuted,
-    )
+    val fieldColors = if (immersive) {
+        OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Immersive.Text,
+            unfocusedTextColor = Immersive.Text,
+            focusedContainerColor = Color.White.copy(alpha = 0.08f),
+            unfocusedContainerColor = Color.White.copy(alpha = 0.08f),
+            cursorColor = Immersive.Accent,
+            focusedBorderColor = Immersive.Accent,
+            unfocusedBorderColor = Immersive.Separator,
+            focusedLabelColor = Immersive.Accent,
+            unfocusedLabelColor = Immersive.TextSecondary,
+        )
+    } else {
+        OutlinedTextFieldDefaults.colors(
+            focusedTextColor = AppText,
+            unfocusedTextColor = AppText,
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            cursorColor = AppAccent,
+            focusedBorderColor = AppAccent,
+            unfocusedBorderColor = AppMuted,
+            focusedLabelColor = AppAccent,
+            unfocusedLabelColor = AppMuted,
+        )
+    }
 
     fun connect() {
         val trimmedUrl = url.trim()
@@ -256,10 +280,8 @@ internal fun SubsonicServerForm(
         Spacer(Modifier.height(6.dp))
         Text(
             text = "HTTP sends the password and the token in clear text on the network. Use HTTPS when the server supports it.",
+            style = if (immersive) Immersive.Caption else TextStyle(fontFamily = AppSans, fontSize = 12.sp, lineHeight = 16.sp),
             color = Color(0xFFFFB74D),
-            fontFamily = AppSans,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
         )
     }
     Spacer(Modifier.height(12.dp))
@@ -294,9 +316,8 @@ internal fun SubsonicServerForm(
         supportingText = {
             Text(
                 "Only for servers that advertise OpenSubsonic API-key login; it replaces the password.",
-                color = AppMuted,
-                fontFamily = AppSans,
-                fontSize = 12.sp,
+                style = if (immersive) Immersive.Caption else TextStyle(fontFamily = AppSans, fontSize = 12.sp),
+                color = if (immersive) Immersive.TextSecondary else AppMuted,
             )
         },
         modifier = Modifier.fillMaxWidth(),
@@ -306,9 +327,8 @@ internal fun SubsonicServerForm(
         Spacer(Modifier.height(12.dp))
         Text(
             text = error.orEmpty(),
-            color = Color(0xFFFF6B6B),
-            fontFamily = AppSans,
-            fontSize = 14.sp,
+            style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 14.sp),
+            color = if (immersive) Immersive.Destructive else Color(0xFFFF6B6B),
         )
     }
 
@@ -316,8 +336,9 @@ internal fun SubsonicServerForm(
     Button(
         onClick = { connect() },
         enabled = !busy,
+        shape = if (immersive) Immersive.Button else ButtonDefaults.shape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = AppAccent,
+            containerColor = if (immersive) Immersive.Accent else AppAccent,
             contentColor = Color.Black,
         ),
         modifier = Modifier
@@ -331,12 +352,19 @@ internal fun SubsonicServerForm(
                 color = Color.Black,
             )
         } else {
-            Text("Connect", fontFamily = AppSans, fontWeight = FontWeight.Bold)
+            Text(
+                "Connect",
+                style = if (immersive) Immersive.BodyStrong.copy(color = Color.Black) else TextStyle(fontFamily = AppSans, fontWeight = FontWeight.Bold),
+            )
         }
     }
     if (onCancel != null) {
         TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
-            Text("Cancel", color = AppMuted, fontFamily = AppSans)
+            Text(
+                "Cancel",
+                style = if (immersive) Immersive.BodyStrong.copy(color = Immersive.TextSecondary) else TextStyle(fontFamily = AppSans),
+                color = if (immersive) Immersive.TextSecondary else AppMuted,
+            )
         }
     }
 }

@@ -28,13 +28,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.adlen.sonora.app.data.preferences.Look
+import com.adlen.sonora.app.data.preferences.LookPref
 import com.adlen.sonora.app.data.upload.UploadSettings
+import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.app.ui.immersive.pages.ImmersiveGroupRow
 import com.adlen.sonora.app.ui.theme.AppBackground
 import com.adlen.sonora.app.ui.theme.AppMuted
 import com.adlen.sonora.app.ui.theme.AppSans
 import com.adlen.sonora.app.ui.theme.AppText
 import com.adlen.sonora.engine.R
+import androidx.compose.ui.text.TextStyle
 
 /**
  * The ingest URL and the Wi-Fi rule. No token to copy: "Connect" proves the Subsonic
@@ -43,6 +47,7 @@ import com.adlen.sonora.engine.R
 @Composable
 fun ServerUploadDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
     val context = LocalContext.current
+    val immersive = LookPref.look == Look.IMMERSIVE
     val initial = UploadSettings.load(context)?.baseUrl ?: UploadSettings.url(context)
     val close = {
         // A token may already have been issued (before this dialog or by Connect).
@@ -52,28 +57,34 @@ fun ServerUploadDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
         Column(
             Modifier
                 .widthIn(max = 520.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(AppBackground)
+                .clip(if (immersive) Immersive.Card else RoundedCornerShape(16.dp))
+                .background(if (immersive) Immersive.Raised else AppBackground)
                 .padding(20.dp),
         ) {
-            Text(
-                stringResource(R.string.upload_settings_title),
-                color = AppText,
-                fontFamily = AppSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-            )
+            if (immersive) {
+                Text(stringResource(R.string.upload_settings_title), style = Immersive.Title)
+            } else {
+                Text(
+                    stringResource(R.string.upload_settings_title),
+                    color = AppText,
+                    fontFamily = AppSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             UploadConnectForm(
                 initialUrl = initial.orEmpty(),
                 onConnected = {},
+                immersive = immersive,
                 trailing = { connected ->
                     TextButton(onClick = close, modifier = Modifier.fillMaxWidth()) {
                         Text(
                             stringResource(
                                 if (connected) R.string.upload_settings_close else R.string.upload_settings_cancel,
                             ),
-                            color = AppMuted,
+                            style = if (immersive) Immersive.BodyStrong.copy(color = Immersive.TextSecondary) else TextStyle(fontFamily = AppSans),
+                            color = if (immersive) Immersive.TextSecondary else AppMuted,
                         )
                     }
                 },
