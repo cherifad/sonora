@@ -55,6 +55,9 @@ Also: [Immersive search](docs/screenshots/sonora/immersive-search.png) ·
 - **Downloads and offline** — the server's own files (original or transcoded: MP3 128, ≤320 kbps,
   or untouched), kept encrypted on the phone; offline, only downloads play and the lists say so.
   A WorkManager job keeps downloads going in the background.
+- **Local library upload (early)** — send the phone's own files to a companion ingest service
+  in front of Navidrome/Jellyfin: automatic SHA-256/ISRC/MBID dedup, server verification, and
+  delete-local only once the server confirms. See [`docs/INGEST.md`](docs/INGEST.md).
 - **Android Auto**: the car browses Home / Library / Downloads through the app's media browser
   service, and plays. The app is installed on the **phone**; Android Auto projects it.
 - **Android Automotive OS** (the car runs Android itself) is a separate, optional build —
@@ -127,6 +130,8 @@ UI references them; the app itself only starts the Subsonic backend.
 - [`docs/TESTING.md`](docs/TESTING.md) — emulators (phone, tablet, Wear, car), Android Auto.
 - [`docs/RELEASING.md`](docs/RELEASING.md) — branches, tags, secrets.
 - [`docs/NAVIDROME-COMPAT.md`](docs/NAVIDROME-COMPAT.md) — the client against Navidrome's API docs.
+- [`docs/INGEST.md`](docs/INGEST.md) — local library upload: companion ingest service, token
+  exchange, dedup, security and known limits (early version).
 
 ## Licence
 

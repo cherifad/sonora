@@ -4,6 +4,10 @@ A small companion service for Sonora. It lets the phone **upload local music int
 Navidrome or Jellyfin library**, which neither server accepts through the Subsonic API:
 Navidrome has no upload by design, and Jellyfin expects files in a scanned folder.
 
+> Early version: the API and state file may still change between Sonora releases. The
+> user-facing guide, including security, dedup rules and known limits, is
+> [`docs/INGEST.md`](../docs/INGEST.md).
+
 The service receives the file, validates it, deduplicates it, writes it into the music
 folder, triggers the library scan and returns the server track id. The app can then mark
 the local copy as uploaded and, after verification, delete it.

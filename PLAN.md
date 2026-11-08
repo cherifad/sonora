@@ -360,6 +360,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-07 | 13 | Token exchange: ingest `/auth/exchange`, app URL + Connect, auto re-exchange | `feat(auth)` |
 | 2026-11-07 | 13 | Delete local copies after a server check, through MediaStore | `feat(upload)` |
 | 2026-11-07 | 13 | Onboarding upload step, prefilled `<server>-upload.<domain>`, compose fixes | `feat(setup)` |
+| 2026-11-08 | 13 | User-facing ingest guide (`docs/INGEST.md`), early-version status, limits | `docs(ingest)` |
 
 ## Decisions and risks
 
