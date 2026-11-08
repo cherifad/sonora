@@ -4,6 +4,10 @@ A small companion service for Sonora. It lets the phone **upload local music int
 Navidrome or Jellyfin library**, which neither server accepts through the Subsonic API:
 Navidrome has no upload by design, and Jellyfin expects files in a scanned folder.
 
+> Early version: the API and state file may still change between Sonora releases. The
+> user-facing guide, including security, dedup rules and known limits, is
+> [`docs/INGEST.md`](../docs/INGEST.md).
+
 The service receives the file, validates it, deduplicates it, writes it into the music
 folder, triggers the library scan and returns the server track id. The app can then mark
 the local copy as uploaded and, after verification, delete it.
@@ -15,6 +19,9 @@ does the same. Writing into that folder from the phone needs an HTTP service wit
 access to the library — that is this service.
 
 ## Quick start (Navidrome)
+
+The image is published on GHCR: `ghcr.io/cherifad/sonora-ingest` (`linux/amd64` and
+`linux/arm64`). Compose pulls it, so no Go toolchain is needed.
 
 1. Create the Navidrome admin user first (its web UI), and a music folder shared by both
    containers.
@@ -32,6 +39,21 @@ access to the library — that is this service.
 5. In Sonora, Settings → Server upload: enter the URL `http://<host>:8088` and press
    **Connect**. The app proves the Subsonic account it already uses and stores the token the
    ingest issues; nothing to copy. `$INGEST_TOKEN` stays for curl and admin use.
+
+Without Compose:
+
+```bash
+docker run -d --name sonora-ingest -p 8088:8088 \
+  -v /path/to/music:/music \
+  -e TOKEN="$INGEST_TOKEN" \
+  -e LIBRARY_PATH=/music \
+  -e SCAN_URL=http://navidrome:4533 \
+  -e SCAN_USER=admin -e SCAN_PASSWORD="$NAVIDROME_PASSWORD" \
+  ghcr.io/cherifad/sonora-ingest:latest
+```
+
+To build the image from this checkout instead, uncomment `build: .` in the Compose file (or
+`docker build -t ghcr.io/cherifad/sonora-ingest:latest .`).
 
 For Jellyfin:
 
