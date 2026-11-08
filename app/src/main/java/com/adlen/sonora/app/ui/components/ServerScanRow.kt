@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,8 @@ import java.util.Date
 fun ServerScanRow() {
     val api = SonoraRuntime.subsonicApi ?: return
     if (!api.supports(ServerCapabilities.Feature.SCAN)) return
+    val admin by api.isAdmin.collectAsState()
+    if (admin == false) return
     var status by remember { mutableStateOf<SubsonicServerExtras.ScanStatus?>(null) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()

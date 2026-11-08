@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -115,6 +116,8 @@ fun NowPlayingSheet(onDismiss: () -> Unit) {
 fun NowPlayingSettingsRow() {
     val api = SonoraRuntime.subsonicApi ?: return
     if (!api.supports(ServerCapabilities.Feature.NOW_PLAYING)) return
+    val admin by api.isAdmin.collectAsState()
+    if (admin == false) return
     var show by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
