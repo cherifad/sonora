@@ -34,7 +34,8 @@ class SubsonicApi(
     val config: SubsonicConfig,
 ) : SonoraApi {
 
-    private val client = SubsonicClient(config)
+    private val appContext = context.applicationContext
+    private val client = SubsonicClient(config, SubsonicTls.client(appContext, config))
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _capabilities = MutableStateFlow<ServerCapabilities?>(null)
     private val catalogImpl = SubsonicCatalog(client)
@@ -48,6 +49,7 @@ class SubsonicApi(
     val serverExtras = SubsonicServerExtras(client)
 
     init {
+        client.setMusicFolder(SubsonicSettings.musicFolder(appContext))
         scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
     }
 
@@ -94,10 +96,22 @@ class SubsonicApi(
     fun supports(feature: ServerCapabilities.Feature): Boolean =
         _capabilities.value?.supports(feature) ?: true
 
+    /** The server's music folders, when it exposes more than one. */
+    suspend fun musicFolders(): List<SubsonicServerExtras.MusicFolder> = serverExtras.musicFolders()
+
+    val currentMusicFolder: String? get() = client.musicFolderId
+
+    /** Scope the library to [id], or null for every folder. */
+    fun selectMusicFolder(id: String?) {
+        client.setMusicFolder(id)
+        SubsonicSettings.setMusicFolder(appContext, id)
+    }
+
     /** The setup screen changed the server: the same client/player now talk to the new one. */
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
         _capabilities.value = null
+        playerImpl.invalidateBookmarks()
         scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
         playerImpl.restoreServerQueueIfIdle()
     }

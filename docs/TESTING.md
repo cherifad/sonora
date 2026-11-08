@@ -285,6 +285,20 @@ points de l'AVD) relie une montre virtuelle à un téléphone virtuel ou réel.
 
 Le workflow `Release` signe les APK stables depuis un tag `vX.Y.Z` sur `main`.
 
+## Contrat contre un vrai serveur
+
+`tools/server_contract.py` interroge les endpoints que Sonora utilise et sort en erreur si un
+endpoint requis ne répond pas `status: ok` :
+
+```bash
+tools/server_contract.py --url http://10.0.2.2:4533 --user admin --password '…'
+tools/server_contract.py --url https://music.example --user me --api-key '…' --json
+```
+
+Il affiche le type/version du serveur, les extensions OpenSubsonic et OK/FAIL/WARN par endpoint.
+`--insecure` accepte le certificat auto-signé d'un serveur de test. À lancer contre Navidrome,
+Jellyfin+Subfin, Gonic et Airsonic avant une release.
+
 ## Vérifications manuelles des surfaces plateforme
 
 - **Tuile Réglages rapides** : ajouter la tuile Sonora, lecture/pause, l'état suit le lecteur.

@@ -24,6 +24,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,10 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adlen.sonora.engine.BuildConfig
 import com.adlen.sonora.engine.R
-import com.adlen.sonora.app.data.api.SupportReminder
-import com.adlen.sonora.app.ui.theme.AppAccent
+import kotlinx.coroutines.launch
 
-const val DISCORD_URL = "https://discord.gg/jXKnGVFnGS"
 // The fork's own source, so the GPL's "corresponding source" is one tap away (a build
 // with -PupdateRepo points both this and the update check at another repository).
 private val repo get() = BuildConfig.UPDATE_REPO.ifBlank { "cherifad/sonora" }
@@ -51,13 +52,24 @@ private fun openUrl(context: Context, url: String) {
     }
 }
 
-/** About: the version, the Discord community, the source code and Ko-fi. */
+/** About: the version, the source code and the update check. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val check = com.adlen.sonora.app.data.api.rememberUpdateCheckState(context)
+    val update = com.adlen.sonora.app.updateRelease.value
+        ?: remember { com.adlen.sonora.app.data.api.UpdateChecker.known(context) }
+    LaunchedEffect(Unit) {
+        if (com.adlen.sonora.app.data.preferences.AutoUpdateCheckPref.on) {
+            com.adlen.sonora.app.data.api.UpdateChecker.check(context)?.let {
+                com.adlen.sonora.app.updateRelease.value = it
+            }
+        }
+    }
     com.adlen.sonora.app.extensions.ProtectedSurfaceEffect(com.adlen.sonora.extensions.ProtectedSurface.ABOUT)
-    // Opened in full: half open, it hid the support buttons at the bottom.
+    // Opened in full: half open, it hid the update row at the bottom.
     LookSheet(
         onDismissRequest = onDismiss,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -77,53 +89,22 @@ fun AboutSheet(onDismiss: () -> Unit) {
             }
             Text(stringResource(R.string.about_free), color = AppMuted, fontSize = 13.sp,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp))
-            AboutRow(stringResource(R.string.about_discord), stringResource(R.string.about_discord_detail)) { openUrl(context, DISCORD_URL) }
             AboutRow(stringResource(R.string.about_github), stringResource(R.string.about_github_detail)) { openUrl(context, "https://github.com/$repo") }
-            Text(stringResource(R.string.support_body), color = AppMuted, fontSize = 13.sp,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 12.dp))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth().height(48.dp).clip(RoundedCornerShape(50))
-                    .background(AppAccent).pressable(0.96f) { SupportReminder.open(context) },
-            ) { Text(stringResource(R.string.support_action), color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
-            GitHubSponsorButton(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp))
-        }
-    }
-}
-
-/** GitHub Sponsors, under the Ko-fi button: outlined, so Ko-fi stays the main one. */
-@Composable
-fun GitHubSponsorButton(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val context = LocalContext.current
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(50))
-            .border(1.dp, AppText.copy(alpha = 0.6f), RoundedCornerShape(50))
-            .pressable(0.96f) { onClick?.invoke() ?: SupportReminder.openSponsors(context) },
-    ) { Text(stringResource(R.string.support_github_action), color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
-}
-
-/** "Support Sonora" from the profile menu: Ko-fi or GitHub Sponsors, the user picks. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SupportSheet(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    com.adlen.sonora.app.extensions.ProtectedSurfaceEffect(com.adlen.sonora.extensions.ProtectedSurface.SUPPORT)
-    LookSheet(
-        onDismissRequest = onDismiss,
-        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = tone(0xFF282828),
-    ) {
-        androidx.compose.foundation.layout.Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
-            Text(stringResource(R.string.support_title), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.support_body), color = AppMuted, fontSize = 14.sp,
-                modifier = Modifier.padding(top = 10.dp, bottom = 18.dp))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(50))
-                    .background(AppAccent).pressable(0.96f) { onDismiss(); SupportReminder.open(context) },
-            ) { Text(stringResource(R.string.support_action), color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
-            GitHubSponsorButton(Modifier.padding(top = 10.dp)) { onDismiss(); SupportReminder.openSponsors(context) }
+            if (update != null) {
+                AboutRow(
+                    stringResource(R.string.settings_update_available, update.version),
+                    stringResource(R.string.settings_update_available_detail),
+                ) { com.adlen.sonora.app.updateRelease.value = update }
+            } else {
+                AboutRow(
+                    stringResource(R.string.settings_update_refresh),
+                    if (check.checking) stringResource(R.string.settings_update_checking) else check.lastCheckedText,
+                ) { scope.launch { check.run() } }
+            }
+            check.message?.takeIf { check.isError }?.let {
+                Text(it, color = Color(0xFFFF6B6B), fontSize = 13.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp))
+            }
         }
     }
 }

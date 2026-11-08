@@ -31,6 +31,7 @@ object Graph {
         // Downloaded songs (private storage), and the downloads left unfinished last time.
         // Supporter thank-yous (accent colour) before any screen draws.
         com.adlen.sonora.app.data.api.SupportReminder.init(application)
+        com.adlen.sonora.app.data.upload.LocalUploadIndex.init(application)
         com.adlen.sonora.app.data.offline.OfflineStore.init(application)
         com.adlen.sonora.app.data.offline.OfflineMode.init(application)
         com.adlen.sonora.app.data.offline.OfflineCollections.init(application)

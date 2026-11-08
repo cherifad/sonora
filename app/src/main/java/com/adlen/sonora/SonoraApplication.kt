@@ -39,7 +39,16 @@ class SonoraApplication : Application() {
         // The report's header: the extensions installed, with their versions.
         com.adlen.sonora.host.android.Logbook.headerExtras = {
             val all = com.adlen.sonora.app.extensions.Extensions.registry.value.extensions
-            listOf("extensions" to (all.joinToString { "${it.id} ${it.version}${if (it.enabled) "" else " (off)"}" }.ifEmpty { "none" })) +
+            val server = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi?.capabilities?.value?.let { caps ->
+                "server" to buildString {
+                    append(caps.label)
+                    if (caps.extensions.isNotEmpty()) {
+                        append(" · ").append(caps.extensions.sorted().joinToString(", "))
+                    }
+                }
+            }
+            listOfNotNull(server) +
+                listOf("extensions" to (all.joinToString { "${it.id} ${it.version}${if (it.enabled) "" else " (off)"}" }.ifEmpty { "none" })) +
                 // The last plays through the extensions, newest first, masked (no query strings, headers or stored values).
                 com.adlen.sonora.app.extensions.Extensions.attempts.last().map { "play attempt" to it.summary() }
         }

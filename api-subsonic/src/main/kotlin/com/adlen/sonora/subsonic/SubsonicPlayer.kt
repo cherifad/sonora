@@ -57,6 +57,15 @@ private fun subsonicRenderers(
                 .build()
     }
 
+/** Long enough to be worth resuming, and not at either edge (where a bookmark means nothing). */
+internal fun shouldBookmark(durationMs: Long, positionMs: Long): Boolean =
+    durationMs >= BOOKMARK_MIN_MS &&
+        positionMs >= BOOKMARK_EDGE_MS &&
+        positionMs <= durationMs - BOOKMARK_EDGE_MS
+
+private const val BOOKMARK_MIN_MS = 10 * 60_000L
+private const val BOOKMARK_EDGE_MS = 30_000L
+
 internal class SubsonicPlayer(
     context: Context,
     private val client: SubsonicClient,
@@ -123,6 +132,56 @@ internal class SubsonicPlayer(
             }
         }
         restoreServerQueueIfIdle()
+    }
+
+    /**
+     * A long track (a DJ set, an audiobook chapter) remembers where it was paused, so another
+     * client can resume it. Short songs do not create bookmark noise.
+     */
+    private fun saveBookmark() {
+        val track = tracks.getOrNull(exo.currentMediaItemIndex) ?: return
+        val position = exo.currentPosition
+        if (!shouldBookmark(track.durationMs, position)) return
+        if (client.capabilities?.supports(ServerCapabilities.Feature.BOOKMARKS) == false) return
+        val id = track.uri.substringAfterLast(':').substringBefore('|')
+        if (id.isBlank()) return
+        scope.launch {
+            runCatching { client.call("createBookmark", mapOf("id" to id, "position" to position.toString())) }
+                .onSuccess { bookmarkCache = bookmarkCache?.plus(id to position) }
+        }
+    }
+
+    @Volatile
+    private var bookmarkCache: Map<String, Long>? = null
+
+    /** The server's bookmarks, read once per session (or after a config change). */
+    private suspend fun bookmarks(): Map<String, Long> {
+        bookmarkCache?.let { return it }
+        if (client.capabilities?.supports(ServerCapabilities.Feature.BOOKMARKS) == false) return emptyMap()
+        val root = client.callOptional("getBookmarks")?.optJSONObject("bookmarks") ?: return emptyMap()
+        val map = root.array("bookmark").mapNotNull { bookmark ->
+            val id = bookmark.optJSONObject("entry")?.optString("id")?.takeIf { it.isNotBlank() }
+                ?: return@mapNotNull null
+            id to bookmark.optLong("position", 0L)
+        }.toMap()
+        bookmarkCache = map
+        return map
+    }
+
+    private suspend fun maybeResumeBookmark(track: Track) {
+        if (track.durationMs < BOOKMARK_MIN_MS) return
+        val position = bookmarks()[track.id()] ?: return
+        if (!shouldBookmark(track.durationMs, position)) return
+        withContext(Dispatchers.Main) {
+            if (tracks.getOrNull(exo.currentMediaItemIndex)?.id() == track.id()) {
+                exo.seekTo(position)
+                publish()
+            }
+        }
+    }
+
+    internal fun invalidateBookmarks() {
+        bookmarkCache = null
     }
 
     /** Track or album gain, capped by the declared peak; 1 when normalization is off. */
@@ -245,6 +304,11 @@ internal class SubsonicPlayer(
             exo.playWhenReady = true
             publish()
             scheduleSavePlayQueue()
+            // An explicit position wins; otherwise a long track picks up its server bookmark.
+            if (positionMs == null) {
+                val started = resolved[start]
+                scope.launch { maybeResumeBookmark(started) }
+            }
         }
     }
 
@@ -267,6 +331,7 @@ internal class SubsonicPlayer(
         key.substringAfter("spotify:track:", key).substringBefore('|').substringAfterLast(':')
 
     override suspend fun pause() = withContext(Dispatchers.Main) {
+        saveBookmark()
         exo.pause()
         publish()
         scheduleSavePlayQueue()

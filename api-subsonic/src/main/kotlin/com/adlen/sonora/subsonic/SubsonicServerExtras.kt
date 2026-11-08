@@ -31,6 +31,17 @@ class SubsonicServerExtras(private val client: SubsonicClient) {
         val minutesAgo: Int,
     )
 
+    data class MusicFolder(val id: String, val name: String)
+
+    /** The server's music folders; more than one means the library can be scoped. */
+    suspend fun musicFolders(): List<MusicFolder> {
+        val root = client.callOptional("getMusicFolders")?.optJSONObject("musicFolders") ?: return emptyList()
+        return root.array("musicFolder").mapNotNull { folder ->
+            val id = folder.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            MusicFolder(id, folder.optString("name").ifBlank { id })
+        }
+    }
+
     suspend fun bookmarks(): List<Bookmark> {
         if (!supports(ServerCapabilities.Feature.BOOKMARKS)) return emptyList()
         val root = client.callOptional("getBookmarks")?.optJSONObject("bookmarks") ?: return emptyList()

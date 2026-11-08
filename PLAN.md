@@ -128,8 +128,9 @@ identifiers, the app builds, and the attribution files are untouched.
       phases land.
 - [x] Implement API-key auth when `apiKeyAuthentication` is advertised (optional field in
       setup; `apiKey` replaces `u`/`t`/`s`).
-- [ ] Trust-on-first-use for self-signed TLS, with an explicit HTTP warning in setup.
-      Deferred to Phase 10: it needs a trust manager plus a stored fingerprint per host.
+- [x] Trust-on-first-use for self-signed TLS, with an explicit HTTP warning in setup.
+      The first certificate per host is pinned; a different one is refused and can be reset
+      in Settings.
 - [x] Contract tests: each error class, capability JSON, missing extension, API-key URL.
 
 **Done when:** a wrong password, a dead server, and a non-Subsonic server each produce a
@@ -148,8 +149,9 @@ TOFU TLS is the one remaining item.
       server, artists and playlists keep the server order.
 - [x] Cache the starred set briefly and invalidate on `star`/`unstar` instead of fetching it
       in every `contains()` call.
-- [ ] Add a `getMusicFolders` selector when the server exposes more than one folder.
-      Deferred: it needs a Settings row and a folder-scoped `musicFolderId` on every call.
+- [x] Add a `getMusicFolders` selector when the server exposes more than one folder: the
+      choice is stored, `musicFolderId` is added to later calls, and the row is hidden with
+      zero or one folder.
 - [x] Tests: page 2 of a 250-album library, page 2 of a 250-result search, >100-song
       playlist, one `getStarred2` for contains + liked songs, cache dropped on a mutation.
 
@@ -229,14 +231,15 @@ action.
 
 ## Phase 8 — Server-native extras
 
-- [~] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks:
-      backend done and gated; the player does not create them on pause yet.
+- [x] Bookmarks (`getBookmarks`, `createBookmark`, `deleteBookmark`) for long tracks:
+      pausing a track of at least ten minutes (away from its edges) writes one, and a new play
+      resumes it unless the caller asked for an explicit position.
 - [x] Shares (`getShares`, `createShare`, `deleteShare`): the song sheets copy the server's
       share URL, with a toast on success/failure.
 - [x] Scan status (`getScanStatus`, `startScan`) in Settings, both looks (the Immersive row
       starts a scan; the Classic row shows the status and starts one).
-- [~] Now playing (`getNowPlaying`) and avatar (`getAvatar`): the account avatar is wired;
-      the now-playing list has no screen yet.
+- [x] Now playing (`getNowPlaying`) and avatar (`getAvatar`): the account avatar is wired,
+      and Settings opens a sheet with what other clients are playing.
 - [x] Tests for bookmarks, shares, scan, now playing, and a Jellyfin bridge that is not
       asked for bookmarks.
 
@@ -269,8 +272,8 @@ action.
 - [x] Clear the cached server credentials on logout. Downloads stay parked, encrypted, under
       the account (deleting them on sign-out would silently lose offline content).
 - [ ] Optional biometric lock.
-- [~] Tests: the HTTP warning is visible; there is no Context-level test for the encrypted
-      file yet, and TOFU TLS is still Phase 10's open item.
+- [~] Tests: the HTTP warning is visible, the TLS fingerprint has a unit test, and the
+      encrypted prefs file still needs a Context-level test.
 
 **Done when:** `adb shell run-as … cat shared_prefs/*` shows no plaintext password.
 
@@ -282,19 +285,21 @@ action.
       timeouts, star/unstar ids, playlist create/update/delete, scrobble, play queue.
       A few read endpoints (`getGenres`, the player's internal calls) are still only
       exercised through their screens.
-- [ ] Capability-matrix CI: run the smoke suite against Navidrome and Jellyfin+Subfin
-      fixtures (version-pinned), plus Gonic/Airsonic when available. Needs Docker servers
-      and an emulator job; the manual matrix in `docs/TESTING.md` is the current check.
+- [~] Capability-matrix CI: `tools/server_contract.py` checks the required endpoints and
+      reports OpenSubsonic extensions against any live server; the Docker Navidrome/Jellyfin
+      job and the emulator run are still manual.
 - [x] Typed-error tests: auth, not-found, HTTP 500, protocol, empty answer, network refusal,
       timeout, and `Unsupported`.
 - [~] Performance budget from `docs/audit-2026-10-18.md`: `tools/tap_latency.py` and
       `tools/playback_test.py` measure it; no nightly threshold gate yet.
 - [~] Fault injection: HTTP 500, malformed/empty bodies and a timeout are unit-tested;
       airplane mode, clock skew and self-signed TLS stay manual.
-- [ ] Migration tests: upgrade from the previous release APK; downloads/queue/settings
-      survive.
-- [~] Opt-in crash/diagnostics: `Logbook`/`BetaLogs` and the debug report exist; no opt-in
-      remote reporter.
+- [~] Migration tests: the downloaded-lists file format is covered by a JVM test
+      (`readCollections`), so a format change cannot silently drop downloads. A full
+      install-over-the-previous-APK upgrade test is still manual.
+- [x] Opt-in diagnostics: `Logbook.export` builds the redacted report the Settings row shares;
+      it now includes the server type/version and OpenSubsonic extensions. No remote reporter
+      is sent automatically; the report is only exported when the user asks.
 - [x] Release gates: the R8 release build (with lint-vital) now runs in CI; the signed APK
       stays in the release workflow.
 - [x] Issue template asking for server type/version + `ping` + debug log.
@@ -312,8 +317,8 @@ report arrives with the server facts needed to reproduce it.
       `docs/RELEASING.md` and the README feature list.
 - [ ] Publish the source (GPL-3.0) and the Navidrome app-catalogue entry. Needs the public
       repository and store screenshots; not done here.
-- [ ] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs. Belongs to the release
-      flow (`bumpv`/`Release`), not to this work.
+- [x] Tag `vX.Y.Z` on `main`; publish signed phone + automotive APKs.
+      `v1.4.0` was released on 2026-11-06 from `main` (`4710ab3`).
 - [~] Verify the release checklist end to end: the list is in `docs/RELEASING.md`; the device
       pass (clean install, upgrade, offline, tile/widget) is still to do.
 
@@ -339,6 +344,22 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-06 | 11 | Contract/fault tests, R8 release gate in CI, bug template, review quality gate | `chore(ci)` |
 | 2026-11-06 | 9 | Quick Settings play/pause tile and a widget shuffle action | `feat(platform)` |
 | 2026-11-06 | 12 | ROADMAP M7, PORTING/compat/testing/releasing docs, README features, release checklist | `docs(release)` |
+| 2026-11-06 | 11 | `tools/server_contract.py`: live-server endpoint/capability probe | `test(tools)` |
+| 2026-11-06 | 8 | Bookmark long tracks on pause, with a threshold test | `feat(subsonic)` |
+| 2026-11-06 | 8 | Resume a long track from its bookmark on a new play | `feat(subsonic)` |
+| 2026-11-06 | 8 | Now-playing sheet in Settings, both looks | `feat(ui)` |
+| 2026-11-06 | 3 | Multi-library selector (`getMusicFolders` + `musicFolderId`), both looks | `feat(subsonic)` |
+| 2026-11-06 | 11 | Debug report carries server type/version and OpenSubsonic extensions | `feat(diagnostics)` |
+| 2026-11-06 | 11 | Downloaded-lists file format locked by a JVM test | `test(offline)` |
+| 2026-11-06 | — | About shows the live update row / manual check; fork credit corrected to Myspoti | `fix(about)` |
+| 2026-11-06 | — | Removed Myspoti's Discord, Ko-fi and GitHub Sponsors links and their support UI/strings | `fix(about)` |
+| 2026-11-06 | 10 | Trust-on-first-use for self-signed HTTPS, reset row, fingerprint test | `feat(security)` |
+| 2026-11-06 | 12 | `v1.4.0` released from `main` (`4710ab3`) | release |
+| 2026-11-07 | 13 | Ingest e2e tests: upload, duplicate, review, collision, ZIP/short rejection | `test(ingest)` |
+| 2026-11-07 | 13 | App upload target, client, index, worker, Local Files button/badges | `feat(upload)` |
+| 2026-11-07 | 13 | Token exchange: ingest `/auth/exchange`, app URL + Connect, auto re-exchange | `feat(auth)` |
+| 2026-11-07 | 13 | Delete local copies after a server check, through MediaStore | `feat(upload)` |
+| 2026-11-07 | 13 | Onboarding upload step, prefilled `<server>-upload.<domain>`, compose fixes | `feat(setup)` |
 
 ## Decisions and risks
 
@@ -350,3 +371,32 @@ report arrives with the server facts needed to reproduce it.
   `MYSPOTI_*` so existing repository secrets keep working.
 - **Capability probe is the keystone.** It turns silent `runCatching` fallbacks into
   explicit, testable behaviour.
+
+---
+
+## Phase 13 — Local library upload (companion ingest)
+
+Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
+(`ingest/`) writes into the scanned music folder and triggers the scan.
+
+- [x] Service MVP: `/health`, `/library/match`, `/uploads` (create, chunked
+      `Content-Range`, complete, status, delete), `/scan`.
+- [x] Dedup: SHA-256, ISRC, MBID; close metadata is `needs_review`, never uploaded
+      automatically.
+- [x] Path sanitization, no overwrite, 30 s minimum, audio stream check when `ffprobe` is
+      present, atomic write, scan trigger, track verification.
+- [x] Dockerfile, Compose example (Navidrome), README, Go tests, live curl pass.
+- [x] App: upload target settings (URL only, encrypted token), local state index.
+- [x] Token exchange: `POST /auth/exchange` verifies the app's own Subsonic `u/t/s` (or API
+      key) through `ping`, then issues an HMAC token (TTL, rate limit, `ALLOWED_USERS`); the
+      password never leaves the phone. The app stores only URL + issued token and re-exchanges
+      automatically on 401.
+- [x] App: `UploadWorker` (WorkManager, Wi-Fi only, progress), SHA-256, duplicate answers
+      marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
+- [x] App: Local Files badge, "Upload to server", live progress, and "delete local copies"
+      after a server check, through the system MediaStore delete dialog (Android 11+).
+- [x] Onboarding: an optional upload step after the server, prefilled with the recommended
+      `<server-name>-upload.<domain>` address (or `<host>:8088` for an IP).
+- [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
+      (ffprobe true; short/non-audio rejected).
+- [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

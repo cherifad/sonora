@@ -100,34 +100,13 @@
     <string name="playlist_change_refused">Spotify odrzuciło zmianę w tej playliście</string>
     <string name="download_kept_by_list">Nadal pobrane: trzyma je pobrana playlista</string>
     <string name="download_kept_by_named">Nadal pobrane: «%1$s» jest pobrane i zawiera ten utwór</string>
-    <string name="support_title">Wesprzyj Sonora</string>
-    <string name="support_body">Sonora jest darmowe, bez reklam i powstaje w moim wolnym czasie. Jeśli Ci się podoba, niewielka darowizna pomoże je rozwijać.</string>
-    <string name="support_action">Wesprzyj na Ko-fi</string>
-    <string name="support_decline">Nie, dziękuję</string>
-    <string name="support_row_detail">Niewielka darowizna na Ko-fi lub GitHub Sponsors pomaga rozwijać aplikację</string>
-    <string name="supporter_perks_title">Bonusy dla wspierających</string>
-    <string name="supporter_perks_detail">Kolor akcentu, ikona aplikacji i odznaka, w ramach podziękowania</string>
-    <string name="supporter_perks_locked">Odblokowywane przez wsparcie Sonora. Na słowo honoru: nic nie jest sprawdzane.</string>
-    <string name="supporter_i_supported">Wsparłem(-am) Sonora</string>
-    <string name="supporter_how">Jak wsparłeś(-aś)?</string>
-    <string name="supporter_once">Darowizna</string>
-    <string name="supporter_monthly">Co miesiąc</string>
-    <string name="supporter_badge">Wspierający</string>
-    <string name="supporter_thanks_title">Dziękujemy za wsparcie!</string>
-    <string name="supporter_thanks_body">Jeśli Sonora nadal Ci służy, kolejna niewielka darowizna pomoże je rozwijać.</string>
-    <string name="support_again">Wesprzyj ponownie</string>
     <string name="supporter_accent">Kolor akcentu</string>
-    <string name="supporter_icon">Ikona aplikacji</string>
-    <string name="supporter_icon_note">Po zmianie ikony jej skrót na ekranie głównym może zniknąć: aplikacja zostanie na liście aplikacji.</string>
-    <string name="supporter_monthly_switch">Wspieram co miesiąc (bez przypomnień)</string>
     <string name="color_green">Zielony</string>
     <string name="color_blue">Niebieski</string>
     <string name="color_purple">Fioletowy</string>
     <string name="color_pink">Różowy</string>
     <string name="color_orange">Pomarańczowy</string>
     <string name="about_detail">Wersja, społeczność na Discordzie, kod źródłowy</string>
-    <string name="about_discord">Discord</string>
-    <string name="about_discord_detail">Nowości, pomoc i pomysły: dołącz do społeczności</string>
     <string name="about_github">Kod źródłowy</string>
     <string name="about_github_detail">Wydania, zgłoszenia i kod na GitHubie</string>
     <string name="about_free">Darmowa, otwartoźródłowa i bez reklam. Niezwiązana ze Spotify.</string>
@@ -377,7 +356,6 @@
     <string name="settings_rotation_portrait">Pionowo</string>
     <string name="settings_rotation_auto">Automatycznie</string>
     <string name="settings_rotation_landscape">Poziomo</string>
-    <string name="support_github_action">Wesprzyj na GitHubie</string>
     <string name="download_on_mobile_data">Pobieranie przez dane komórkowe: zużywa Twój pakiet danych</string>
 
     <!-- Podcast show page, episode page and podcast player -->

@@ -151,6 +151,7 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
     val config = com.adlen.sonora.subsonic.SubsonicSettings.load(context)
     val scope = rememberCoroutineScope()
     var showServer by remember { mutableStateOf(false) }
+    var showNowPlaying by remember { mutableStateOf(false) }
     if (showServer) {
         com.adlen.sonora.app.ui.setup.SubsonicSetupDialog(
             onDismiss = { showServer = false },
@@ -189,6 +190,21 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
                     )
                 }
             }
+            if (com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+                    ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.NOW_PLAYING) == true) {
+                row {
+                    ImmersiveGroupRow(
+                        stringResource(R.string.now_playing_title),
+                        detail = stringResource(R.string.now_playing_detail),
+                        icon = Icons.Rounded.PlayArrow,
+                        chevron = true,
+                        onClick = { showNowPlaying = true },
+                    )
+                }
+            }
+            row { com.adlen.sonora.app.ui.components.MusicFolderImmersiveRow() }
+            row { com.adlen.sonora.app.ui.components.ServerTrustImmersiveRow() }
+            row { com.adlen.sonora.app.ui.components.ServerUploadImmersiveRow() }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_playback), icon = Icons.Rounded.PlayArrow, chevron = true, onClick = { open(SettingsPage.Playback) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_downloads), icon = Icons.Rounded.Download, chevron = true, onClick = { open(SettingsPage.Downloads) }) }
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_data), icon = Icons.Rounded.SignalCellularAlt, chevron = true, onClick = { open(SettingsPage.Data) }) }
@@ -196,6 +212,7 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
             row { ImmersiveGroupRow(stringResource(R.string.settings_section_app), icon = Icons.Rounded.Info, chevron = true, onClick = { open(SettingsPage.App) }) }
         }
     }
+    if (showNowPlaying) com.adlen.sonora.app.ui.components.NowPlayingSheet { showNowPlaying = false }
 }
 
 // ---------------------------------------------------------------- Playback

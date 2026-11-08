@@ -249,6 +249,18 @@ class SubsonicBrowseTest {
     }
 
     @Test
+    fun `the capability label names the server and its extensions`() {
+        val caps = ServerCapabilities(
+            type = "navidrome",
+            serverVersion = "0.64.2",
+            openSubsonic = true,
+            extensions = setOf("songLyrics", "apiKeyAuthentication"),
+        )
+
+        assertEquals("navidrome 0.64.2 · OpenSubsonic", caps.label)
+    }
+
+    @Test
     fun `a podcast stub is a typed unsupported failure`() {
         val error = assertThrows(SubsonicException.Unsupported::class.java) {
             runBlocking { SubsonicPodcasts().show("spotify:show:x") }

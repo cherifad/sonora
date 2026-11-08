@@ -21,6 +21,9 @@ data class LocalTrack(
     val artUri: Uri,
     /** The file's folder on the phone, e.g. "Music/Album/" (MediaStore relative path). */
     val folder: String = "",
+    /** The file's own name, extension included (for the upload). */
+    val displayName: String = "",
+    val mimeType: String = "",
 )
 
 /** The device's music files, read through MediaStore (no file access beyond audio). */
@@ -31,6 +34,15 @@ object LocalMusic {
 
     fun hasPermission(context: Context) =
         context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * The system dialog that lets the user delete these files (Android 11+). Null on
+     * Android 10, where the app cannot ask MediaStore to remove another app's files.
+     */
+    fun deleteRequest(context: Context, tracks: List<LocalTrack>): android.app.PendingIntent? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || tracks.isEmpty()) return null
+        return MediaStore.createDeleteRequest(context.contentResolver, tracks.map { it.uri })
+    }
 
     @Volatile private var cache: List<LocalTrack>? = null
 
@@ -53,7 +65,8 @@ object LocalMusic {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.ALBUM_ID,
-            MediaStore.Audio.Media.RELATIVE_PATH,
+            MediaStore.Audio.Media.RELATIVE_PATH, MediaStore.Audio.Media.DISPLAY_NAME,
+            MediaStore.Audio.Media.MIME_TYPE,
         )
         val out = ArrayList<LocalTrack>()
         // Android's index decides what is "music": a phone full of recorded or downloaded audio can
@@ -77,6 +90,8 @@ object LocalMusic {
             val iDur = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val iAlbumId = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
             val iPath = c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+            val iName = c.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
+            val iMime = c.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
             while (c.moveToNext()) {
                 val id = c.getLong(iId)
                 val artist = c.getString(iArtist)?.takeIf { it != MediaStore.UNKNOWN_STRING }.orEmpty()
@@ -89,6 +104,8 @@ object LocalMusic {
                     durationMs = c.getLong(iDur),
                     artUri = ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), c.getLong(iAlbumId)),
                     folder = if (iPath >= 0) c.getString(iPath).orEmpty() else "",
+                    displayName = if (iName >= 0) c.getString(iName).orEmpty() else "",
+                    mimeType = if (iMime >= 0) c.getString(iMime).orEmpty() else "",
                 )
             }
         }

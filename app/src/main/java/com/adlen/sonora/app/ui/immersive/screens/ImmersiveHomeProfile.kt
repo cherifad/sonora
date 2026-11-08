@@ -39,13 +39,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.adlen.sonora.engine.R
 import com.adlen.sonora.app.data.api.ProfileCache
-import com.adlen.sonora.app.data.api.SupportReminder
 import com.adlen.sonora.app.di.Graph
 import com.adlen.sonora.app.di.SessionActions
 import com.adlen.sonora.app.ui.components.AboutSheet
-import com.adlen.sonora.app.ui.components.SupporterBadge
-import com.adlen.sonora.app.ui.components.SupporterSheet
-import com.adlen.sonora.app.ui.components.SupportSheet
 import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.app.ui.immersive.components.ImmersiveCover
 import com.adlen.sonora.app.ui.immersive.components.immersiveClickable
@@ -151,7 +147,6 @@ internal fun ImmersiveProfileSheet(onOpen: (route: String) -> Unit, onDismiss: (
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 14.dp),
                 )
-                if (SupportReminder.level != SupportReminder.Level.NONE) SupporterBadge(Modifier.padding(start = 10.dp))
             }
             if (myId != null) {
                 Text(

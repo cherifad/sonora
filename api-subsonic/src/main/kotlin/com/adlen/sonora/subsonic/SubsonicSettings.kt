@@ -18,6 +18,7 @@ object SubsonicSettings {
     private const val KEY_USER = "username"
     private const val KEY_PASS = "password"
     private const val KEY_API_KEY = "apiKey"
+    private const val KEY_FOLDER = "musicFolderId"
 
     @Volatile
     private var cached: SharedPreferences? = null
@@ -41,6 +42,16 @@ object SubsonicSettings {
                 if (normalized.apiKey != null) putString(KEY_API_KEY, normalized.apiKey) else remove(KEY_API_KEY)
             }
             .apply()
+    }
+
+    /** The selected music folder, or null for every library. */
+    fun musicFolder(context: Context): String? =
+        prefs(context).getString(KEY_FOLDER, null)?.takeIf { it.isNotBlank() }
+
+    fun setMusicFolder(context: Context, id: String?) {
+        prefs(context).edit().apply {
+            if (id.isNullOrBlank()) remove(KEY_FOLDER) else putString(KEY_FOLDER, id)
+        }.apply()
     }
 
     fun clear(context: Context) {

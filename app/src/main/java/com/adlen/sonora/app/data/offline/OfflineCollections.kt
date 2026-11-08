@@ -242,17 +242,31 @@ object OfflineCollections {
     }
 
     private fun read(text: String) {
-        val o = JSONObject(text)
-        val lists = o.optJSONArray("lists") ?: JSONArray()
-        for (i in 0 until lists.length()) {
-            val c = lists.getJSONObject(i)
-            val tracks = c.optJSONArray("tracks") ?: JSONArray()
-            collections[c.getString("uri")] = OfflineCollection(
-                c.getString("uri"), c.optString("type"), c.optString("name"),
-                (0 until tracks.length()).map { tracks.getString(it) }.toSet(), c.optLong("synced"), c.optString("quality"),
-            )
+        val (lists, savedSingles) = readCollections(text)
+        synchronized(lock) {
+            collections.clear()
+            collections.putAll(lists)
+            singles.clear()
+            singles.addAll(savedSingles)
         }
-        val s = o.optJSONArray("singles") ?: JSONArray()
-        synchronized(lock) { (0 until s.length()).forEach { singles += s.getString(it) } }
     }
+}
+
+/** The `collections.json` format, kept pure so a format change cannot silently drop downloads. */
+internal fun readCollections(text: String): Pair<Map<String, OfflineCollection>, Set<String>> {
+    val root = JSONObject(text)
+    val lists = root.optJSONArray("lists") ?: JSONArray()
+    val parsed = linkedMapOf<String, OfflineCollection>()
+    for (i in 0 until lists.length()) {
+        val c = lists.getJSONObject(i)
+        val tracks = c.optJSONArray("tracks") ?: JSONArray()
+        parsed[c.getString("uri")] = OfflineCollection(
+            c.getString("uri"), c.optString("type"), c.optString("name"),
+            (0 until tracks.length()).map { tracks.getString(it) }.toSet(), c.optLong("synced"), c.optString("quality"),
+        )
+    }
+    val singles = linkedSetOf<String>()
+    val saved = root.optJSONArray("singles") ?: JSONArray()
+    (0 until saved.length()).forEach { singles += saved.getString(it) }
+    return parsed to singles
 }

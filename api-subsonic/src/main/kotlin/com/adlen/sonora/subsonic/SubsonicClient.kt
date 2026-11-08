@@ -52,6 +52,15 @@ class SubsonicClient(
     /** Optional endpoints this server already refused: asked once, then skipped. */
     private val unsupported = Collections.synchronizedSet(mutableSetOf<String>())
 
+    /** A Jellyfin/Navidrome music folder to scope library calls to; null = all. */
+    @Volatile
+    var musicFolderId: String? = null
+        private set
+
+    fun setMusicFolder(id: String?) {
+        musicFolderId = id?.takeIf { it.isNotBlank() }
+    }
+
     fun updateConfig(newConfig: SubsonicConfig) {
         config = newConfig.normalized()
         base = config.baseUrl.toHttpUrl()
@@ -133,6 +142,8 @@ class SubsonicClient(
         builder.addQueryParameter("v", "1.16.1")
             .addQueryParameter("c", "Sonora")
             .addQueryParameter("f", "json")
+        // Subsonic ignores it where it does not apply; the library endpoints honour it.
+        musicFolderId?.let { builder.addQueryParameter("musicFolderId", it) }
         params.forEach { (key, value) -> builder.addQueryParameter(key, value) }
         return builder.build()
     }

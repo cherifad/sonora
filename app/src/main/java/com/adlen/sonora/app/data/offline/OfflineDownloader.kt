@@ -531,7 +531,7 @@ fun withinDownloadBudget(
                 val request = okhttp3.Request.Builder().url(url).apply {
                     if (start > 0) header("Range", "bytes=$start-")
                 }.build()
-                serverHttp.newCall(request).execute().use { res ->
+                serverHttp().newCall(request).execute().use { res ->
                     if (res.code == 416) {
                         // The partial is not a prefix the server can continue: start over.
                         out.delete()
@@ -565,7 +565,19 @@ fun withinDownloadBudget(
         }
     }
 
-    private val serverHttp by lazy { okhttp3.OkHttpClient.Builder().build() }
+    @Volatile private var serverHttpKey: String? = null
+    @Volatile private var serverHttpClient: okhttp3.OkHttpClient? = null
+    private val plainHttp by lazy { okhttp3.OkHttpClient.Builder().build() }
+
+    /** The server's own HTTP client, rebuilt when the configured URL changes (TOFU TLS). */
+    private fun serverHttp(): okhttp3.OkHttpClient {
+        val config = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi?.config ?: return plainHttp
+        if (serverHttpKey != config.baseUrl) {
+            serverHttpKey = config.baseUrl
+            serverHttpClient = com.adlen.sonora.subsonic.SubsonicTls.client(Graph.app, config)
+        }
+        return serverHttpClient ?: plainHttp
+    }
 
     /** A server file the phone's own extractor must read as audio (a JSON/XML error page would not). */
     private fun checkServerAudio(file: File) {
