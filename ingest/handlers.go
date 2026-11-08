@@ -382,6 +382,15 @@ func (s *Server) deleteUpload(w http.ResponseWriter, _ *http.Request, id string)
 	if upload.Status == "uploading" {
 		_ = os.Remove(s.tempPath(id))
 	}
+	if upload.Path != "" {
+		full := filepath.Join(s.cfg.LibraryPath, upload.Path)
+		if underRoot(s.cfg.LibraryPath, full) {
+			_ = os.Remove(full)
+		}
+	}
+	if upload.SHA256 != "" {
+		s.store.RemoveFile(upload.SHA256)
+	}
 	s.store.RemoveUpload(id)
 	w.WriteHeader(http.StatusNoContent)
 }

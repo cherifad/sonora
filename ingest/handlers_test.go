@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -256,6 +257,54 @@ func TestALocalHashDuplicateBeatsTheServerCheck(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &match)
 	if match.Decision != "duplicate" || match.ServerTrackID != "7" {
 		t.Fatalf("local duplicate = %+v", match)
+	}
+}
+
+func TestDeletingAnUploadRemovesTheFileAndTheRecord(t *testing.T) {
+	server, _ := newTestServer(t)
+	meta := `{"title":"Delete Me","artist":"Tester","album":"Delete Me","track":1,"durationMs":60000}`
+	hash := sha256Hex("delete-me")
+	create := fmt.Sprintf(`{"filename":"Delete Me.flac","size":9,"sha256":"%s","metadata":%s}`, hash, meta)
+	rec := call(server, http.MethodPost, "/uploads", []byte(create), nil, true)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		UploadID string `json:"uploadId"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &created)
+	rec = call(server, http.MethodPatch, "/uploads/"+created.UploadID, []byte("delete-me"),
+		map[string]string{"Content-Range": "bytes 0-8/9"}, true)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("chunk: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = call(server, http.MethodPost, "/uploads/"+created.UploadID+"/complete", nil, nil, true)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("complete: %d %s", rec.Code, rec.Body.String())
+	}
+	var done Upload
+	_ = json.Unmarshal(rec.Body.Bytes(), &done)
+	if done.Path == "" {
+		t.Fatal("no path after complete")
+	}
+	full := filepath.Join(server.cfg.LibraryPath, done.Path)
+	if _, err := os.Stat(full); err != nil {
+		t.Fatalf("file missing after complete: %v", err)
+	}
+
+	rec = call(server, http.MethodDelete, "/uploads/"+created.UploadID, nil, nil, true)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("delete: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, err := os.Stat(full); !os.IsNotExist(err) {
+		t.Fatalf("file still there after delete: %v", err)
+	}
+	rec = call(server, http.MethodPost, "/library/match",
+		[]byte(fmt.Sprintf(`{"sha256":"%s","metadata":%s}`, hash, meta)), nil, true)
+	var match MatchResult
+	_ = json.Unmarshal(rec.Body.Bytes(), &match)
+	if match.Decision != "new" {
+		t.Fatalf("deleted file still matches: %+v", match)
 	}
 }
 

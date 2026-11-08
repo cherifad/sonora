@@ -286,6 +286,25 @@ func (s *Store) RemoveUpload(id string) {
 	_ = s.saveLocked()
 }
 
+// RemoveFile forgets an uploaded file (and its ISRC/MBID shortcuts), so a later upload of
+// the same bytes is not reported as a duplicate of something that no longer exists.
+func (s *Store) RemoveFile(sha string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rec, ok := s.state.Files[sha]
+	if !ok {
+		return
+	}
+	delete(s.state.Files, sha)
+	if rec.ISRC != "" {
+		delete(s.state.ISRC, strings.ToUpper(rec.ISRC))
+	}
+	if rec.MBID != "" {
+		delete(s.state.MBID, strings.ToLower(rec.MBID))
+	}
+	_ = s.saveLocked()
+}
+
 func randomID() (string, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
