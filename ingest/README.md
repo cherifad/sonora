@@ -20,6 +20,9 @@ access to the library — that is this service.
 
 ## Quick start (Navidrome)
 
+The image is published on GHCR: `ghcr.io/cherifad/sonora-ingest` (`linux/amd64` and
+`linux/arm64`). Compose pulls it, so no Go toolchain is needed.
+
 1. Create the Navidrome admin user first (its web UI), and a music folder shared by both
    containers.
 2. Open `docker-compose.yml` (copy it to a local file if you keep secrets there).
@@ -36,6 +39,21 @@ access to the library — that is this service.
 5. In Sonora, Settings → Server upload: enter the URL `http://<host>:8088` and press
    **Connect**. The app proves the Subsonic account it already uses and stores the token the
    ingest issues; nothing to copy. `$INGEST_TOKEN` stays for curl and admin use.
+
+Without Compose:
+
+```bash
+docker run -d --name sonora-ingest -p 8088:8088 \
+  -v /path/to/music:/music \
+  -e TOKEN="$INGEST_TOKEN" \
+  -e LIBRARY_PATH=/music \
+  -e SCAN_URL=http://navidrome:4533 \
+  -e SCAN_USER=admin -e SCAN_PASSWORD="$NAVIDROME_PASSWORD" \
+  ghcr.io/cherifad/sonora-ingest:latest
+```
+
+To build the image from this checkout instead, uncomment `build: .` in the Compose file (or
+`docker build -t ghcr.io/cherifad/sonora-ingest:latest .`).
 
 For Jellyfin:
 

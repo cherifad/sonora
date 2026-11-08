@@ -62,7 +62,9 @@ Le workflow :
 2. calcule `versionName = 1.2.0` et `versionCode = 10200` (majeur × 10000 + mineur × 100 + correctif) ;
 3. signe avec le keystore des secrets ;
 4. publie **`app-mobile-release.apk`** dans la GitHub Release, avec les notes générées depuis les
-   commits.
+   commits ;
+5. le workflow **`Ingest image`** publie le service compagnon sur GHCR
+   (`ghcr.io/cherifad/sonora-ingest:1.2.0`, `:1.2`, `:latest`, amd64 + arm64).
 
 ### Android Auto et Android Automotive OS, deux choses différentes
 

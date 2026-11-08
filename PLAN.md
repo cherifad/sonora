@@ -361,6 +361,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-07 | 13 | Delete local copies after a server check, through MediaStore | `feat(upload)` |
 | 2026-11-07 | 13 | Onboarding upload step, prefilled `<server>-upload.<domain>`, compose fixes | `feat(setup)` |
 | 2026-11-08 | 13 | User-facing ingest guide (`docs/INGEST.md`), early-version status, limits | `docs(ingest)` |
+| 2026-11-08 | 13 | Publish the ingest image on GHCR (amd64/arm64), compose pulls it | `ci(ingest)` |
 
 ## Decisions and risks
 

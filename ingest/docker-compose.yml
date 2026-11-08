@@ -16,7 +16,10 @@ services:
     restart: unless-stopped
 
   ingest:
-    build: .
+    # Published image (linux/amd64 + linux/arm64); no Go toolchain needed.
+    image: ghcr.io/cherifad/sonora-ingest:latest
+    # To build from this checkout instead, comment the image line and uncomment:
+    # build: .
     ports:
       - "8088:8088"
     # The container must be able to write the music folder; use the host user.

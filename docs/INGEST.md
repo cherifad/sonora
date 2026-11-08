@@ -60,6 +60,16 @@ curl -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:8088/health
 `ffprobe` is installed in the image, so `/health` reports `"ffprobe": true` and real audio
 validation runs. A local `go run .` without ffmpeg falls back to the duration the app sends.
 
+The service is also published as a multi-arch image (`linux/amd64`, `linux/arm64`):
+
+```bash
+docker pull ghcr.io/cherifad/sonora-ingest:latest
+```
+
+Release tags publish the matching version (`ghcr.io/cherifad/sonora-ingest:1.5.0`) and
+`latest`. Compose uses the published image by default; uncomment `build: .` in
+[`ingest/docker-compose.yml`](../ingest/docker-compose.yml) to build from source instead.
+
 ### Recommended name
 
 Give the service its own name next to the server, not a random host:
