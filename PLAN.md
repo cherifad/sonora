@@ -362,6 +362,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-07 | 13 | Onboarding upload step, prefilled `<server>-upload.<domain>`, compose fixes | `feat(setup)` |
 | 2026-11-08 | 13 | User-facing ingest guide (`docs/INGEST.md`), early-version status, limits | `docs(ingest)` |
 | 2026-11-08 | 13 | Publish the ingest image on GHCR (amd64/arm64), compose pulls it | `ci(ingest)` |
+| 2026-11-08 | 13 | Immersive upload/delete, resume without re-upload, server-side duplicate check | `fix(upload)` |
 
 ## Decisions and risks
 
