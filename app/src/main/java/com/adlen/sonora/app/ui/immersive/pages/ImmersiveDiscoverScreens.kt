@@ -38,7 +38,6 @@ import com.adlen.sonora.api.TopContent
 import com.adlen.sonora.api.best
 import com.adlen.sonora.engine.R
 import com.adlen.sonora.host.android.SonoraRuntime
-import com.adlen.sonora.app.data.api.TopStats
 import com.adlen.sonora.app.data.local.ListenHistory
 import com.adlen.sonora.app.di.Graph
 import com.adlen.sonora.app.di.SongPlayer
@@ -56,7 +55,6 @@ import com.adlen.sonora.app.ui.immersive.components.SectionHeader
 import com.adlen.sonora.app.ui.navigation.artistRoute
 import com.adlen.sonora.app.ui.screens.ReleaseTile
 import com.adlen.sonora.app.ui.screens.route
-import com.adlen.sonora.app.ui.screens.rangeLabels
 import com.adlen.sonora.app.ui.theme.AppAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -204,81 +202,13 @@ private fun episodeMinutesLabel(min: Long) = if (min >= 60) "${min / 60} h ${min
 fun ImmersiveRecapScreen(navController: NavController) {
     val periods = listOf(R.string.recap_month to 30L, R.string.recap_year to 365L, R.string.recap_all to 36_500L)
     var period by rememberSaveable { mutableIntStateOf(1) }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     // Off the main thread: the history file grows with every listen.
     val loaded by produceState<ListenHistory.Recap?>(null, period) {
         value = withContext(Dispatchers.IO) { ListenHistory.recap(System.currentTimeMillis() - periods[period].second * 86_400_000L) }
     }
     val recap = loaded ?: ListenHistory.Recap(0, 0, emptyMap(), emptyList(), emptyList(), emptyList())
     ImmersivePage(title = stringResource(R.string.recap_title), onBack = { navController.popBackStack() }) {
-        item(key = "tabs") {
-            ImmersiveSegmentedControl(
-                options = listOf(stringResource(R.string.stats_tab_spotify), stringResource(R.string.stats_tab_phone)),
-                selectedIndex = tab, onSelect = { tab = it },
-                modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 6.dp),
-            )
-        }
-        if (tab == 0) spotifyStats(navController) else phoneStats(navController, recap, periods.map { it.first }, period) { period = it }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.spotifyStats(navController: NavController) {
-    item(key = "spotify") { SpotifyStatsBlock(navController) }
-}
-
-@Composable
-private fun SpotifyStatsBlock(navController: NavController) {
-    var range by rememberSaveable { mutableIntStateOf(0) }
-    var attempt by remember { mutableIntStateOf(0) }
-    val timeRange = rangeLabels[range].first
-    val state by produceState<Result<TopContent>?>(TopStats.cached(timeRange)?.let { Result.success(it) }, timeRange, attempt) {
-        value = runCatching { TopStats.get(timeRange, force = attempt > 0) }
-    }
-    val top = state?.getOrNull()
-    Column {
-        ImmersiveSegmentedControl(
-            options = rangeLabels.map { stringResource(it.second) },
-            selectedIndex = range, onSelect = { range = it },
-            modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 6.dp),
-        )
-        when {
-            state == null -> repeat(5) { com.adlen.sonora.app.ui.immersive.components.ImmersiveSongRowSkeleton(index = it) }
-            top == null -> ImmersiveMessageState(stringResource(R.string.stats_failed), actionLabel = stringResource(R.string.retry_button), onAction = { attempt++ })
-            top.artists.isEmpty() && top.tracks.isEmpty() -> ImmersiveMessageState(stringResource(R.string.stats_empty))
-            else -> {
-                top.artistTotal?.takeIf { it > 0 }?.let { total ->
-                    Text(stringResource(R.string.stats_artists_ranked, total), style = Immersive.Subhead,
-                        modifier = Modifier.padding(horizontal = Immersive.Gutter, vertical = 10.dp))
-                }
-                if (top.artists.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.recap_top_artists))
-                    LazyRow(contentPadding = PaddingValues(horizontal = Immersive.Gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        itemsIndexed(top.artists, key = { _, a -> a.uri }) { i, a ->
-                            ImmersiveShelfCard(
-                                title = "${i + 1}. ${a.name}", subtitle = null,
-                                imageUrl = spotifyImageUrl(a.images.best(300)?.url), round = true,
-                                onClick = { navController.navigate(artistRoute(a.name, a.uri.substringAfterLast(':'))) },
-                                modifier = Modifier.width(120.dp),
-                            )
-                        }
-                    }
-                }
-                if (top.tracks.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.recap_top_tracks))
-                    top.tracks.forEachIndexed { i, t ->
-                        ImmersiveListRow(
-                            title = "${i + 1}  ${t.name}",
-                            subtitle = t.artists.joinToString(", ") { it.name },
-                            imageUrl = spotifyImageUrl(t.album?.images?.best(160)?.url),
-                            round = false,
-                            onClick = { SongPlayer.playSong(t.uri) },
-                        )
-                    }
-                }
-            }
-        }
-        Text(stringResource(R.string.stats_spotify_note), style = Immersive.Caption.copy(color = Immersive.TextTertiary),
-            modifier = Modifier.padding(Immersive.Gutter, 24.dp))
+        phoneStats(navController, recap, periods.map { it.first }, period) { period = it }
     }
 }
 

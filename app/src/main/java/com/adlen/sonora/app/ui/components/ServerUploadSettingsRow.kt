@@ -3,9 +3,11 @@ package com.adlen.sonora.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,13 +30,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.adlen.sonora.app.data.preferences.Look
+import com.adlen.sonora.app.data.preferences.LookPref
 import com.adlen.sonora.app.data.upload.UploadSettings
+import com.adlen.sonora.app.ui.immersive.Immersive
+import com.adlen.sonora.app.ui.immersive.components.ImmersiveButton
 import com.adlen.sonora.app.ui.immersive.pages.ImmersiveGroupRow
+import com.adlen.sonora.app.ui.immersive.pages.ImmersivePage
 import com.adlen.sonora.app.ui.theme.AppBackground
 import com.adlen.sonora.app.ui.theme.AppMuted
 import com.adlen.sonora.app.ui.theme.AppSans
 import com.adlen.sonora.app.ui.theme.AppText
 import com.adlen.sonora.engine.R
+import androidx.compose.ui.text.TextStyle
 
 /**
  * The ingest URL and the Wi-Fi rule. No token to copy: "Connect" proves the Subsonic
@@ -43,10 +52,44 @@ import com.adlen.sonora.engine.R
 @Composable
 fun ServerUploadDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
     val context = LocalContext.current
+    val immersive = LookPref.look == Look.IMMERSIVE
     val initial = UploadSettings.load(context)?.baseUrl ?: UploadSettings.url(context)
     val close = {
         // A token may already have been issued (before this dialog or by Connect).
         if (UploadSettings.load(context) != null) onSaved() else onDismiss()
+    }
+    if (immersive) {
+        Dialog(
+            onDismissRequest = close,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(Modifier.fillMaxSize().background(Immersive.Page)) {
+                ImmersivePage(
+                    title = stringResource(R.string.upload_settings_title),
+                    onBack = close,
+                ) {
+                    item(key = "upload-form") {
+                        Column(Modifier.padding(horizontal = Immersive.Gutter)) {
+                            UploadConnectForm(
+                                initialUrl = initial.orEmpty(),
+                                onConnected = {},
+                                immersive = true,
+                                trailing = { connected ->
+                                    ImmersiveButton(
+                                        text = stringResource(
+                                            if (connected) R.string.upload_settings_close else R.string.upload_settings_cancel,
+                                        ),
+                                        onClick = close,
+                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return
     }
     Dialog(onDismissRequest = close) {
         Column(

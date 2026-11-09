@@ -45,12 +45,24 @@ class SubsonicApi(
     /** The server type/version and the optional calls it advertises. */
     val capabilities: StateFlow<ServerCapabilities?> = _capabilities
 
+    /** Whether the logged-in account is an administrator; null when the server cannot say. */
+    private val _isAdmin = MutableStateFlow<Boolean?>(null)
+    val isAdmin: StateFlow<Boolean?> = _isAdmin
+
     /** Bookmarks, shares, scan status and the server's now-playing list. */
     val serverExtras = SubsonicServerExtras(client)
 
     init {
         client.setMusicFolder(SubsonicSettings.musicFolder(appContext))
-        scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
+        scope.launch {
+            val caps = runCatching { client.probeCapabilities() }.getOrNull()
+            _capabilities.value = caps
+            // Only Navidrome is known to answer getUser with adminRole; elsewhere keep the
+            // admin-only rows visible (the server still enforces its own permissions).
+            if (caps?.isNavidrome == true) {
+                _isAdmin.value = runCatching { serverExtras.isAdmin(client.config.username) }.getOrNull()
+            }
+        }
     }
 
     override val player: Player = playerImpl
@@ -111,8 +123,15 @@ class SubsonicApi(
     fun updateConfig(config: SubsonicConfig) {
         client.updateConfig(config)
         _capabilities.value = null
+        _isAdmin.value = null
         playerImpl.invalidateBookmarks()
-        scope.launch { runCatching { client.probeCapabilities() }.onSuccess { _capabilities.value = it } }
+        scope.launch {
+            val caps = runCatching { client.probeCapabilities() }.getOrNull()
+            _capabilities.value = caps
+            if (caps?.isNavidrome == true) {
+                _isAdmin.value = runCatching { serverExtras.isAdmin(client.config.username) }.getOrNull()
+            }
+        }
         playerImpl.restoreServerQueueIfIdle()
     }
 }

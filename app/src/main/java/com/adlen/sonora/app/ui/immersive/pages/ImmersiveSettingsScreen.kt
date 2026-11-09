@@ -148,6 +148,8 @@ fun ImmersiveSettingsScreen(navController: NavController) {
 @Composable
 private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> Unit, back: () -> Unit) {
     val context = LocalContext.current
+    val api = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
+    val admin = rememberIsAdmin()
     val config = com.adlen.sonora.subsonic.SubsonicSettings.load(context)
     val scope = rememberCoroutineScope()
     var showServer by remember { mutableStateOf(false) }
@@ -172,8 +174,7 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
                     onClick = { showServer = true },
                 )
             }
-            if (com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
-                    ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.SCAN) == true) {
+            if (admin != false && api?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.SCAN) == true) {
                 row {
                     ImmersiveGroupRow(
                         stringResource(R.string.scan_title),
@@ -182,16 +183,13 @@ private fun SettingsRoot(navController: NavController, open: (SettingsPage) -> U
                         chevron = true,
                         onClick = {
                             scope.launch {
-                                runCatching {
-                                    com.adlen.sonora.host.android.SonoraRuntime.subsonicApi?.serverExtras?.startScan()
-                                }
+                                runCatching { api.serverExtras.startScan() }
                             }
                         },
                     )
                 }
             }
-            if (com.adlen.sonora.host.android.SonoraRuntime.subsonicApi
-                    ?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.NOW_PLAYING) == true) {
+            if (admin != false && api?.supports(com.adlen.sonora.subsonic.ServerCapabilities.Feature.NOW_PLAYING) == true) {
                 row {
                     ImmersiveGroupRow(
                         stringResource(R.string.now_playing_title),
@@ -703,4 +701,10 @@ private fun AppPage(navController: NavController, back: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun rememberIsAdmin(): Boolean? {
+    val api = com.adlen.sonora.host.android.SonoraRuntime.subsonicApi ?: return null
+    return api.isAdmin.collectAsStateWithLifecycle().value
 }

@@ -174,25 +174,13 @@ fun ProfileScreen(navController: NavController, userId: String, userName: String
                         }
                     }
                 }
-                // Your own profile leads to your listening stats, like the official app's.
-                if (me && !SonoraRuntime.isSubsonic) {
+                // Your own profile shows the phone's listening totals; the card opens the full recap.
+                if (me) {
                     Spacer(Modifier.height(14.dp))
-                    Text(
-                        stringResource(R.string.stats_listening_stats),
-                        color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(RoundedCornerShape(50))
-                            .border(1.dp, AppMuted, RoundedCornerShape(50))
-                            .pressable(0.96f) { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Recap.route) }
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        stringResource(R.string.extensions_title),
-                        color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(RoundedCornerShape(50))
-                            .border(1.dp, AppMuted, RoundedCornerShape(50))
-                            .pressable(0.96f) { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Extensions.route) }
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                    com.adlen.sonora.app.ui.components.ProfileListeningStats(
+                        immersive = false,
+                        onOpenRecap = { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Recap.route) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
                 if (blocked == true) {

@@ -122,6 +122,29 @@ class SubsonicServerExtras(private val client: SubsonicClient) {
         }
     }
 
+    /**
+     * Whether the logged-in user is a server administrator. `getUser` carries `adminRole`,
+     * but most servers only allow it for admins: a refused call therefore means "not admin".
+     * Null means the server could not tell us, and the caller keeps the row visible.
+     */
+    suspend fun isAdmin(username: String): Boolean? {
+        if (username.isBlank()) return null
+        return try {
+            val root = client.call("getUser", mapOf("username" to username))
+            root.optJSONObject("user")?.optBoolean("adminRole", false) ?: false
+        } catch (e: SubsonicException.Auth) {
+            false
+        } catch (e: SubsonicException.NotFound) {
+            null
+        } catch (e: SubsonicException.Protocol) {
+            null
+        } catch (e: SubsonicException.Unsupported) {
+            null
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
     private fun shareOf(json: JSONObject): Share = Share(
         id = json.optString("id"),
         url = json.optString("url"),

@@ -148,19 +148,13 @@ fun ImmersiveProfileScreen(navController: NavController, userId: String, userNam
                                     }
                                 }
                             }
-                            // Your own profile leads to your listening stats and the extensions.
+                            // Your own profile shows the phone's listening totals; the card opens the full recap.
                             if (me) {
                                 Spacer(Modifier.height(18.dp))
-                                ImmersiveButton(
-                                    text = stringResource(R.string.stats_listening_stats),
-                                    modifier = Modifier.widthIn(min = 170.dp),
-                                    onClick = { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Recap.route) },
-                                )
-                                Spacer(Modifier.height(10.dp))
-                                ImmersiveButton(
-                                    text = stringResource(R.string.extensions_title),
-                                    modifier = Modifier.widthIn(min = 170.dp),
-                                    onClick = { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Extensions.route) },
+                                com.adlen.sonora.app.ui.components.ProfileListeningStats(
+                                    immersive = true,
+                                    onOpenRecap = { navController.navigate(com.adlen.sonora.app.ui.navigation.Routes.Recap.route) },
+                                    modifier = Modifier.padding(horizontal = Immersive.Gutter),
                                 )
                             }
                             if (blocked == true) {

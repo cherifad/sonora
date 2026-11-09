@@ -168,6 +168,9 @@
     <string name="recap_top_artists">Top artists</string>
     <string name="recap_top_albums">Top albums</string>
     <string name="recap_private_note">Counts everything played in the app (downloads and local files). It stays on this phone and is never sent anywhere.</string>
+    <string name="profile_stats_minutes">Minutes</string>
+    <string name="profile_stats_listens">Listens</string>
+    <string name="profile_stats_see_all">See your recap</string>
     <string name="recap_detail">Your listening, downloads and local files included</string>
     <string name="track_credits">Credits</string>
     <string name="exclude_taste">Exclude from your taste profile</string>
