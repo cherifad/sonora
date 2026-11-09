@@ -262,12 +262,9 @@ fun RecapScreen(navController: NavController) {
         }
     }
     val recap = loaded ?: ListenHistory.Recap(0, 0, emptyMap(), emptyList(), emptyList(), emptyList())
-    // Spotify's ranking of the account first (the official "Listening stats"), then this phone's counter.
-    var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
     Column(Modifier.fillMaxSize().background(Background).statusBarsPadding()) {
         ScreenHeader(stringResource(R.string.recap_title), navController)
-        StatsTabs(tab) { tab = it }
-        if (tab == 0) SpotifyStatsTab(navController) else LazyColumn(contentPadding = PaddingValues(bottom = com.adlen.sonora.app.ui.components.bottomBarsSpace())) {
+        LazyColumn(contentPadding = PaddingValues(bottom = com.adlen.sonora.app.ui.components.bottomBarsSpace())) {
             item {
                 Row(Modifier.padding(16.dp, 12.dp, 16.dp, 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     periods.forEachIndexed { i, (label, _) ->
