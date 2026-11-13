@@ -375,6 +375,9 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-13 | 1 | Media notification and download notification use Sonora's bars; the Myspoti wave leaves the APK | `fix(ui)` |
 | 2026-11-13 | 6 | Crossfade on streamed albums: shared `CrossfadeRamp`, second player for the outgoing tail, pause/seek/skip safety | `feat(subsonic)` |
 | 2026-11-13 | 6 | Stream buffering: tuned load control, 256 MB disk cache, Wi-Fi-only warm-up of the next song | `feat(subsonic)` |
+| 2026-11-13 | 13 | Upload step in the real onboarding (`SetupScreen`), offered once per install | `feat(setup)` |
+| 2026-11-13 | 13 | Ingest prefill from the server domain (`navidrome-ingest.<domain>`), HTTPS by default | `feat(upload)` |
+| 2026-11-13 | 13 | Connect feedback readable at a glance: green tick for success, red warning for failure | `fix(ui)` |
 
 ## Decisions and risks
 
@@ -410,8 +413,9 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       marked `UPLOADED / DUPLICATE` like a fresh upload, `NEEDS_REVIEW` kept local.
 - [x] App: Local Files badge, "Upload to server", live progress, and "delete local copies"
       after a server check, through the system MediaStore delete dialog (Android 11+).
-- [x] Onboarding: an optional upload step after the server, prefilled with the recommended
-      `<server-name>-upload.<domain>` address (or `<host>:8088` for an IP).
+- [x] Onboarding: the optional upload step lives in the real setup flow (`SetupScreen`, after
+      the storage step, offered once), prefilled with `navidrome-ingest.<domain>` and HTTPS for
+      a registered name (or `<host>:8088` for an IP).
 - [x] Admission policy: the app skips files without title/artist/album, the ingest checks the
       embedded tags and cover with ffprobe and asks MusicBrainz; anything unverified is
       `needs_review`, never uploaded.

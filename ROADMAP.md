@@ -137,8 +137,9 @@ is correct.
 ## M6 — Polish, tests, release
 
 - [x] Onboarding (Subsonic): server → look → **downloads and storage** (quality, songs/size,
-      free space) → permissions (notifications, Bluetooth, battery); the local-files permission
-      is asked when Local Files is opened. The steps are remembered, so updates skip them.
+      free space) → **companion ingest** (optional, prefilled `navidrome-ingest.<domain>`) →
+      permissions (notifications, Bluetooth, battery); the local-files permission is asked when
+      Local Files is opened. The steps are remembered, so updates skip them.
 - [ ] Tablet/two-pane layout; responsive player; large-screen polish.
       Android Automotive OS: the `automotive` flavor (no launcher, media metadata, `appCategory`
       audio) runs on the car emulator — the car's media app browses Home / Library / Downloads
