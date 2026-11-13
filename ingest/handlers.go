@@ -29,6 +29,7 @@ type Server struct {
 	limiter      *rateLimiter
 	allowedUsers map[string]bool
 	mb           *MusicBrainz
+	log          *Logger
 }
 
 func writeJSON(w http.ResponseWriter, code int, value any) {
@@ -47,6 +48,11 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 			signedOK = err == nil
 		}
 		if !staticOK && !signedOK {
+			reason := "no token"
+			if token != "" {
+				reason = "unknown or expired token"
+			}
+			s.log.Warn("auth refused", "path", r.URL.Path, "ip", clientIP(r), "reason", reason)
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -70,6 +76,7 @@ func (s *Server) handleExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.limiter != nil && !s.limiter.allow(clientIP(r)) {
+		s.log.Warn("token exchange refused", "reason", "too many attempts", "ip", clientIP(r))
 		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts"})
 		return
 	}
@@ -101,10 +108,13 @@ func (s *Server) handleExchange(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	if err := s.authClient.Ping(ctx, auth); err != nil {
+		s.log.Warn("token exchange refused", "reason", "the server refused these credentials",
+			"user", user, "ip", clientIP(r), "detail", err)
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "the server refused these credentials"})
 		return
 	}
 	if len(s.allowedUsers) > 0 && !s.allowedUsers[user] {
+		s.log.Warn("token exchange refused", "reason", "user not in ALLOWED_USERS", "user", user)
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "this user is not allowed to upload"})
 		return
 	}
@@ -113,6 +123,7 @@ func (s *Server) handleExchange(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+	s.log.Info("token issued", "user", user, "expires", expires.Format(time.RFC3339), "ip", clientIP(r))
 	writeJSON(w, http.StatusOK, map[string]any{
 		"token": token, "expiresAt": expires, "user": user, "server": s.cfg.ServerType,
 	})
@@ -163,6 +174,8 @@ func (s *Server) handleMatch(w http.ResponseWriter, r *http.Request) {
 			Reason:   "a close match already exists on the server; not uploaded automatically",
 		}
 	}
+	s.log.Debug("match asked", "title", req.Metadata.Title, "artist", req.Metadata.Artist,
+		"decision", match.Decision, "reason", match.Reason)
 	writeJSON(w, http.StatusOK, match)
 }
 
@@ -192,20 +205,27 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
+	s.log.Debug("upload asked", "file", req.Filename, "size", humanBytes(req.Size),
+		"title", req.Metadata.Title, "artist", req.Metadata.Artist, "sha256", shortHash(req.SHA256))
 	if extensionOf(req.Filename) == "" {
+		s.log.Warn("upload refused", "file", req.Filename, "reason", "unsupported audio extension")
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "unsupported audio extension"})
 		return
 	}
 	if req.Size <= 0 || (s.cfg.MaxUploadBytes > 0 && req.Size > s.cfg.MaxUploadBytes) {
+		s.log.Warn("upload refused", "file", req.Filename, "reason", "invalid size", "size", humanBytes(req.Size))
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "invalid size"})
 		return
 	}
 	if req.Metadata.Title == "" || (req.Metadata.Artist == "" && req.Metadata.AlbumArtist == "") {
+		s.log.Warn("upload refused", "file", req.Filename, "reason", "title and artist are required")
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "title and artist are required"})
 		return
 	}
 	if local := s.store.Match(strings.ToLower(req.SHA256), req.Metadata); local.Decision == "new" &&
 		s.serverHasCloseMatch(r.Context(), req.Metadata) {
+		s.log.Info("upload held for review", "file", req.Filename, "title", req.Metadata.Title,
+			"reason", "a close match already exists on the server")
 		writeJSON(w, http.StatusOK, map[string]any{
 			"decision": "needs_review",
 			"reason":   "a close match already exists on the server; not uploaded automatically",
@@ -217,6 +237,8 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 		err := s.mb.Verify(ctx, req.Metadata)
 		cancel()
 		if err != nil {
+			s.log.Info("upload held for review", "file", req.Filename, "title", req.Metadata.Title,
+				"reason", "MusicBrainz: "+err.Error())
 			writeJSON(w, http.StatusOK, map[string]any{"decision": "needs_review", "reason": err.Error()})
 			return
 		}
@@ -228,12 +250,15 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	switch match.Decision {
 	case "duplicate":
+		s.log.Info("upload skipped", "file", req.Filename, "reason", "duplicate",
+			"match", match.Match, "path", match.Path)
 		writeJSON(w, http.StatusOK, map[string]any{
 			"duplicate": true, "match": match.Match,
 			"serverTrackId": match.ServerTrackID, "path": match.Path,
 		})
 		return
 	case "needs_review":
+		s.log.Info("upload held for review", "file", req.Filename, "reason", match.Reason)
 		writeJSON(w, http.StatusOK, map[string]any{"decision": "needs_review", "reason": match.Reason})
 		return
 	}
@@ -248,6 +273,8 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = file.Close()
+	s.log.Info("upload accepted", "id", shortID(upload.ID), "file", req.Filename,
+		"size", humanBytes(req.Size), "title", req.Metadata.Title, "artist", req.Metadata.Artist)
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"uploadId": upload.ID, "offset": 0, "chunkSize": 8 << 20,
 	})
@@ -288,6 +315,8 @@ func (s *Server) patchUpload(w http.ResponseWriter, r *http.Request, id string) 
 		return
 	}
 	s.store.SetOffset(id, end+1)
+	s.log.Debug("chunk received", "id", shortID(id), "range", fmt.Sprintf("%d-%d", start, end),
+		"offset", end+1, "of", humanBytes(upload.Size))
 	writeJSON(w, http.StatusOK, map[string]any{"offset": end + 1})
 }
 
@@ -310,6 +339,8 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 	if upload.SHA256 != "" && hash != upload.SHA256 {
 		_ = os.Remove(tmp)
 		s.store.SetStatus(id, "failed", "sha256 mismatch")
+		s.log.Warn("upload rejected", "id", shortID(id), "file", upload.Filename,
+			"reason", "sha256 mismatch", "expected", shortHash(upload.SHA256), "got", shortHash(hash))
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "sha256 mismatch"})
 		return
 	}
@@ -317,6 +348,8 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 		if _, err := validateAudio(tmp, upload.Metadata, s.cfg.RequireTags, s.cfg.RequireCover); err != nil {
 			_ = os.Remove(tmp)
 			s.store.SetStatus(id, "failed", err.Error())
+			s.log.Warn("upload rejected", "id", shortID(id), "file", upload.Filename,
+				"reason", err.Error(), "title", upload.Metadata.Title, "artist", upload.Metadata.Artist)
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
 			return
 		}
@@ -335,6 +368,8 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	rel, _ := filepath.Rel(s.cfg.LibraryPath, target)
+	s.log.Info("track written", "id", shortID(id), "path", rel,
+		"size", humanBytes(upload.Size), "sha256", shortHash(hash))
 	now := time.Now().UTC()
 	s.store.AddFile(&FileRecord{
 		SHA256: hash, Path: rel, ISRC: upload.Metadata.ISRC, MBID: upload.Metadata.MBID,
@@ -342,13 +377,16 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 	})
 	s.store.SetPath(id, rel)
 	if s.scanner == nil {
+		s.log.Warn("no scanner configured", "path", rel, "hint", "set SCAN_URL and SCAN_USER/SCAN_PASSWORD")
 		s.store.SetStatus(id, "waiting_scan", "no scanner configured: set SCAN_URL and SCAN_USER/SCAN_PASSWORD")
 	} else {
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 		if err := s.scanner.Trigger(ctx); err != nil {
+			s.log.Warn("scan trigger failed", "path", rel, "detail", err)
 			s.store.SetStatus(id, "waiting_scan", "scan trigger failed: "+err.Error())
 		} else {
+			s.log.Info("scan triggered", "path", rel, "server", s.cfg.ServerType)
 			s.store.SetStatus(id, "waiting_scan", "")
 		}
 	}
@@ -372,9 +410,12 @@ func (s *Server) statusUpload(w http.ResponseWriter, r *http.Request, id string)
 			if trackID, err := s.scanner.Verify(ctx, upload.Metadata); err == nil && trackID != "" {
 				s.store.SetServerTrackID(id, trackID)
 				s.store.SetFileServerTrackID(upload.SHA256, trackID)
+				s.log.Info("track indexed", "id", shortID(id), "path", upload.Path, "serverTrackId", trackID)
 				upload, _ = s.store.Upload(id)
 			} else if err != nil {
 				// Keep waiting, but tell the app why the scan has not produced the track yet.
+				s.log.Debug("still waiting for the scan", "id", shortID(id), "path", upload.Path,
+					"reason", err.Error())
 				s.store.SetStatus(id, "waiting_scan", err.Error())
 				upload, _ = s.store.Upload(id)
 			}
@@ -401,6 +442,7 @@ func (s *Server) deleteUpload(w http.ResponseWriter, _ *http.Request, id string)
 	if upload.SHA256 != "" {
 		s.store.RemoveFile(upload.SHA256)
 	}
+	s.log.Info("upload deleted", "id", shortID(id), "file", upload.Filename, "path", upload.Path)
 	s.store.RemoveUpload(id)
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -447,9 +489,11 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	if err := s.scanner.Trigger(ctx); err != nil {
+		s.log.Warn("scan trigger failed", "detail", err)
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return
 	}
+	s.log.Info("scan triggered", "via", "api", "server", s.cfg.ServerType)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
@@ -593,4 +637,21 @@ func uniquePath(root, rel string) string {
 func underRoot(root, full string) bool {
 	rel, err := filepath.Rel(root, full)
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// shortID keeps the first characters of an upload id: enough to follow one upload through the
+// log, short enough to keep a line readable.
+func shortID(id string) string {
+	if len(id) <= 8 {
+		return id
+	}
+	return id[:8]
+}
+
+// shortHash does the same for a sha256, which is never useful in full in a log line.
+func shortHash(hash string) string {
+	if len(hash) <= 12 {
+		return hash
+	}
+	return hash[:12]
 }

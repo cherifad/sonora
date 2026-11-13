@@ -378,6 +378,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-13 | 13 | Upload step in the real onboarding (`SetupScreen`), offered once per install | `feat(setup)` |
 | 2026-11-13 | 13 | Ingest prefill from the server domain (`navidrome-ingest.<domain>`), HTTPS by default | `feat(upload)` |
 | 2026-11-13 | 13 | Connect feedback readable at a glance: green tick for success, red warning for failure | `fix(ui)` |
+| 2026-11-13 | 13 | Levelled logs in the ingest (text/JSON, request id, startup summary, graceful stop), `SKIP_AUDIO_VALIDATION` wired | `feat(ingest)` |
 
 ## Decisions and risks
 

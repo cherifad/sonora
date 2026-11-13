@@ -206,11 +206,14 @@ dialog is capped at 2000 files per request.
 | `SCAN_USER` / `SCAN_PASSWORD` | — | Subsonic token auth for scan/verify |
 | `SCAN_API_KEY` | — | Jellyfin API key |
 | `MAX_UPLOAD_BYTES` | 4 GiB | Per-file limit |
+| `SKIP_AUDIO_VALIDATION` | `false` | Skip ffprobe entirely (no duration, tag or cover check) |
 | `REQUIRE_TAGS` | `true` | The embedded title/artist/album must match the upload metadata |
 | `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
 | `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
 | `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
 | `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `LOG_FORMAT` | `text` | `text` for people, `json` for a log collector |
 
 The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is documented in
 [`ingest/README.md`](../ingest/README.md).
@@ -244,7 +247,38 @@ The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is document
 | `On server` when you expected an upload | the hash/ISRC/MBID already exists; that is the intended result |
 | nothing deleted | the server did not confirm the track, or Android is older than 11 |
 
-Logs: `docker compose logs -f ingest`.
+### Logs
+
+Everything the service does is in its own log, one line per event, so a problem can be read
+without attaching a debugger:
+
+```bash
+docker compose logs -f ingest          # follow
+docker compose logs --tail 200 ingest  # the last 200 lines
+```
+
+```
+2026-11-13T14:30:12.345Z  INFO   upload accepted   id=3f2a9c11  file=tagged.flac  size=8.4MiB  title="Some Song"  artist="Someone"
+2026-11-13T14:30:19.900Z  WARN   upload rejected   id=3f2a9c11  file=tagged.flac  reason="the file tags do not match the uploaded metadata"
+2026-11-13T14:30:20.010Z  INFO   http   req=7c35c781  method=POST  path=/uploads  status=422  bytes=40B  took=112ms  ip=192.168.1.42
+```
+
+Levels, set with `LOG_LEVEL` (default `info`):
+
+| Level | What it holds |
+|---|---|
+| `error` | the service cannot work: a missing `TOKEN`, an unreadable state, a listener that stopped |
+| `warn` | something the user must know: refused credentials, a rejected file, a failed scan trigger, MusicBrainz unreachable, a throttled token exchange |
+| `info` | the story of an upload: accepted, held for review (and why), skipped as a duplicate, written to the library, indexed by the server, deleted |
+| `debug` | every request, each 8 MiB chunk, the MusicBrainz query, why the scan is not done yet |
+
+`LOG_FORMAT=json` emits one object per line (`time`, `level`, `msg` and the fields) for Loki,
+ELK or similar. Values with spaces are quoted in the text shape; sizes are `MiB`/`GiB` and
+durations `µs`/`ms`/`s`.
+
+Every answer also carries an `X-Request-Id` header, the `req=` of the `http` line: when the
+app reports an error, that id leads straight to the request and the lines it produced.
+Secrets are never logged: the token appears as `te…56`, and passwords not at all.
 
 ## Roadmap
 

@@ -34,6 +34,9 @@ services:
       SCAN_URL: http://navidrome:4533
       SCAN_USER: "${NAVIDROME_USER:-admin}"
       SCAN_PASSWORD: ${NAVIDROME_PASSWORD:?set NAVIDROME_PASSWORD}
+      # Container logs: debug | info | warn | error, and text | json.
+      LOG_LEVEL: info
+      LOG_FORMAT: text
     depends_on:
       - navidrome
     restart: unless-stopped

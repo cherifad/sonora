@@ -89,14 +89,32 @@ environment:
 | `SCAN_USER` / `SCAN_PASSWORD` | — | Subsonic token auth |
 | `SCAN_API_KEY` | — | Jellyfin API key |
 | `MAX_UPLOAD_BYTES` | 4 GiB | Per-file limit |
+| `SKIP_AUDIO_VALIDATION` | `false` | Skip ffprobe entirely (no duration, tag or cover check) |
 | `REQUIRE_TAGS` | `true` | Embedded title/artist/album must match the upload metadata |
 | `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
 | `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
 | `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
 | `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `LOG_FORMAT` | `text` | `text` for people, `json` for a log collector |
 
 The service has **no TLS of its own**: put it behind Caddy/Traefik or run it on a trusted
 LAN. Never expose it directly to the internet.
+
+## Logs
+
+The service logs one line per event to stdout, which is what the container log shows:
+
+```bash
+docker compose logs -f ingest
+docker compose logs --tail 200 ingest | grep 3f2a9c11   # one upload, by its id
+```
+
+`LOG_LEVEL=debug` adds every request, each chunk, the MusicBrainz query and the reason a scan
+is still pending; `LOG_FORMAT=json` gives one object per line for Loki/ELK. Every answer
+carries an `X-Request-Id` header, the `req=` of its `http` line. Secrets are never printed
+(the token appears as `te…56`). The user-facing guide has the full level table:
+[`docs/INGEST.md`](../docs/INGEST.md#logs).
 
 ## API
 

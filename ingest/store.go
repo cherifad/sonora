@@ -125,6 +125,13 @@ func NewStore(path string) (*Store, error) {
 	return s, nil
 }
 
+// Counts is the size of the state, for the startup line: how much the service already knows.
+func (s *Store) Counts() (files, uploads int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.state.Files), len(s.state.Uploads)
+}
+
 func (s *Store) saveLocked() error {
 	raw, err := json.MarshalIndent(s.state, "", "  ")
 	if err != nil {

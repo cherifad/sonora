@@ -50,3 +50,4 @@ tools/qa-results/
 ingest/music/
 .agents/
 skills-lock.json
+ingest/sonora-ingest

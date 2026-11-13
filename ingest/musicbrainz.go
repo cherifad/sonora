@@ -20,6 +20,7 @@ type MusicBrainz struct {
 	http      *http.Client
 	mu        sync.Mutex
 	last      time.Time
+	log       *Logger
 }
 
 func NewMusicBrainz(base, userAgent string) *MusicBrainz {
@@ -54,6 +55,7 @@ func (m *MusicBrainz) Verify(ctx context.Context, meta Metadata) error {
 	if err := m.wait(ctx); err != nil {
 		return err
 	}
+	m.log.Debug("musicbrainz query", "title", meta.Title, "artist", meta.Artist)
 	query := fmt.Sprintf(`recording:"%s" AND artist:"%s"`, escapeLucene(meta.Title), escapeLucene(meta.Artist))
 	endpoint := m.base + "/recording/?query=" + url.QueryEscape(query) + "&fmt=json&limit=5"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -64,13 +66,16 @@ func (m *MusicBrainz) Verify(ctx context.Context, meta Metadata) error {
 	req.Header.Set("Accept", "application/json")
 	resp, err := m.http.Do(req)
 	if err != nil {
+		m.log.Warn("musicbrainz unreachable", "detail", err)
 		return fmt.Errorf("MusicBrainz unavailable: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusTooManyRequests {
+		m.log.Warn("musicbrainz rate limit", "hint", "the next upload may be held for review")
 		return fmt.Errorf("MusicBrainz rate limit; try again later")
 	}
 	if resp.StatusCode >= 300 {
+		m.log.Warn("musicbrainz error", "status", resp.StatusCode)
 		return fmt.Errorf("MusicBrainz HTTP %d", resp.StatusCode)
 	}
 	var out struct {
@@ -89,8 +94,11 @@ func (m *MusicBrainz) Verify(ctx context.Context, meta Metadata) error {
 		if meta.DurationMs > 0 && rec.Length > 0 && abs64(rec.Length-meta.DurationMs) > 5000 {
 			continue
 		}
+		m.log.Debug("musicbrainz match", "title", rec.Title, "lengthMs", rec.Length)
 		return nil
 	}
+	m.log.Info("musicbrainz does not know this recording", "title", meta.Title, "artist", meta.Artist,
+		"recordings", len(out.Recordings))
 	return fmt.Errorf("no MusicBrainz match for %q by %q", meta.Title, meta.Artist)
 }
 
