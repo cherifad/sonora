@@ -3,13 +3,17 @@ package com.adlen.sonora.subsonic
 
 import android.content.Context
 import android.net.Uri as AndroidUri
+import android.os.Handler
+import android.os.Looper
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.adlen.sonora.audio.AudioSettings
+import com.adlen.sonora.audio.CrossfadeRamp
 import com.adlen.sonora.audio.EqualizerProcessor
 import com.adlen.sonora.audio.ReplayGainProcessor
 import com.adlen.sonora.audio.replayGainLinear
@@ -66,8 +70,15 @@ internal fun shouldBookmark(durationMs: Long, positionMs: Long): Boolean =
 private const val BOOKMARK_MIN_MS = 10 * 60_000L
 private const val BOOKMARK_EDGE_MS = 30_000L
 
+/** Shorter overlaps are not worth opening a second stream. */
+private const val MIN_FADE_MS = 500L
+/** How long the copy gets to open the stream before this song ends without a fade. */
+private const val COPY_READY_TIMEOUT_MS = 1_500L
+/** 40 ms steps: 25 volume updates a second, smooth enough and cheap. */
+private const val RAMP_STEP_MS = 40L
+
 internal class SubsonicPlayer(
-    context: Context,
+    private val context: Context,
     private val client: SubsonicClient,
     private val catalog: SubsonicCatalog,
     private val playlists: SubsonicPlaylists,
@@ -75,14 +86,13 @@ internal class SubsonicPlayer(
 
     private val replayGain = ReplayGainProcessor()
 
+    private val attributes = AudioAttributes.Builder()
+        .setUsage(C.USAGE_MEDIA)
+        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+        .build()
+
     private val exo = ExoPlayer.Builder(context, subsonicRenderers(context, replayGain))
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(C.USAGE_MEDIA)
-                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                .build(),
-            /* handleAudioFocus = */ true,
-        )
+        .setAudioAttributes(attributes, /* handleAudioFocus = */ true)
         .setHandleAudioBecomingNoisy(true)
         .setWakeMode(C.WAKE_MODE_NETWORK)
         .build()
@@ -104,11 +114,33 @@ internal class SubsonicPlayer(
     private var saveQueueJob: Job? = null
     private var lastSavedAtMs = 0L
 
+    // ── Crossfade ──
+    // Near the end of a song a second player opens the same stream at the same position and
+    // carries the tail (fading out) while the main player moves on to the next item at once
+    // (fading in). The queue, the session and the scrobbles only ever see the main player.
+    private var outgoing: ExoPlayer? = null
+    private var fadeMs = 0L
+    private var preparingFade = false
+    private var startingFade = false
+    /** The item index whose end must not fade (the user sought into its tail, or the fade failed). */
+    private var noFadeFor = -1
+    /** Identifies the fade in flight, so a seek or a pause can drop the copy still being prepared. */
+    private var fadeToken: Any? = null
+    /** The user's own volume, which the ramp scales while it runs. */
+    private var userVolume = 1f
+    private val handler = Handler(Looper.getMainLooper())
+
     init {
         exo.skipSilenceEnabled = AudioSettings.skipSilence
         exo.addListener(object : Media3Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 applyReplayGain()
+            }
+
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                // The copy is a second player: a pause (the user's, an audio focus loss, the
+                // headset unplugged) must end the fade, or the tail would keep singing alone.
+                if (!playWhenReady) endCrossfade()
             }
 
             override fun onEvents(player: Media3Player, events: Media3Player.Events) {
@@ -128,6 +160,7 @@ internal class SubsonicPlayer(
                 if (exo.skipSilenceEnabled != AudioSettings.skipSilence) exo.skipSilenceEnabled = AudioSettings.skipSilence
                 applyReplayGain()
                 publish()
+                maybeBeginCrossfade()
                 checkScrobbleAndPeriodicSave()
             }
         }
@@ -292,6 +325,7 @@ internal class SubsonicPlayer(
         val resolved = resolve(contextUri, trackUri, order)
         if (resolved.isEmpty()) return
         withContext(Dispatchers.Main) {
+            endCrossfade()
             tracks = resolved
             currentContext = contextUri
             currentContextName = runCatching { catalog.album(contextUri).name }.getOrNull()
@@ -331,6 +365,7 @@ internal class SubsonicPlayer(
         key.substringAfter("spotify:track:", key).substringBefore('|').substringAfterLast(':')
 
     override suspend fun pause() = withContext(Dispatchers.Main) {
+        endCrossfade()
         saveBookmark()
         exo.pause()
         publish()
@@ -343,12 +378,24 @@ internal class SubsonicPlayer(
     }
 
     override suspend fun seek(positionMs: Long) = withContext(Dispatchers.Main) {
-        exo.seekTo(positionMs.coerceAtLeast(0L))
+        endCrossfade()
+        val to = positionMs.coerceAtLeast(0L)
+        // Jumping into a song's last seconds must not start a fade it never earned.
+        if (CrossfadeRamp.shouldStart(AudioSettings.crossfadeSeconds, exo.duration.takeIf { it > 0 } ?: 0L, to)) {
+            noFadeFor = exo.currentMediaItemIndex
+        }
+        exo.seekTo(to)
         publish()
         scheduleSavePlayQueue()
     }
 
     override suspend fun next() = withContext(Dispatchers.Main) {
+        // Mid-fade the main player is already on the incoming song while the ear still hears the
+        // one going out: a skip there would go two songs on. It lands on the incoming one.
+        if (outgoing != null && CrossfadeRamp.progress(exo.currentPosition, fadeMs) < 0.5f) {
+            return@withContext endCrossfade()
+        }
+        endCrossfade()
         val index = exo.currentMediaItemIndex
         if (index in 0 until tracks.lastIndex) {
             exo.seekTo(index + 1, 0L)
@@ -358,6 +405,7 @@ internal class SubsonicPlayer(
     }
 
     override suspend fun previous() = withContext(Dispatchers.Main) {
+        endCrossfade()
         val index = exo.currentMediaItemIndex
         if (exo.currentPosition > 3_000L) {
             exo.seekTo(index, 0L)
@@ -407,6 +455,7 @@ internal class SubsonicPlayer(
     }
 
     override suspend fun clearQueue() = withContext(Dispatchers.Main) {
+        endCrossfade()
         tracks = emptyList()
         exo.clearMediaItems()
         _state.value = null
@@ -414,6 +463,7 @@ internal class SubsonicPlayer(
     }
 
     override suspend fun skipTo(item: NowPlaying) = withContext(Dispatchers.Main) {
+        endCrossfade()
         val index = tracks.indexOfFirst { it.uri == item.uri }
         if (index >= 0) {
             exo.seekTo(index, 0L)
@@ -457,10 +507,12 @@ internal class SubsonicPlayer(
         scheduleSavePlayQueue()
     }
 
-    override suspend fun volume(): Double = exo.volume.toDouble()
+    /** The user's own level: during a fade the ramp scales it, [exo] holds the scaled value. */
+    override suspend fun volume(): Double = userVolume.toDouble()
 
     override suspend fun setVolume(level: Double) = withContext(Dispatchers.Main) {
-        exo.volume = level.toFloat().coerceIn(0f, 1f)
+        userVolume = level.toFloat().coerceIn(0f, 1f)
+        if (outgoing == null) exo.volume = userVolume
     }
 
     override suspend fun setSpeed(speed: Double) = withContext(Dispatchers.Main) {
@@ -472,6 +524,132 @@ internal class SubsonicPlayer(
     }
 
     override val localMute: Boolean get() = muted
+
+    // ── Crossfade ──
+
+    /** A player for the outgoing tail: same renderers, no audio focus and no noisy pause of its own. */
+    private fun fadeCopy(gain: Float): ExoPlayer {
+        val trackGain = ReplayGainProcessor().apply { this.gain = gain }
+        return ExoPlayer.Builder(context, subsonicRenderers(context, trackGain))
+            .setAudioAttributes(attributes, /* handleAudioFocus = */ false)
+            .setHandleAudioBecomingNoisy(false)
+            .setWakeMode(C.WAKE_MODE_NETWORK)
+            .build()
+    }
+
+    private fun canCrossfade(seconds: Int): Boolean =
+        seconds > 0 && !startingFade && !preparingFade && outgoing == null &&
+            exo.playWhenReady && exo.isPlaying &&
+            // A song on repeat never hands over, and a queue of one has nothing to hand over to.
+            exo.repeatMode != Media3Player.REPEAT_MODE_ONE &&
+            exo.mediaItemCount > 1 && exo.nextMediaItemIndex != C.INDEX_UNSET &&
+            exo.currentMediaItem != null && exo.currentMediaItemIndex != noFadeFor
+
+    private fun maybeBeginCrossfade() {
+        val seconds = AudioSettings.crossfadeSeconds
+        if (!canCrossfade(seconds)) return
+        val duration = exo.duration.takeIf { it > 0 } ?: return
+        if (!CrossfadeRamp.shouldStart(seconds, duration, exo.currentPosition)) return
+        beginCrossfade(seconds, duration)
+    }
+
+    private fun beginCrossfade(seconds: Int, duration: Long) {
+        val item = exo.currentMediaItem ?: return
+        val index = exo.currentMediaItemIndex
+        val remaining = (duration - exo.currentPosition).coerceAtLeast(0)
+        val fade = minOf(CrossfadeRamp.fadeMs(seconds, duration), remaining)
+        if (fade < MIN_FADE_MS) return
+        val token = Any()
+        fadeToken = token
+        preparingFade = true
+        val copy = fadeCopy(replayGain.gain)
+        copy.volume = 1f
+        // The copy starts a little ahead of the main player: it is heard once it is ready.
+        copy.setMediaItem(item, exo.currentPosition + 300)
+        copy.addListener(object : Media3Player.Listener {
+            private var aligned = false
+
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state != Media3Player.STATE_READY) return
+                // Ready later than its lead (a stream opened at an offset can take a second):
+                // started there, the copy would play again what was just heard. Moved once to
+                // where the main player is, inside what it has loaded, then started.
+                if (!aligned && fadeToken === token && exo.currentMediaItemIndex == index &&
+                    exo.currentPosition + 50 > copy.currentPosition
+                ) {
+                    aligned = true
+                    copy.seekTo(exo.currentPosition + 100)
+                    return
+                }
+                copy.removeListener(this)
+                if (fadeToken !== token) return copy.release()
+                preparingFade = false
+                if (exo.currentMediaItemIndex != index || !exo.playWhenReady || !exo.isPlaying) {
+                    fadeToken = null
+                    return copy.release()
+                }
+                // What is left of the song now, not when the copy was asked for: a longer fade
+                // would run past the copy's end, the next song never reaching full volume.
+                val length = minOf(fade, (exo.duration - exo.currentPosition).coerceAtLeast(0))
+                if (length < MIN_FADE_MS) {
+                    noFadeFor = index
+                    fadeToken = null
+                    return copy.release()
+                }
+                outgoing = copy
+                fadeMs = length
+                copy.play()
+                startingFade = true
+                exo.volume = 0f
+                exo.seekToNextMediaItem()
+                startingFade = false
+                rampTick.run()
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                // Could not open the stream: this song ends as usual.
+                if (fadeToken === token) {
+                    fadeToken = null
+                    preparingFade = false
+                    noFadeFor = index
+                }
+                copy.release()
+            }
+        })
+        copy.prepare()
+        // Not ready in time: no fade for this song.
+        handler.postDelayed({
+            if (fadeToken === token && outgoing == null) {
+                fadeToken = null
+                preparingFade = false
+                noFadeFor = index
+                copy.release()
+            }
+        }, COPY_READY_TIMEOUT_MS)
+    }
+
+    /** Drives the two gains from the incoming song's own position, as the local player does. */
+    private val rampTick = object : Runnable {
+        override fun run() {
+            handler.removeCallbacks(this)
+            val copy = outgoing ?: return
+            val t = CrossfadeRamp.progress(exo.currentPosition, fadeMs)
+            exo.volume = userVolume * CrossfadeRamp.incomingGain(t)
+            copy.volume = CrossfadeRamp.outgoingGain(t)
+            if (t >= 1f) endCrossfade() else handler.postDelayed(this, RAMP_STEP_MS)
+        }
+    }
+
+    /** Ends a fade (done, or interrupted by a seek/skip/pause): the copy goes, the main player is at full volume. */
+    private fun endCrossfade() {
+        handler.removeCallbacks(rampTick)
+        fadeToken = null
+        preparingFade = false
+        val copy = outgoing
+        outgoing = null
+        copy?.let { it.stop(); it.release() }
+        exo.volume = userVolume
+    }
 
     private fun publish() {
         if (tracks.isEmpty()) {

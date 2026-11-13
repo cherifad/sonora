@@ -1,4 +1,4 @@
-package com.adlen.sonora.app.di
+package com.adlen.sonora.audio
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

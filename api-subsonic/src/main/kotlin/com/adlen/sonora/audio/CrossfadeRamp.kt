@@ -1,9 +1,9 @@
-package com.adlen.sonora.app.di
+package com.adlen.sonora.audio
 
 /**
- * Timing and volume curve of the real (overlapping) crossfade of [LocalPlayer], kept pure so it
- * is tested off-device. Equal-power: the two gains' squares add up to 1, so the loudness stays
- * level through the overlap.
+ * Timing and volume curve of the real (overlapping) crossfade shared by the local player and the
+ * Subsonic one, kept pure so it is tested off-device. Equal-power: the two gains' squares add up
+ * to 1, so the loudness stays level through the overlap.
  */
 object CrossfadeRamp {
     /** The overlap for a song of [durationMs] and a setting of [seconds]: never over half the song. */

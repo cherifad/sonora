@@ -215,6 +215,8 @@ fun getCrossfadeSeconds(c: Context): Int =
 
 /** Gives the saved length to the player (at start, and at every change); 0 stops a fade at once. */
 fun applyCrossfade(seconds: Int) {
+    // The Subsonic player reads it from here, so the value is set even before the runtime starts.
+    com.adlen.sonora.audio.AudioSettings.crossfadeSeconds = seconds.coerceAtLeast(0)
     val runtime = com.adlen.sonora.host.android.SonoraRuntime
     if (!runtime.isStarted) return
     runtime.spotify.player.crossfadeSeconds = seconds

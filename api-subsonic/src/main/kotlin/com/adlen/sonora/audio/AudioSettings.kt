@@ -9,4 +9,6 @@ object AudioSettings {
     @Volatile var skipSilence: Boolean = false
     @Volatile var replayGainEnabled: Boolean = true
     @Volatile var replayGainAlbum: Boolean = false
+    /** Crossfade length between two streamed songs, 0 = off (the same preference as the local player). */
+    @Volatile var crossfadeSeconds: Int = 0
 }
