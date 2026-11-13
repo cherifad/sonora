@@ -93,7 +93,7 @@ class DownloadWorker(
         val title = if (remaining > 0) context.resources.getQuantityString(R.plurals.download_notification_count, remaining, remaining)
         else context.getString(R.string.download_notification_downloading)
         val builder = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.msp_ic_notification)
+            .setSmallIcon(R.drawable.sonora_ic_notification)
             .setContentTitle(title)
             .setContentIntent(open)
             .setOngoing(true)

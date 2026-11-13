@@ -433,7 +433,7 @@ class PlaybackService : MediaBrowserServiceCompat() {
         val playing = info?.playing == true
         val episode = info?.episode == true
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.msp_ic_notification)
+            .setSmallIcon(R.drawable.sonora_ic_notification)
             .setContentTitle(info?.title ?: "")
             .setContentText(info?.artist ?: "")
             .setSubText(info?.album)
