@@ -24,6 +24,8 @@ type Config struct {
 	MaxUploadBytes      int64
 	StatePath           string
 	SkipAudioValidation bool
+	RequireTags         bool
+	RequireCover        bool
 }
 
 func env(key, fallback string) string {
@@ -31,6 +33,17 @@ func env(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func envBool(key string, fallback bool) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return fallback
+	}
 }
 
 func main() {
@@ -47,6 +60,8 @@ func main() {
 		ScanAPIKey:     os.Getenv("SCAN_API_KEY"),
 		MaxUploadBytes: 4 << 30,
 		StatePath:      os.Getenv("STATE_PATH"),
+		RequireTags:    envBool("REQUIRE_TAGS", true),
+		RequireCover:   envBool("REQUIRE_COVER_ART", true),
 	}
 	if cfg.Token == "" {
 		log.Fatal("TOKEN is required (generate one with: openssl rand -hex 32)")
@@ -89,10 +104,14 @@ func main() {
 			allowed[user] = true
 		}
 	}
+	var mb *MusicBrainz
+	if envBool("VERIFY_MUSICBRAINZ", true) {
+		mb = NewMusicBrainz(os.Getenv("MUSICBRAINZ_URL"), os.Getenv("MUSICBRAINZ_USER_AGENT"))
+	}
 	server := &Server{
 		cfg: cfg, store: store, scanner: NewScanner(cfg),
 		authClient: authClient, issuer: NewTokenIssuer(cfg.Token, ttl),
-		limiter: newRateLimiter(5, time.Minute), allowedUsers: allowed,
+		limiter: newRateLimiter(5, time.Minute), allowedUsers: allowed, mb: mb,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/exchange", server.handleExchange)

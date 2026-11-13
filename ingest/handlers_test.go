@@ -308,6 +308,29 @@ func TestDeletingAnUploadRemovesTheFileAndTheRecord(t *testing.T) {
 	}
 }
 
+func TestCreateUploadNeedsReviewWhenMusicBrainzDoesNotKnowIt(t *testing.T) {
+	mb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"recordings":[]}`))
+	}))
+	defer mb.Close()
+
+	server, _ := newTestServer(t)
+	server.mb = NewMusicBrainz(mb.URL, "sonora-test/1.0")
+	body := `{"filename":"a.flac","size":5,"sha256":"new-hash","metadata":{"title":"Made Up","artist":"Nobody","album":"Nowhere","durationMs":60000}}`
+	rec := call(server, http.MethodPost, "/uploads", []byte(body), nil, true)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create = %d %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Decision string `json:"decision"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &response)
+	if response.Decision != "needs_review" {
+		t.Fatalf("create response = %s", rec.Body.String())
+	}
+}
+
 func TestAuthIsRequired(t *testing.T) {
 	server, _ := newTestServer(t)
 	rec := call(server, http.MethodPost, "/library/match", []byte(`{}`), nil, false)

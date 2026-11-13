@@ -38,6 +38,16 @@ func normalize(s string) string {
 	return strings.Join(strings.Fields(strings.ToLower(strings.TrimSpace(s))), " ")
 }
 
+// artistLike compares two artist names loosely: "A, B" and "A & B" should not fail the
+// embedded-tag check, and MusicBrainz credits sometimes carry a longer name.
+func artistLike(a, b string) bool {
+	na, nb := normalize(a), normalize(b)
+	if na == "" || nb == "" {
+		return false
+	}
+	return na == nb || strings.Contains(na, nb) || strings.Contains(nb, na)
+}
+
 // Upload is one file being received. Status is one of:
 // uploading, verifying, waiting_scan, done, duplicate, needs_review, failed.
 type Upload struct {

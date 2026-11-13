@@ -365,6 +365,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-08 | 13 | User-facing ingest guide (`docs/INGEST.md`), early-version status, limits | `docs(ingest)` |
 | 2026-11-08 | 13 | Publish the ingest image on GHCR (amd64/arm64), compose pulls it | `ci(ingest)` |
 | 2026-11-08 | 13 | Immersive upload/delete, resume without re-upload, server-side duplicate check | `fix(upload)` |
+| 2026-11-09 | 13 | Admission policy: embedded tags/cover + MusicBrainz, app skips untagged | `feat(ingest)` |
 | 2026-11-08 | 9 | Immersive server and upload editors: styled dialogs, then full pages | `feat(ui)` |
 | 2026-11-08 | 10 | Server rows that need admin rights are hidden for non-admin users | `feat(auth)` |
 | 2026-11-09 | 9 | Profile shows listening stats directly; Spotify profile relics dropped | `feat(profile)` |
@@ -408,6 +409,9 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       after a server check, through the system MediaStore delete dialog (Android 11+).
 - [x] Onboarding: an optional upload step after the server, prefilled with the recommended
       `<server-name>-upload.<domain>` address (or `<host>:8088` for an IP).
+- [x] Admission policy: the app skips files without title/artist/album, the ingest checks the
+      embedded tags and cover with ffprobe and asks MusicBrainz; anything unverified is
+      `needs_review`, never uploaded.
 - [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
       (ffprobe true; short/non-audio rejected).
 - [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.

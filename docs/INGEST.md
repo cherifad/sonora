@@ -131,11 +131,18 @@ fresh upload, and never prompts.
 
 ### What is sent
 
-The app skips obvious non-music before it even queues a file: blank title or artist, files
-between 1 s and 30 s, and the usual voice-note folders (WhatsApp, Telegram, Recordings, call
-recordings, ringtones, alarms, notifications). The ingest enforces the same floor again with
-`ffprobe`: a file shorter than 30 s, without an audio stream, or not audio at all (a ZIP
-renamed `.mp3`, for example) is rejected.
+The app skips obvious non-music before it even queues a file: missing title, artist or album,
+files between 1 s and 30 s, and the usual voice-note folders (WhatsApp, Telegram, Recordings,
+call recordings, ringtones, alarms, notifications). A skipped file gets a `Skipped` badge with
+the reason; it is never sent.
+
+The ingest enforces the same floor again with `ffprobe`: a file shorter than 30 s, without an
+audio stream, or not audio at all (a ZIP renamed `.mp3`, for example) is rejected. With
+`REQUIRE_TAGS` (default), the file's embedded title, artist and album must match the metadata
+the app sent — renaming a file or lying in the request does not pass. With `REQUIRE_COVER_ART`
+(default), the file must carry an embedded cover picture. Finally, `MusicBrainz` must know a
+recording with that title and artist (and a duration within 5 s): a file that only exists in
+the uploader's imagination becomes `Review`, never a library entry.
 
 ### Deduplication
 
@@ -148,6 +155,7 @@ The ingest decides, the app only reports:
 | same MusicBrainz recording id | duplicate | `Uploaded` / `On server` |
 | same normalised title + artist, duration ±2 s | `needs_review` | `Review`, **not uploaded** |
 | same track already in the server's library | `needs_review` | `Review`, **not uploaded** |
+| MusicBrainz does not know the recording | `needs_review` | `Review`, **not uploaded** |
 | otherwise | new | upload |
 
 The ingest checks its own state first (hash, ISRC, MBID), then the server's `search3` index:
@@ -196,6 +204,11 @@ dialog is capped at 2000 files per request.
 | `SCAN_USER` / `SCAN_PASSWORD` | — | Subsonic token auth for scan/verify |
 | `SCAN_API_KEY` | — | Jellyfin API key |
 | `MAX_UPLOAD_BYTES` | 4 GiB | Per-file limit |
+| `REQUIRE_TAGS` | `true` | The embedded title/artist/album must match the upload metadata |
+| `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
+| `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
+| `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
+| `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
 
 The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is documented in
 [`ingest/README.md`](../ingest/README.md).
@@ -207,8 +220,11 @@ The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is document
 - `Scanning` entries are retried on the next worker run; a slow server scan can leave a file
   in that state for a while.
 - One library path and one server per ingest instance.
-- No acoustic fingerprint (Chromaprint) yet: two different masters of the same recording are
-  only caught when their metadata is close (`Review`) or their tags match (duplicate).
+- No acoustic fingerprint (Chromaprint) yet: MusicBrainz proves the tags are plausible, not
+  that the audio is the claimed recording. Two different masters are only caught when their
+  metadata is close (`Review`) or their tags match (duplicate).
+- `REQUIRE_TAGS` and `REQUIRE_COVER_ART` need `ffprobe`; a host run without ffmpeg skips
+  those two checks (the Docker image includes it).
 - Uploads are not transcoded: the server receives the original file.
 - Deleting local copies needs Android 11+.
 - Losing `state.json` does not lose music, but the ingest forgets what it already uploaded;
@@ -220,7 +236,7 @@ The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is document
 |---|---|
 | `401` from the ingest | token expired or `TOKEN` changed; the app re-exchanges on its own, or reconnect from Settings |
 | `no Subsonic endpoint configured` | set `SUBSONIC_URL` (or `SCAN_URL`) |
-| `/health` says `"ffprobe": false` | you run the service outside Docker without ffmpeg; validation falls back to the app duration |
+| `/health` says `"ffprobe": false` | you run the service outside Docker without ffmpeg; duration validation falls back to the app value and the tag/cover checks are skipped |
 | stuck on `Scanning` | `SCAN_URL`, `SCAN_USER`/`SCAN_PASSWORD`; check the ingest logs |
 | `Review` | a close metadata match exists; adjust tags or remove the server copy, then upload again |
 | `On server` when you expected an upload | the hash/ISRC/MBID already exists; that is the intended result |

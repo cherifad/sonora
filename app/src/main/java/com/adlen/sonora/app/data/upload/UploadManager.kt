@@ -30,13 +30,22 @@ object UploadManager {
         "notifications", "ringtones", "alarms", "android/media", "download",
     )
 
-    /** The files the automatic sync may send: music, not voice notes or system sounds. */
-    fun isLikelyMusic(track: LocalTrack): Boolean {
-        if (track.title.isBlank() || track.artist.isBlank()) return false
-        if (track.durationMs in 1 until 30_000) return false
+    /**
+     * Why a file is not worth uploading, or null when it is. The app is strict on purpose:
+     * a file without title, artist and album tags never leaves the phone.
+     */
+    fun skipReason(track: LocalTrack): String? {
+        if (track.title.isBlank() || track.artist.isBlank() || track.album.isBlank()) {
+            return "missing title, artist or album tags"
+        }
+        if (track.durationMs in 1 until 30_000) return "shorter than 30 seconds"
         val folder = track.folder.lowercase()
-        return deniedFolders.none { folder.contains(it) }
+        if (deniedFolders.any { folder.contains(it) }) return "voice note or system folder"
+        return null
     }
+
+    /** The files the automatic sync may send: tagged music, not voice notes or system sounds. */
+    fun isLikelyMusic(track: LocalTrack): Boolean = skipReason(track) == null
 
     /** True when the server still returns the track the ingest registered for this file. */
     suspend fun isOnServer(serverTrackId: String?): Boolean {
@@ -49,12 +58,18 @@ object UploadManager {
 
     fun enqueue(context: Context, tracks: List<LocalTrack>) {
         if (UploadSettings.load(context) == null) return
-        tracks.filter(::isLikelyMusic).forEach { track ->
+        tracks.forEach { track ->
             val key = LocalUploadIndex.key(track)
             val current = LocalUploadIndex.entry(key)
-            // Pressing Upload again must not re-send a file the server already confirmed, or
-            // one waiting for its scan: keep those states and let the worker poll them.
-            if (current == null || current.state == UploadState.FAILED || current.state == UploadState.SKIPPED) {
+            val reason = skipReason(track)
+            if (reason != null) {
+                // Never overwrite a file the server already confirmed, or one waiting for its scan.
+                if (current?.state != UploadState.UPLOADED && current?.state != UploadState.WAITING_SCAN) {
+                    LocalUploadIndex.set(key, UploadEntry(UploadState.SKIPPED, reason = reason))
+                }
+            } else if (current == null || current.state == UploadState.FAILED || current.state == UploadState.SKIPPED) {
+                // Pressing Upload again must not re-send a file the server already confirmed, or
+                // one waiting for its scan: keep those states and let the worker poll them.
                 LocalUploadIndex.set(key, UploadEntry(UploadState.QUEUED))
             }
         }

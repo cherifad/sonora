@@ -8,6 +8,10 @@ Navidrome has no upload by design, and Jellyfin expects files in a scanned folde
 > user-facing guide, including security, dedup rules and known limits, is
 > [`docs/INGEST.md`](../docs/INGEST.md).
 
+The service only accepts files whose embedded title/artist/album match the upload, that carry
+an embedded cover, and whose recording MusicBrainz knows; anything else comes back
+`needs_review` instead of entering the library.
+
 The service receives the file, validates it, deduplicates it, writes it into the music
 folder, triggers the library scan and returns the server track id. The app can then mark
 the local copy as uploaded and, after verification, delete it.
@@ -85,6 +89,11 @@ environment:
 | `SCAN_USER` / `SCAN_PASSWORD` | — | Subsonic token auth |
 | `SCAN_API_KEY` | — | Jellyfin API key |
 | `MAX_UPLOAD_BYTES` | 4 GiB | Per-file limit |
+| `REQUIRE_TAGS` | `true` | Embedded title/artist/album must match the upload metadata |
+| `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
+| `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
+| `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
+| `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
 
 The service has **no TLS of its own**: put it behind Caddy/Traefik or run it on a trusted
 LAN. Never expose it directly to the internet.

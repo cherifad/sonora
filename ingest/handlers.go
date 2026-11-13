@@ -28,6 +28,7 @@ type Server struct {
 	issuer       *TokenIssuer
 	limiter      *rateLimiter
 	allowedUsers map[string]bool
+	mb           *MusicBrainz
 }
 
 func writeJSON(w http.ResponseWriter, code int, value any) {
@@ -211,6 +212,15 @@ func (s *Server) createUpload(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	if s.mb != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		err := s.mb.Verify(ctx, req.Metadata)
+		cancel()
+		if err != nil {
+			writeJSON(w, http.StatusOK, map[string]any{"decision": "needs_review", "reason": err.Error()})
+			return
+		}
+	}
 	upload, match, err := s.store.CreateUpload(req.Filename, req.Size, strings.ToLower(req.SHA256), req.Metadata)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -304,7 +314,7 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	if !s.cfg.SkipAudioValidation {
-		if _, err := validateAudio(tmp, upload.Metadata); err != nil {
+		if _, err := validateAudio(tmp, upload.Metadata, s.cfg.RequireTags, s.cfg.RequireCover); err != nil {
 			_ = os.Remove(tmp)
 			s.store.SetStatus(id, "failed", err.Error())
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
@@ -488,35 +498,58 @@ func sha256File(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-// validateAudio uses ffprobe when present (audio stream, duration) and falls back to the
-// duration the app sent. A file shorter than 30 s is not music for this service.
-func validateAudio(path string, meta Metadata) (int64, error) {
+// validateAudio uses ffprobe when present (audio stream, duration, embedded tags and cover)
+// and falls back to the duration the app sent. A file shorter than 30 s is not music for this
+// service; with requireTags/requireCover the file must also carry the tags it claims and a
+// picture stream.
+func validateAudio(path string, meta Metadata, requireTags, requireCover bool) (int64, error) {
 	if ffprobe, err := exec.LookPath("ffprobe"); err == nil && ffprobe != "" {
 		cmd := exec.Command(ffprobe, "-v", "error",
-			"-show_entries", "format=duration:stream=codec_type", "-of", "json", path)
+			"-show_entries", "format=duration:format_tags=title,artist,album,album_artist:stream=codec_type:stream_disposition=attached_pic",
+			"-of", "json", path)
 		out, err := cmd.Output()
 		if err != nil {
 			return 0, fmt.Errorf("ffprobe: %w", err)
 		}
 		var probe struct {
 			Format struct {
-				Duration string `json:"duration"`
+				Duration string            `json:"duration"`
+				Tags     map[string]string `json:"tags"`
 			} `json:"format"`
 			Streams []struct {
-				CodecType string `json:"codec_type"`
+				CodecType   string `json:"codec_type"`
+				Disposition struct {
+					AttachedPic int `json:"attached_pic"`
+				} `json:"disposition"`
 			} `json:"streams"`
 		}
 		if err := json.Unmarshal(out, &probe); err != nil {
 			return 0, fmt.Errorf("ffprobe output: %w", err)
 		}
-		audio := false
+		audio, cover := false, false
 		for _, stream := range probe.Streams {
 			if stream.CodecType == "audio" {
 				audio = true
 			}
+			if stream.CodecType == "video" && stream.Disposition.AttachedPic == 1 {
+				cover = true
+			}
 		}
 		if !audio {
 			return 0, errors.New("not an audio file")
+		}
+		if requireCover && !cover {
+			return 0, errors.New("no embedded cover art")
+		}
+		if requireTags {
+			title := tagValue(probe.Format.Tags, "title")
+			artist := tagValue(probe.Format.Tags, "artist")
+			album := tagValue(probe.Format.Tags, "album")
+			if normalize(title) != meta.normalizedTitle() ||
+				!artistLike(artist, meta.Artist) ||
+				(meta.Album != "" && normalize(album) != normalize(meta.Album)) {
+				return 0, errors.New("the file tags do not match the uploaded metadata")
+			}
 		}
 		seconds, _ := strconv.ParseFloat(probe.Format.Duration, 64)
 		ms := int64(seconds * 1000)
@@ -529,6 +562,16 @@ func validateAudio(path string, meta Metadata) (int64, error) {
 		return 0, fmt.Errorf("too short (%d ms)", meta.DurationMs)
 	}
 	return meta.DurationMs, nil
+}
+
+// tagValue reads an ffprobe tag whatever case the container uses for its keys.
+func tagValue(tags map[string]string, key string) string {
+	for k, v := range tags {
+		if strings.EqualFold(k, key) {
+			return v
+		}
+	}
+	return ""
 }
 
 func uniquePath(root, rel string) string {
