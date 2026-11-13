@@ -77,6 +77,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import com.adlen.sonora.engine.R
 import com.adlen.sonora.power.BatteryExemption
@@ -92,18 +93,23 @@ import com.adlen.sonora.app.ui.navigation.isImmersive
 object Setup {
     private const val KEY = "SetupDone"
     private const val EXTENSIONS_KEY = "SetupExtensionsSeen"
+    private const val UPLOAD_KEY = "SetupUploadSeen"
     /** The permissions step, the sound quality one, the look one or the extensions one (each new step is shown once after the update too). */
     fun needed(context: Context): Boolean {
         if (com.adlen.sonora.host.android.SonoraRuntime.isSubsonic) {
             val server = com.adlen.sonora.subsonic.SubsonicSettings.load(context) != null
             return !server || !permissionsDone(context) ||
-                !com.adlen.sonora.app.data.preferences.LookPref.isChosen(context)
+                !com.adlen.sonora.app.data.preferences.LookPref.isChosen(context) || !uploadSeen(context)
         }
         return !permissionsDone(context) || !com.adlen.sonora.app.data.preferences.isQualityChosen(context) ||
             !com.adlen.sonora.app.data.preferences.LookPref.isChosen(context) || !extensionsSeen(context)
     }
     fun permissionsDone(context: Context) = prefs(context).getBoolean(KEY, false)
     fun done(context: Context) = prefs(context).edit().putBoolean(KEY, true).apply()
+    /** The companion ingest was offered (connected or skipped); a connected target counts too. */
+    fun uploadSeen(context: Context) = prefs(context).getBoolean(UPLOAD_KEY, false) ||
+        com.adlen.sonora.app.data.upload.UploadSettings.load(context) != null
+    fun setUploadSeen(context: Context) = prefs(context).edit().putBoolean(UPLOAD_KEY, true).apply()
     fun extensionsSeen(context: Context) = prefs(context).getBoolean(EXTENSIONS_KEY, false)
     fun setExtensionsSeen(context: Context) = prefs(context).edit().putBoolean(EXTENSIONS_KEY, true).apply()
     private fun prefs(context: Context) = context.getSharedPreferences("sonora_prefs", Context.MODE_PRIVATE)
@@ -131,10 +137,14 @@ fun SetupScreen(onDone: () -> Unit) {
     val needExtensions = remember { !subsonic && !Setup.extensionsSeen(context) }
     val needIntro = !subsonic && needPerms
     val needServer = subsonic && com.adlen.sonora.subsonic.SubsonicSettings.load(context) == null
+    // The companion ingest is optional, but a fresh install is asked once: skipping it is one
+    // tap, and the step is gone for good once a target is connected (Settings keeps the row).
+    val needUpload = remember { subsonic && !Setup.uploadSeen(context) }
     val order = remember {
         listOfNotNull(
             STEP_SERVER.takeIf { needServer }, STEP_INTRO.takeIf { needIntro }, STEP_LOOK.takeIf { needLook },
             STEP_QUALITY.takeIf { needQuality }, STEP_STORAGE.takeIf { needStorage },
+            STEP_UPLOAD.takeIf { needUpload },
             STEP_PERMISSIONS.takeIf { needPerms },
             STEP_EXTENSIONS.takeIf { needExtensions },
         ).ifEmpty { listOf(STEP_SERVER, STEP_LOOK, STEP_PERMISSIONS) }
@@ -183,6 +193,10 @@ fun SetupScreen(onDone: () -> Unit) {
                         com.adlen.sonora.app.data.preferences.setQualityChosen(context)
                         next()
                     })
+                    STEP_UPLOAD -> UploadStep(onNext = {
+                        Setup.setUploadSeen(context)
+                        next()
+                    })
                     STEP_EXTENSIONS -> ExtensionsStep(
                         onBrowse = {
                             Setup.setExtensionsSeen(context)
@@ -205,6 +219,7 @@ private const val STEP_EXTENSIONS = 3
 private const val STEP_PERMISSIONS = 4
 private const val STEP_SERVER = 5
 private const val STEP_STORAGE = 6
+private const val STEP_UPLOAD = 7
 
 /** Where the user is in the steps: the current one a longer green dash. */
 @Composable
@@ -488,4 +503,42 @@ private fun CardTitle(text: String) {
 private fun CardDetail(text: String, lineHeight: androidx.compose.ui.unit.TextUnit = 18.sp) {
     if (isImmersive()) Text(text, style = Immersive.Caption.copy(fontSize = 13.sp, lineHeight = lineHeight))
     else Text(text, color = AppMuted, fontSize = 13.sp, lineHeight = lineHeight)
+}
+
+/** Onboarding (Subsonic): the optional companion ingest, the address prefilled from the server. */
+@Composable
+private fun UploadStep(onNext: () -> Unit) {
+    val context = LocalContext.current
+    val immersive = isImmersive()
+    val server = com.adlen.sonora.subsonic.SubsonicSettings.load(context)
+    val suggestion = com.adlen.sonora.app.data.upload.UploadSettings.suggestUrl(server?.baseUrl.orEmpty())
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        var row = 0
+        SetupTitle(stringResource(R.string.setup_upload_title), Modifier.riseIn(row++))
+        SetupSubtitle(stringResource(R.string.setup_upload_subtitle, suggestion), Modifier.riseIn(row++))
+        Spacer(Modifier.height(8.dp))
+        Column(Modifier.riseIn(row++)) {
+            com.adlen.sonora.app.ui.components.UploadConnectForm(
+                initialUrl = com.adlen.sonora.app.data.upload.UploadSettings.url(context)
+                    ?: com.adlen.sonora.app.data.upload.UploadSettings.load(context)?.baseUrl
+                    ?: suggestion,
+                onConnected = {},
+                immersive = immersive,
+                trailing = { connected ->
+                    TextButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            if (connected) stringResource(R.string.setup_continue)
+                            else stringResource(R.string.setup_upload_skip),
+                            style = if (immersive) Immersive.BodyStrong.copy(color = Immersive.TextSecondary)
+                            else TextStyle(fontFamily = com.adlen.sonora.app.ui.theme.AppSans),
+                            color = if (immersive) Immersive.TextSecondary else AppMuted,
+                        )
+                    }
+                },
+            )
+        }
+    }
 }

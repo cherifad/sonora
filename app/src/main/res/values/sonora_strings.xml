@@ -211,6 +211,9 @@
     <string name="setup_battery_detail">Music keeps playing with the screen off</string>
     <string name="setup_enable">Allow</string>
     <string name="setup_continue">Continue</string>
+    <string name="setup_upload_title">Send your own files to the server</string>
+    <string name="setup_upload_subtitle">Optional. The companion ingest service runs next to your server: run it, then connect it here and Sonora can send the music already on this phone to your library. Recommended address: %1$s</string>
+    <string name="setup_upload_skip">Skip for now</string>
     <string name="setup_intro_title">How Sonora works</string>
     <string name="setup_intro_subtitle">Three things to know before you start.</string>
     <string name="setup_intro_spotify_title">Spotify, without the ads</string>

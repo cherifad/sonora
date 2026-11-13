@@ -72,25 +72,27 @@ Release tags publish the matching version (`ghcr.io/cherifad/sonora-ingest:1.5.0
 
 ### Recommended name
 
-Give the service its own name next to the server, not a random host:
+Give the service its own name on the domain the server already uses:
 
 ```
-<server-name>-upload.<domain>
+navidrome-ingest.<domain>
 ```
 
-Examples:
+The app derives it from the server address, whatever the server is called:
 
 | Server | Ingest |
 |---|---|
-| `https://music.example.com` | `https://music-upload.example.com` |
-| `https://navidrome.example.com` | `https://navidrome-upload.example.com` |
+| `https://musics.example.com` | `https://navidrome-ingest.example.com` |
+| `https://jellyfin.example.com` | `https://navidrome-ingest.example.com` |
+| `https://music.example.co.uk` | `https://navidrome-ingest.example.co.uk` |
 | `http://192.168.1.20:4533` | `http://192.168.1.20:8088` |
 
-The onboarding and the Settings field prefill this address for you. Put the ingest behind the
-same reverse proxy as the server, with TLS:
+The onboarding step and the Settings field prefill this address, always over HTTPS for a
+registered name (an address on the LAN, an IP or a bare host name, keeps plain HTTP). Put the
+ingest behind the same reverse proxy as the server, with TLS:
 
 ```caddyfile
-music-upload.example.com {
+navidrome-ingest.example.com {
     reverse_proxy 127.0.0.1:8088
 }
 ```

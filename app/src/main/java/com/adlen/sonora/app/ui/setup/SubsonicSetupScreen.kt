@@ -55,8 +55,6 @@ import com.adlen.sonora.subsonic.SubsonicFailure
 import com.adlen.sonora.subsonic.SubsonicSettings
 import com.adlen.sonora.app.data.preferences.Look
 import com.adlen.sonora.app.data.preferences.LookPref
-import com.adlen.sonora.app.data.upload.UploadSettings
-import com.adlen.sonora.app.ui.components.UploadConnectForm
 import com.adlen.sonora.app.ui.immersive.Immersive
 import com.adlen.sonora.app.ui.immersive.components.ImmersiveButton
 import com.adlen.sonora.app.ui.immersive.pages.ImmersivePage
@@ -66,100 +64,6 @@ import com.adlen.sonora.app.ui.theme.AppMuted
 import com.adlen.sonora.app.ui.theme.AppSans
 import com.adlen.sonora.app.ui.theme.AppText
 import kotlinx.coroutines.launch
-
-/** First-run setup: no Spotify login, just the Subsonic server, then the optional upload target. */
-@Composable
-fun SubsonicSetupScreen(onDone: () -> Unit) {
-    val context = LocalContext.current
-    val immersive = LookPref.look == Look.IMMERSIVE
-    var step by remember { mutableStateOf(0) }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (immersive) Immersive.Page else AppBackground)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            if (step == 0) {
-                if (immersive) {
-                    Text(text = "Connect to your server", style = Immersive.LargeTitle)
-                } else {
-                    Text(
-                        text = "Connect to your server",
-                        color = AppText,
-                        fontFamily = AppSans,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 30.sp,
-                    )
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = "Subsonic / OpenSubsonic. Jellyfin + Subfin: http://<host>:8096/subfin/ — Navidrome: http://<host>:4533/",
-                    style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 14.sp, lineHeight = 20.sp),
-                    color = if (immersive) Immersive.TextSecondary else AppMuted,
-                )
-                Spacer(Modifier.height(24.dp))
-                SubsonicServerForm(
-                    initial = SubsonicSettings.load(context),
-                    onCancel = null,
-                    onSaved = { step = 1 },
-                )
-            } else {
-                val server = SubsonicSettings.load(context)
-                val suggestion = UploadSettings.suggestUrl(server?.baseUrl.orEmpty())
-                val suggestedHost = suggestion.removePrefix("http://").removePrefix("https://").substringBefore('/')
-                val rule = if (suggestedHost.contains("-upload.")) {
-                    "your server name with -upload before the domain"
-                } else {
-                    "the same host on port 8088"
-                }
-                if (immersive) {
-                    Text(text = "Upload your music (optional)", style = Immersive.LargeTitle)
-                } else {
-                    Text(
-                        text = "Upload your music (optional)",
-                        color = AppText,
-                        fontFamily = AppSans,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 30.sp,
-                    )
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = "Run the companion ingest service next to your server, then connect it here so Sonora " +
-                        "can send your local files to the library. Recommended address: $suggestion ($rule).",
-                    style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 14.sp, lineHeight = 20.sp),
-                    color = if (immersive) Immersive.TextSecondary else AppMuted,
-                )
-                Spacer(Modifier.height(24.dp))
-                UploadConnectForm(
-                    initialUrl = UploadSettings.load(context)?.baseUrl
-                        ?: UploadSettings.url(context)
-                        ?: suggestion,
-                    onConnected = {},
-                    immersive = immersive,
-                    trailing = { connected ->
-                        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                if (connected) "Continue" else "Skip for now",
-                                style = if (immersive) Immersive.BodyStrong.copy(color = Immersive.TextSecondary) else TextStyle(fontFamily = AppSans),
-                                color = if (immersive) Immersive.TextSecondary else AppMuted,
-                            )
-                        }
-                    },
-                )
-            }
-        }
-    }
-}
 
 /** Re-open the server form from Settings. */
 @Composable
