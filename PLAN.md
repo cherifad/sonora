@@ -201,7 +201,9 @@ clear "not supported by this server", never an empty screen.
       screen has "Normalize volume" and "Use album gain".
 - [x] `EqualizerProcessor` moved to `api-subsonic` so the Subsonic player uses the same
       chain as the local player: equalizer, ReplayGain, skip-silence.
-- [ ] Crossfade in `SubsonicPlayer` (the local player's two-player ramp is not shared).
+- [x] Crossfade in `SubsonicPlayer`: `CrossfadeRamp` moved to `api-subsonic`, and a second
+      player carries the outgoing tail while the main one fades the next song in. The setting
+      is the local player's, pushed through `AudioSettings`.
 - [ ] Buffer tuning + pre-cache the next track on Wi-Fi.
 - [ ] Audio offload where the device supports it.
 - [x] Tests: ReplayGain math (track/album/peak cap), `replayGain` mapping, the moved
@@ -367,6 +369,8 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-08 | 10 | Server rows that need admin rights are hidden for non-admin users | `feat(auth)` |
 | 2026-11-09 | 9 | Profile shows listening stats directly; Spotify profile relics dropped | `feat(profile)` |
 | 2026-11-13 | 1 | Device pass on the phone emulator (Home, album, playback, Settings) and the R8 release build | `test(device)` |
+| 2026-11-13 | 1 | Media notification and download notification use Sonora's bars; the Myspoti wave leaves the APK | `fix(ui)` |
+| 2026-11-13 | 6 | Crossfade on streamed albums: shared `CrossfadeRamp`, second player for the outgoing tail, pause/seek/skip safety | `feat(subsonic)` |
 
 ## Decisions and risks
 
