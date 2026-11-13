@@ -35,6 +35,8 @@ object Immersive {
     val GlassEdge = Color.White.copy(alpha = 0.12f)
     /** The red of a destructive swipe, menu entry or confirmation (Leave, Remove, an error). */
     val Destructive = Color(0xFFFF453A)
+    /** A confirmed action (an upload target connected, a server saved). */
+    val Success = Color(0xFF32D74B)
 
     // Shapes.
     val CoverSmall: Shape = RoundedCornerShape(6.dp)

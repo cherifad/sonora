@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -154,22 +156,8 @@ fun UploadConnectForm(
                 },
             )
         }
-        connectedAs?.let {
-            Text(
-                it,
-                style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 13.sp),
-                color = if (immersive) Immersive.Accent else AppAccent,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        error?.let {
-            Text(
-                it,
-                style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 13.sp),
-                color = if (immersive) Immersive.Destructive else Color(0xFFFF6B6B),
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
+        connectedAs?.let { OutcomeText(it, success = true, immersive = immersive) }
+        error?.let { OutcomeText(it, success = false, immersive = immersive) }
         Spacer(Modifier.height(12.dp))
         Button(
             onClick = {
@@ -225,5 +213,43 @@ fun UploadConnectForm(
             }
         }
         trailing(connectedAs != null)
+    }
+}
+
+/**
+ * The result of Connect, readable at a glance: a green tick for a connected target, a red
+ * warning for a failure, each on its own tinted band. The accent alone was too close to the
+ * error red to tell them apart.
+ */
+@Composable
+private fun OutcomeText(text: String, success: Boolean, immersive: Boolean) {
+    val color = when {
+        success && immersive -> Immersive.Success
+        success -> Color(0xFF3DDC84)
+        immersive -> Immersive.Destructive
+        else -> Color(0xFFFF6B6B)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(color.copy(alpha = 0.14f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = if (success) "\u2713" else "\u26A0",
+            color = color,
+            style = if (immersive) Immersive.Subhead.copy(fontWeight = FontWeight.Bold)
+                else TextStyle(fontFamily = AppSans, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+        )
+        Spacer(Modifier.size(8.dp))
+        Text(
+            text = text,
+            color = color,
+            style = if (immersive) Immersive.Subhead else TextStyle(fontFamily = AppSans, fontSize = 13.sp),
+            modifier = Modifier.weight(1f),
+        )
     }
 }
