@@ -122,7 +122,7 @@
     <string name="color_purple">Purple</string>
     <string name="color_pink">Pink</string>
     <string name="color_orange">Orange</string>
-    <string name="about_detail">Version, Discord community, source code</string>
+    <string name="about_detail">Version, source code, updates</string>
     <string name="about_github">Source code</string>
     <string name="about_github_detail">Releases, issues and code on GitHub</string>
     <string name="about_free">Free, open source and without ads. A fork of Myspoti, under GPL-3.0.</string>
