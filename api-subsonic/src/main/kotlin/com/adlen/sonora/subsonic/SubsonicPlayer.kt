@@ -2,6 +2,8 @@
 package com.adlen.sonora.subsonic
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri as AndroidUri
 import android.os.Handler
 import android.os.Looper
@@ -91,10 +93,30 @@ internal class SubsonicPlayer(
         .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
         .build()
 
+    /**
+     * A stream needs more slack than a local file: 20 s in hand before playing, 90 s at most so
+     * the next song of a queue starts buffering well before it is needed, and 30 s kept behind
+     * so a skip back replays from memory or disk instead of the network.
+     */
+    private val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+        .setBufferDurationsMs(
+            /* minBufferMs = */ 20_000,
+            /* maxBufferMs = */ 90_000,
+            /* bufferForPlaybackMs = */ 2_500,
+            /* bufferForPlaybackAfterRebufferMs = */ 5_000,
+        )
+        .setBackBuffer(/* backBufferDurationMs = */ 30_000, /* retainBackBufferFromKeyframe = */ false)
+        .setPrioritizeTimeOverSizeThresholds(true)
+        .build()
+
     private val exo = ExoPlayer.Builder(context, subsonicRenderers(context, replayGain))
         .setAudioAttributes(attributes, /* handleAudioFocus = */ true)
         .setHandleAudioBecomingNoisy(true)
         .setWakeMode(C.WAKE_MODE_NETWORK)
+        .setLoadControl(loadControl)
+        // Read every stream through a bounded disk cache: replays, seeks back and the next song
+        // of the queue then cost no network. The key is the song's own URI, not the stream URL.
+        .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(StreamCache.playerSource(context)))
         .build()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -130,6 +152,15 @@ internal class SubsonicPlayer(
     private var userVolume = 1f
     private val handler = Handler(Looper.getMainLooper())
 
+    // ── Next-song warm-up ──
+    // On an unmetered network, the next item of the queue is written to the disk cache in the
+    // background, so the transition starts from the phone instead of the server.
+    private var prefetchFor: String? = null
+    private var prefetch: Job? = null
+    private var prefetchWriter: StreamCache.Prefetch? = null
+    /** The last song fully written to the cache, so its key is not re-read from disk every tick. */
+    private var prefetched: String? = null
+
     init {
         exo.skipSilenceEnabled = AudioSettings.skipSilence
         exo.addListener(object : Media3Player.Listener {
@@ -161,6 +192,7 @@ internal class SubsonicPlayer(
                 applyReplayGain()
                 publish()
                 maybeBeginCrossfade()
+                maybePrefetchNext()
                 checkScrobbleAndPeriodicSave()
             }
         }
@@ -651,6 +683,69 @@ internal class SubsonicPlayer(
         exo.volume = userVolume
     }
 
+    // ── Next-song warm-up ──
+
+    /** True when the current network does not charge by the byte (Wi-Fi, Ethernet) and is up. */
+    private fun isUnmetered(): Boolean = runCatching {
+        val manager = context.getSystemService(ConnectivityManager::class.java) ?: return false
+        manager.getNetworkCapabilities(manager.activeNetwork)
+            ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+    }.getOrDefault(false)
+
+    private fun maybePrefetchNext() {
+        val index = exo.nextMediaItemIndex
+        val config = if (index == C.INDEX_UNSET) null else exo.getMediaItemAt(index).localConfiguration
+        val key = config?.customCacheKey
+        val uri = config?.uri
+        val wanted = key != null && uri != null && Precache.wanted(
+            unmetered = isUnmetered(),
+            hasNext = true,
+            cached = false,
+            playing = exo.isPlaying,
+            // A song still filling its buffer keeps the whole link: the warm-up would slow it.
+            loading = exo.isLoading,
+        )
+        if (!wanted) {
+            // A warm-up never outlives its reason: a pause, a metered network, a song still
+            // buffering or no next song all end it, and it starts again when they clear.
+            if (prefetchFor != null) stopPrefetch()
+            return
+        }
+        if (prefetchFor == key || prefetched == key) return
+        stopPrefetch()
+        prefetchFor = key
+        prefetch = scope.launch(Dispatchers.IO) {
+            // The cache index is a database: it is never read from the main thread (an ANR).
+            if (StreamCache.isCached(context, key)) {
+                withContext(Dispatchers.Main) {
+                    prefetched = key
+                    prefetchFor = null
+                }
+                return@launch
+            }
+            val writer = StreamCache.prefetch(context, key, uri)
+            withContext(Dispatchers.Main) {
+                if (prefetchFor == key) prefetchWriter = writer else writer.cancel()
+            }
+            writer.run()
+            withContext(Dispatchers.Main) {
+                if (prefetchFor == key) {
+                    prefetched = key
+                    prefetchFor = null
+                }
+                prefetchWriter = null
+            }
+        }
+    }
+
+    private fun stopPrefetch() {
+        prefetchFor = null
+        prefetchWriter?.cancel()
+        prefetchWriter = null
+        prefetch?.cancel()
+        prefetch = null
+    }
+
     private fun publish() {
         if (tracks.isEmpty()) {
             _state.value = null
@@ -698,6 +793,7 @@ internal class SubsonicPlayer(
         return MediaItem.Builder()
             .setMediaId(uri)
             .setUri(client.streamUrl(id()))
+            .setCustomCacheKey(uri)
             .setMediaMetadata(metadata)
             .build()
     }

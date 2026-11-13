@@ -24,6 +24,8 @@ dependencies {
     implementation(libs.security.crypto)
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-common:1.8.0")
+    implementation("androidx.media3:media3-datasource:1.8.0")
+    implementation("androidx.media3:media3-database:1.8.0")
 
     testImplementation("junit:junit:4.13.2")
     // The real org.json on the JVM (the Android stub throws in unit tests).
