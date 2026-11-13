@@ -46,3 +46,7 @@ docs/RESTE-A-FAIRE.md
 tools/handoff_state.sh
 REDDIT-*.md
 tools/qa-results/
+
+ingest/music/
+.agents/
+skills-lock.json
