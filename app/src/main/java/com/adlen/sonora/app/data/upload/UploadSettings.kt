@@ -51,29 +51,50 @@ object UploadSettings {
         cached = null
     }
 
+    /**
+     * A URL the way it is stored: without a trailing slash, and with a scheme. An address that
+     * only works on the LAN (an IP, localhost, a bare host name) keeps plain HTTP; a public name
+     * is served over TLS, so a typed `ingest.example.com` becomes `https://ingest.example.com`
+     * even when the user does not say so.
+     */
     fun normalize(url: String): String {
-        var value = url.trim().trimEnd('/')
-        if (!value.startsWith("http://") && !value.startsWith("https://")) value = "http://$value"
-        return value
+        val value = url.trim().trimEnd('/')
+        if (value.startsWith("http://") || value.startsWith("https://")) return value
+        val host = value.substringBefore('/').substringBefore(':')
+        val local = host.isBlank() || host == "localhost" || value.startsWith("[") ||
+            !host.contains('.') || host.endsWith(".local") || IPV4.matches(host)
+        return (if (local) "http://" else "https://") + value
     }
 
+    private val IPV4 = Regex("""\d{1,3}(\.\d{1,3}){3}""")
+    /** The country-style second levels that belong to the domain, not to the server name. */
+    private val SECOND_LEVELS = setOf("co", "com", "org", "net", "gov", "edu", "ac")
+
     /**
-     * A sensible ingest address for a music server: the same host name with `-upload`
-     * before the domain (`music.example.com` -> `music-upload.example.com`). A bare IP or
-     * a single-label host keeps the host and takes the ingest default port.
+     * A sensible ingest address for a music server: `navidrome-ingest` on the domain the server
+     * already uses. `music.example.com` and `jellyfin.example.com` both suggest
+     * `navidrome-ingest.example.com`, which is the name people register for the companion
+     * service; a bare address (an IP, a single label) keeps the host and the ingest default port.
+     *
+     * The suggestion is HTTPS: a registered name is published behind TLS, so the user does not
+     * have to think about the scheme.
      */
     fun suggestUrl(serverBaseUrl: String): String {
-        if (serverBaseUrl.isBlank()) return "http://<ingest-host>:8088"
-        val uri = runCatching { java.net.URI(normalize(serverBaseUrl)) }.getOrNull()
-            ?: return "http://<ingest-host>:8088"
-        val scheme = if (uri.scheme == "https") "https" else "http"
-        val host = uri.host?.takeIf { it.isNotBlank() } ?: return "http://<ingest-host>:8088"
-        val ipv4 = Regex("""\d{1,3}(\.\d{1,3}){3}""")
-        if (host.contains(':') || ipv4.matches(host)) return "http://$host:8088"
-        val labels = host.split('.').filter { it.isNotBlank() }
-        if (labels.size < 2) return "http://$host:8088"
-        val suggested = labels.first() + "-upload." + labels.drop(1).joinToString(".")
-        return "$scheme://$suggested"
+        val fallback = "http://<ingest-host>:8088"
+        if (serverBaseUrl.isBlank()) return fallback
+        val uri = runCatching { java.net.URI(normalize(serverBaseUrl)) }.getOrNull() ?: return fallback
+        val host = uri.host?.takeIf { it.isNotBlank() } ?: return fallback
+        if (host.contains(':') || IPV4.matches(host) || !host.contains('.')) return "http://$host:8088"
+        return "https://navidrome-ingest." + rootDomain(host)
+    }
+
+    /** The registrable part of a host: `musics.servperso.me` and `jellyfin.example.com` give `servperso.me` and `example.com`. */
+    private fun rootDomain(host: String): String {
+        val labels = host.lowercase().split('.').filter { it.isNotBlank() }
+        if (labels.size <= 2) return labels.joinToString(".")
+        val secondLast = labels[labels.size - 2]
+        val take = if (secondLast.length == 2 && secondLast in SECOND_LEVELS) 3 else 2
+        return labels.takeLast(take).joinToString(".")
     }
 
     private fun prefs(context: Context): SharedPreferences {
