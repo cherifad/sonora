@@ -103,8 +103,8 @@ tools see becomes Sonora.
 - [x] `grep -ri myspoti` returns only the deliberate exceptions above.
 - [x] `grep -ri "app.myspoti\|com.music.spotui\|com.myspoti"` returns nothing.
 - [x] Unit tests and both debug APKs build.
-- [ ] Install the phone APK on the emulator; Home, an album, playback, Settings open.
-- [ ] Check the signed release path (R8) still builds.
+- [x] Install the phone APK on the emulator; Home, an album, playback, Settings open.
+- [x] Check the signed release path (R8) still builds.
 
 **Done when:** the code, manifest, resources and tools contain no `myspoti`/`spotui`
 identifiers, the app builds, and the attribution files are untouched.
@@ -363,6 +363,10 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-08 | 13 | User-facing ingest guide (`docs/INGEST.md`), early-version status, limits | `docs(ingest)` |
 | 2026-11-08 | 13 | Publish the ingest image on GHCR (amd64/arm64), compose pulls it | `ci(ingest)` |
 | 2026-11-08 | 13 | Immersive upload/delete, resume without re-upload, server-side duplicate check | `fix(upload)` |
+| 2026-11-08 | 9 | Immersive server and upload editors: styled dialogs, then full pages | `feat(ui)` |
+| 2026-11-08 | 10 | Server rows that need admin rights are hidden for non-admin users | `feat(auth)` |
+| 2026-11-09 | 9 | Profile shows listening stats directly; Spotify profile relics dropped | `feat(profile)` |
+| 2026-11-13 | 1 | Device pass on the phone emulator (Home, album, playback, Settings) and the R8 release build | `test(device)` |
 
 ## Decisions and risks
 

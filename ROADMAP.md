@@ -22,15 +22,15 @@ in its device-check phase.
 - [x] Native setup screen shown on first run (and reachable from Settings → Server, the cloud icon, or the profile menu):
       URL, username/password, **Test connection** (`ping`), save, error states.
 - [x] Token auth (`u`, `t = md5(password + salt)`, `s`) instead of the plain `p=`.
-- [ ] API-key auth when the server advertises `apiKeyAuthentication` (OpenSubsonic).
-- [ ] Capability probe (`getOpenSubsonicExtensions`, server type/version) and a typed
+- [x] API-key auth when the server advertises `apiKeyAuthentication` (OpenSubsonic).
+- [x] Capability probe (`getOpenSubsonicExtensions`, server type/version) and a typed
       error model (`Auth`, `NotFound`, `Server`, `Network`).
 - [x] Remove the hard-coded `10.0.2.2:4533` / `admin` / `admin` defaults (the runtime
       starts with a placeholder only until setup is saved).
 - [x] Subsonic onboarding, **one sequence**: server step (integrated, step 1 of the dots) →
       look choice (Immersive/Classic) → permissions (notifications/Bluetooth/battery); the
       Spotify intro, streaming-quality and extensions steps are skipped.
-- [ ] Trust-on-first-use for self-signed TLS, with an explicit warning for HTTP.
+- [x] Trust-on-first-use for self-signed TLS, with an explicit warning for HTTP.
 
 **Done when:** a fresh install asks for a server, connects to Jellyfin + Subfin and
 Navidrome, shows a useful error on bad credentials, and no credential is hard-coded.
@@ -104,7 +104,7 @@ buttons work, and the queue survives process death.
 - [x] Lyrics (`SubsonicExtras.lyrics`): OpenSubsonic `getLyricsBySongId` (synced + plain)
       with classic `getLyrics` fallback (plus LRCLIB fallback in `LyricsApi`).
 - [x] Recents (`SubsonicRecents`): `getAlbumList2?type=recent`.
-- [ ] Ratings (`setRating`) behind capability detection.
+- [x] Ratings (`setRating`) behind capability detection.
 
 **Done when:** all mutations round-trip against Jellyfin and Navidrome.
 
@@ -200,7 +200,7 @@ The delivery tracker is [`PLAN.md`](PLAN.md); this is the summary.
 - [x] Encrypted server credentials, logout cleanup, HTTP warning.
 - [x] Contract/fault tests, R8 release gate in CI, bug-report template.
 - [ ] Cast a Subsonic stream, Wear OS.
-- [ ] Capability-matrix CI, upgrade/migration test, opt-in diagnostics.
+- [ ] Capability-matrix CI, upgrade/migration test.
 - [ ] Store metadata, source publication, signed release tag.
 
 ## Non-goals
