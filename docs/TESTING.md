@@ -299,9 +299,15 @@ Il affiche le type/version du serveur, les extensions OpenSubsonic et OK/FAIL/WA
 `--insecure` accepte le certificat auto-signé d'un serveur de test. À lancer contre Navidrome,
 Jellyfin+Subfin, Gonic et Airsonic avant une release.
 
-Le job **contract** de `.github/workflows/ci.yml` le fait à chaque push : il démarre un vrai
-Navidrome dans le runner et échoue si un endpoint requis ne répond plus. Jellyfin et la passe
-émulateur restent manuels.
+Les jobs **contract** (Navidrome) et **contract-jellyfin** (Jellyfin + Subfin) de
+`.github/workflows/ci.yml` le font à chaque push et échouent si un endpoint requis ne répond
+plus. La passe émulateur reste manuelle.
+
+Le second job installe le plugin Subfin dans `/config/plugins`, puis
+`tools/jellyfin_ci.py` complète l'assistant d'installation, crée la bibliothèque et lie un
+appareil Subsonic — seule façon d'obtenir un mot de passe, Jellyfin ne l'accepte pas. Le
+serveur Subsonic de Subfin est à la **racine** (`http://host:8096`), `/subfin/` n'étant que le
+gestionnaire d'appareils.
 
 ## Vérifications manuelles des surfaces plateforme
 

@@ -46,6 +46,46 @@ jobs:
         if: failure()
         run: docker logs navidrome
 
+  # Jellyfin + Subfin, the other production target. The plugin is not in the image: it is
+  # downloaded from its release and read from /config/plugins at startup.
+  contract-jellyfin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Subfin plugin
+        run: |
+          mkdir -p "$RUNNER_TEMP/jellyfin/config/plugins/subfin" \
+                   "$RUNNER_TEMP/jellyfin/cache" "$RUNNER_TEMP/jellyfin/music"
+          curl -fsSL -o "$RUNNER_TEMP/subfin.zip" \
+            https://github.com/williamkray/subfin-plugin/releases/download/v10.11.5.7/jellyfin-plugin-subfin_10.11.5.7.zip
+          unzip -q "$RUNNER_TEMP/subfin.zip" -d "$RUNNER_TEMP/jellyfin/config/plugins/subfin"
+
+      - name: Start Jellyfin
+        run: |
+          docker run -d --name jellyfin -p 8096:8096 \
+            -v "$RUNNER_TEMP/jellyfin/config:/config" \
+            -v "$RUNNER_TEMP/jellyfin/cache:/cache" \
+            -v "$RUNNER_TEMP/jellyfin/music:/music" \
+            jellyfin/jellyfin:10.11.11
+
+      - name: Wizard, library and Subsonic device
+        run: |
+          python3 tools/jellyfin_ci.py --url http://localhost:8096 --json \
+            > "$RUNNER_TEMP/jellyfin.json"
+
+      - name: Contract against Jellyfin + Subfin
+        run: |
+          read -r USER PASS < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["subsonicUsername"], d["password"])' "$RUNNER_TEMP/jellyfin.json")
+          echo "::add-mask::$PASS"
+          python3 tools/server_contract.py \
+            --url http://localhost:8096 --user "$USER" --password "$PASS" --json
+
+      - name: Jellyfin logs on failure
+        if: failure()
+        run: docker logs jellyfin
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
