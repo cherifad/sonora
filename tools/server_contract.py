@@ -61,6 +61,14 @@ def url_for(args, method, extra):
     return args.url.rstrip("/") + "/rest/" + method + ".view?" + urllib.parse.urlencode(params)
 
 
+class ServerError(ValueError):
+    """A Subsonic error code, kept so a library query on an empty library is not a failure."""
+
+    def __init__(self, code, message):
+        super().__init__("status failed: %s %s" % (code, message))
+        self.code = code
+
+
 def call(args, method, extra):
     request = urllib.request.Request(url_for(args, method, extra))
     context = ssl._create_unverified_context() if args.insecure else None
@@ -71,7 +79,7 @@ def call(args, method, extra):
         raise ValueError("not a Subsonic envelope")
     if root.get("status") != "ok":
         error = root.get("error") or {}
-        raise ValueError("status failed: %s %s" % (error.get("code"), error.get("message")))
+        raise ServerError(error.get("code"), error.get("message"))
     return root
 
 
@@ -94,6 +102,9 @@ def main():
 
     try:
         ping = call(args, "ping", {})
+    except ServerError as error:
+        print("%s answered but refused the credentials: %s" % (args.url, error), file=sys.stderr)
+        return 2
     except Exception as error:
         print("cannot reach %s: %s" % (args.url, error), file=sys.stderr)
         return 2
@@ -116,6 +127,14 @@ def main():
         try:
             call(args, method, extra)
             report["required"][method] = "ok"
+        except ServerError as error:
+            # Error 70 is "not found": on a server with an empty library that is a valid
+            # answer, not a regression (it is what the CI job runs against).
+            if error.code == 70:
+                report["required"][method] = "ok (empty library)"
+            else:
+                report["required"][method] = "fail: %s" % error
+                failures += 1
         except Exception as error:
             report["required"][method] = "fail: %s" % error
             failures += 1
@@ -143,7 +162,8 @@ def main():
         if report["extensions"]:
             print("Extensions: " + ", ".join(report["extensions"]))
         for method, state in report["required"].items():
-            print(("OK   " if state == "ok" else "FAIL ") + method + ("" if state == "ok" else ": " + state))
+            good = state in ("ok", "ok (empty library)")
+            print(("OK   " if good else "FAIL ") + method + ("" if state == "ok" else ": " + state))
         for method, state in report["optional"].items():
             print(("OK   " if state == "ok" else "WARN ") + method + ("" if state == "ok" else ": " + state))
 

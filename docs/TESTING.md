@@ -299,6 +299,10 @@ Il affiche le type/version du serveur, les extensions OpenSubsonic et OK/FAIL/WA
 `--insecure` accepte le certificat auto-signé d'un serveur de test. À lancer contre Navidrome,
 Jellyfin+Subfin, Gonic et Airsonic avant une release.
 
+Le job **contract** de `.github/workflows/ci.yml` le fait à chaque push : il démarre un vrai
+Navidrome dans le runner et échoue si un endpoint requis ne répond plus. Jellyfin et la passe
+émulateur restent manuels.
+
 ## Vérifications manuelles des surfaces plateforme
 
 - **Tuile Réglages rapides** : ajouter la tuile Sonora, lecture/pause, l'état suit le lecteur.

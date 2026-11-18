@@ -292,8 +292,8 @@ action.
       A few read endpoints (`getGenres`, the player's internal calls) are still only
       exercised through their screens.
 - [~] Capability-matrix CI: `tools/server_contract.py` checks the required endpoints and
-      reports OpenSubsonic extensions against any live server; the Docker Navidrome/Jellyfin
-      job and the emulator run are still manual.
+      reports OpenSubsonic extensions against any live server. The `contract` job now runs it
+      against a real Navidrome on every push; Jellyfin and the emulator run are still manual.
 - [x] Typed-error tests: auth, not-found, HTTP 500, protocol, empty answer, network refusal,
       timeout, and `Unsupported`.
 - [~] Performance budget from `docs/audit-2026-10-18.md`: `tools/tap_latency.py` and
@@ -382,6 +382,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-13 | 13 | Connect feedback readable at a glance: green tick for success, red warning for failure | `fix(ui)` |
 | 2026-11-13 | 13 | Levelled logs in the ingest (text/JSON, request id, startup summary, graceful stop), `SKIP_AUDIO_VALIDATION` wired | `feat(ingest)` |
 | 2026-11-18 | 6 | Audio offload on streams behind a settings switch, disabled while any processor is active | `feat(subsonic)` |
+| 2026-11-18 | 11 | CI `contract` job: a real Navidrome, the required endpoints checked on every push | `ci(contract)` |
 
 ## Decisions and risks
 

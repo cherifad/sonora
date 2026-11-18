@@ -11,6 +11,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The capability matrix, server side: a real Navidrome, the endpoints the app calls. The
+  # emulator run and Jellyfin stay manual (docs/TESTING.md).
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Navidrome
+        run: |
+          docker run -d --name navidrome -p 4533:4533 \
+            -e ND_DEVAUTOCREATEADMINPASSWORD=contract-only \
+            -e ND_MUSICFOLDER=/music \
+            -e ND_SCANSCHEDULE=0 \
+            -e ND_LOGLEVEL=warn \
+            deluan/navidrome:0.64.2
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:4533/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "Navidrome did not answer in 120 s"
+          docker logs navidrome
+          exit 1
+
+      - name: Contract against Navidrome
+        run: |
+          python3 tools/server_contract.py \
+            --url http://localhost:4533 \
+            --user admin --password contract-only \
+            --json | tee "$RUNNER_TEMP/contract.json"
+
+      - name: Navidrome logs on failure
+        if: failure()
+        run: docker logs navidrome
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
