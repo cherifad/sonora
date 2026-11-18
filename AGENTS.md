@@ -32,6 +32,28 @@ JDK 17 and Android SDK 37. Two flavors share the code: **mobile** (debug package
 **automotive** (no launcher activity, `.car` id — `…/apk/automotive/debug/`, used on the car
 emulator; see `docs/TESTING.md`).
 
+## Commits
+
+[Conventional Commits](https://www.conventionalcommits.org/), in English, one logical change
+per commit.
+
+- **Subject**: `type(scope): imperative summary`, **72 characters maximum**, no trailing
+  period. Types in use: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`, `ci`.
+- **Body**: optional, **4 lines maximum**. Say why the change is needed and anything
+  surprising; never walk through the diff, the file list, the tests or the plan. If it does
+  not fit in four lines, it is probably more than one commit.
+- **Breaking change**: `!` after the type or scope and a `BREAKING CHANGE:` footer.
+- **No attribution**: no `Co-Authored-By`, no "Generated with", no tool or model name.
+- Update `PLAN.md` in the same commit; do not repeat it in the message.
+- Stage by path, never `git add .`.
+
+```
+feat(subsonic): pre-cache the next song on Wi-Fi
+
+A streamed album stalled on the first seconds of every track. With an
+unmetered network, the next queue item is now written to a bounded cache.
+```
+
 ## Branches and releases
 
 - **`develop`** (default): all work; CI runs the JVM tests and builds the debug APKs.
