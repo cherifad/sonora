@@ -93,6 +93,8 @@ environment:
 | `REQUIRE_TAGS` | `true` | Embedded title/artist/album must match the upload metadata |
 | `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
 | `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
+| `ACOUSTID_API_KEY` | — | AcoustID key: check the audio itself, not only its tags |
+| `ACOUSTID_MIN_SCORE` | `0.6` | Below this AcoustID score, the answer is ignored |
 | `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
 | `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |

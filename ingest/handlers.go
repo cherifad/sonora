@@ -29,6 +29,7 @@ type Server struct {
 	limiter      *rateLimiter
 	allowedUsers map[string]bool
 	mb           *MusicBrainz
+	fp           *Fingerprinter
 	log          *Logger
 }
 
@@ -352,6 +353,17 @@ func (s *Server) completeUpload(w http.ResponseWriter, r *http.Request, id strin
 				"reason", err.Error(), "title", upload.Metadata.Title, "artist", upload.Metadata.Artist)
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
 			return
+		}
+		// The tags passed; the audio itself still has to be the recording they name.
+		if s.fp != nil && s.fp.Enabled() {
+			if err := s.fp.Verify(r.Context(), tmp, upload.Metadata); err != nil {
+				_ = os.Remove(tmp)
+				s.store.SetStatus(id, "failed", err.Error())
+				s.log.Warn("upload rejected", "id", shortID(id), "file", upload.Filename,
+					"reason", "fingerprint: "+err.Error())
+				writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+				return
+			}
 		}
 	}
 	target := uniquePath(s.cfg.LibraryPath, targetPath(upload.Metadata, extensionOf(upload.Filename)))

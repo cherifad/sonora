@@ -385,6 +385,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-18 | 6 | Audio offload on streams behind a settings switch, disabled while any processor is active | `feat(subsonic)` |
 | 2026-11-18 | 11 | CI `contract` job: a real Navidrome, the required endpoints checked on every push | `ci(contract)` |
 | 2026-11-18 | 11 | CI `contract-jellyfin` job: Subfin installed, wizard and Subsonic device automated | `ci(contract)` |
+| 2026-11-18 | 13 | Chromaprint fingerprint via fpcalc + AcoustID, rejecting a confidently wrong file | `feat(ingest)` |
 
 ## Decisions and risks
 
@@ -428,4 +429,7 @@ Navidrome and Jellyfin have no Subsonic upload endpoint. A companion service
       `needs_review`, never uploaded.
 - [x] End-to-end checks with `ingest/music/test_songs`, locally and in the Docker image
       (ffprobe true; short/non-audio rejected).
-- [ ] Acoustic fingerprint (Chromaprint) and optional tag rewriting.
+- [x] Acoustic fingerprint (Chromaprint): `fpcalc` reads the file, AcoustID says which
+      recording it is, and a confident mismatch rejects the upload. Off without
+      `ACOUSTID_API_KEY` or `fpcalc`; the Docker image ships both the binary and the key slot.
+- [ ] Optional tag rewriting and cover embedding.

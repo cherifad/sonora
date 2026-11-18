@@ -120,11 +120,12 @@ func main() {
 		mb = NewMusicBrainz(os.Getenv("MUSICBRAINZ_URL"), os.Getenv("MUSICBRAINZ_USER_AGENT"))
 		mb.log = logger
 	}
+	fp := NewFingerprinter(logger)
 	server := &Server{
 		cfg: cfg, store: store, scanner: NewScanner(cfg),
 		authClient: authClient, issuer: NewTokenIssuer(cfg.Token, ttl),
 		limiter: newRateLimiter(5, time.Minute), allowedUsers: allowed, mb: mb,
-		log: logger,
+		fp: fp, log: logger,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/exchange", server.handleExchange)
@@ -148,6 +149,7 @@ func main() {
 		"requireTags", cfg.RequireTags,
 		"requireCover", cfg.RequireCover,
 		"musicbrainz", mb != nil,
+		"fingerprint", fp.Why(),
 		"allowedUsers", userList(allowed),
 		"token", Mask(cfg.Token),
 	)

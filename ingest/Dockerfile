@@ -7,7 +7,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /sonora-ingest .
 
 # Runtime: ffprobe validates the audio and its duration.
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates ffmpeg
+RUN apk add --no-cache ca-certificates ffmpeg chromaprint
 COPY --from=build /sonora-ingest /usr/local/bin/sonora-ingest
 ENV PORT=8088 \
     LIBRARY_PATH=/music \

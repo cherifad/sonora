@@ -146,6 +146,10 @@ the app sent — renaming a file or lying in the request does not pass. With `RE
 recording with that title and artist (and a duration within 5 s): a file that only exists in
 the uploader's imagination becomes `Review`, never a library entry.
 
+With an `ACOUSTID_API_KEY`, the audio itself is checked too: `fpcalc` fingerprints the file,
+AcoustID says what those bytes are, and a confident answer naming a different recording rejects
+the upload — the one check a renamed file cannot pass.
+
 ### Deduplication
 
 The ingest decides, the app only reports:
@@ -210,6 +214,8 @@ dialog is capped at 2000 files per request.
 | `REQUIRE_TAGS` | `true` | The embedded title/artist/album must match the upload metadata |
 | `REQUIRE_COVER_ART` | `true` | The file must carry an embedded cover picture |
 | `VERIFY_MUSICBRAINZ` | `true` | Ask MusicBrainz before accepting a new recording |
+| `ACOUSTID_API_KEY` | — | AcoustID key: check the audio itself, not only its tags |
+| `ACOUSTID_MIN_SCORE` | `0.6` | Below this AcoustID score, the answer is ignored |
 | `MUSICBRAINZ_URL` | `https://musicbrainz.org/ws/2` | MusicBrainz API base |
 | `MUSICBRAINZ_USER_AGENT` | `sonora-ingest/1.0 (…)` | User-Agent MusicBrainz requires |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
@@ -225,9 +231,10 @@ The full HTTP API (`/health`, `/library/match`, `/uploads`, `/scan`) is document
 - `Scanning` entries are retried on the next worker run; a slow server scan can leave a file
   in that state for a while.
 - One library path and one server per ingest instance.
-- No acoustic fingerprint (Chromaprint) yet: MusicBrainz proves the tags are plausible, not
-  that the audio is the claimed recording. Two different masters are only caught when their
-  metadata is close (`Review`) or their tags match (duplicate).
+- The acoustic fingerprint needs two things a host may not have: the `fpcalc` binary (in the
+  Docker image) and a free `ACOUSTID_API_KEY`. Without either, only the tags are checked:
+  MusicBrainz then proves the metadata is plausible, not that the audio is the recording it
+  names.
 - `REQUIRE_TAGS` and `REQUIRE_COVER_ART` need `ffprobe`; a host run without ffmpeg skips
   those two checks (the Docker image includes it).
 - Uploads are not transcoded: the server receives the original file.
@@ -284,6 +291,5 @@ Secrets are never logged: the token appears as `te…56`, and passwords not at a
 
 - Stream uploads instead of buffering whole files.
 - Automatic retry of `Scanning` entries with backoff.
-- Chromaprint acoustic fingerprint.
 - Optional tag rewriting and cover embedding.
 - A small admin page for `needs_review`.
