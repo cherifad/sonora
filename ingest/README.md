@@ -67,7 +67,7 @@ environment:
   SCAN_URL: http://jellyfin:8096
   SCAN_API_KEY: "<Jellyfin API key>"
   # Verification goes through the Subsonic/Subfin endpoint:
-  SUBSONIC_URL: http://jellyfin:8096/subfin
+  SUBSONIC_URL: http://jellyfin:8096
   SCAN_USER: "<Subfin user>"
   SCAN_PASSWORD: "<Subfin password>"
 ```

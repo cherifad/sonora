@@ -95,7 +95,7 @@ configuration.
 
 Exemples d'URL :
 
-- Jellyfin + Subfin : `http://<host>:8096/subfin/`
+- Jellyfin + Subfin : `http://<host>:8096` (API à la racine ; `/subfin/` = gestionnaire d'appareils)
 - Navidrome : `http://<host>:4533/`
 - Émulateur Android vers l'hôte : `http://10.0.2.2:4533/`
 

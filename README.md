@@ -71,7 +71,8 @@ Download `app-mobile-release.apk` and install it on the phone (Android 10+).
 
 On first launch, enter the server URL and credentials:
 
-- Jellyfin + Subfin: `http://<host>:8096/subfin/`
+- Jellyfin + Subfin: `http://<host>:8096` (the Subsonic API is at the root; `/subfin/` is the
+  plugin's device manager, where a client gets its app password)
 - Navidrome: `http://<host>:4533/`
 - Emulator to the host machine: `http://10.0.2.2:4533/`
 
