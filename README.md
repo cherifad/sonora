@@ -47,7 +47,8 @@ Also: [Immersive search](docs/screenshots/sonora/immersive-search.png) ·
   “Recently played” and “More like this”.
 - **Server extras**: bookmarks, share links (`getShares`), library scan status, now playing
   and the account avatar, each shown only when the server supports it.
-- **Sound**: ReplayGain (track or album), equalizer, skip-silence, crossfade for local files.
+- **Sound**: ReplayGain (track or album), equalizer, skip-silence and crossfade on streamed songs
+  too, next-song pre-caching on Wi-Fi, and hardware audio offload when nothing is processing.
 - **Server queue persistence** (`savePlayQueue` / `getPlayQueue`) and scrobbling
   (`nowPlaying`, then `submission=true` at half the song).
 - **Platform**: Android Auto/Automotive, a home-screen widget with shuffle, and a Quick

@@ -16,7 +16,9 @@ import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.adlen.sonora.audio.AudioSettings
 import com.adlen.sonora.audio.CrossfadeRamp
+import com.adlen.sonora.audio.Equalizer
 import com.adlen.sonora.audio.EqualizerProcessor
+import com.adlen.sonora.audio.Offload
 import com.adlen.sonora.audio.ReplayGainProcessor
 import com.adlen.sonora.audio.replayGainLinear
 import com.adlen.sonora.api.ItemKind
@@ -44,23 +46,34 @@ import kotlinx.coroutines.withContext
  * - Subsonic scrobbling (`nowPlaying` on start, `submission=true` at 50% or 4 min).
  * - Server play-queue persistence (`savePlayQueue` / `getPlayQueue`).
  */
+/** Holds the sink the renderers build, so the offload mode can be changed later (it is read at
+ * the next format configuration, and a setting or a track change is enough). */
+internal class AudioSinkHolder {
+    @Volatile
+    var sink: androidx.media3.exoplayer.audio.AudioSink? = null
+}
+
 /** The default renderers with the same audio chain as the local player. */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 private fun subsonicRenderers(
     context: Context,
     replayGain: ReplayGainProcessor,
+    holder: AudioSinkHolder,
 ): androidx.media3.exoplayer.DefaultRenderersFactory =
     object : androidx.media3.exoplayer.DefaultRenderersFactory(context) {
         override fun buildAudioSink(
             context: Context,
             enableFloatOutput: Boolean,
             enableAudioTrackPlaybackParams: Boolean,
-        ): androidx.media3.exoplayer.audio.AudioSink =
-            androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+        ): androidx.media3.exoplayer.audio.AudioSink {
+            val sink = androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
                 .setEnableFloatOutput(enableFloatOutput)
                 .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
                 .setAudioProcessors(arrayOf(EqualizerProcessor(), replayGain))
                 .build()
+            holder.sink = sink
+            return sink
+        }
     }
 
 /** Long enough to be worth resuming, and not at either edge (where a bookmark means nothing). */
@@ -87,6 +100,7 @@ internal class SubsonicPlayer(
 ) : Player {
 
     private val replayGain = ReplayGainProcessor()
+    private val sinkHolder = AudioSinkHolder()
 
     private val attributes = AudioAttributes.Builder()
         .setUsage(C.USAGE_MEDIA)
@@ -109,7 +123,7 @@ internal class SubsonicPlayer(
         .setPrioritizeTimeOverSizeThresholds(true)
         .build()
 
-    private val exo = ExoPlayer.Builder(context, subsonicRenderers(context, replayGain))
+    private val exo = ExoPlayer.Builder(context, subsonicRenderers(context, replayGain, sinkHolder))
         .setAudioAttributes(attributes, /* handleAudioFocus = */ true)
         .setHandleAudioBecomingNoisy(true)
         .setWakeMode(C.WAKE_MODE_NETWORK)
@@ -152,6 +166,9 @@ internal class SubsonicPlayer(
     private var userVolume = 1f
     private val handler = Handler(Looper.getMainLooper())
 
+    /** The offload mode last handed to the sink, so the tick does not repeat the call. */
+    private var offloadMode = -1
+
     // ── Next-song warm-up ──
     // On an unmetered network, the next item of the queue is written to the disk cache in the
     // background, so the transition starts from the phone instead of the server.
@@ -166,6 +183,7 @@ internal class SubsonicPlayer(
         exo.addListener(object : Media3Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 applyReplayGain()
+                applyOffload()
             }
 
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -191,6 +209,7 @@ internal class SubsonicPlayer(
                 if (exo.skipSilenceEnabled != AudioSettings.skipSilence) exo.skipSilenceEnabled = AudioSettings.skipSilence
                 applyReplayGain()
                 publish()
+                applyOffload()
                 maybeBeginCrossfade()
                 maybePrefetchNext()
                 checkScrobbleAndPeriodicSave()
@@ -247,6 +266,34 @@ internal class SubsonicPlayer(
 
     internal fun invalidateBookmarks() {
         bookmarkCache = null
+    }
+
+    /**
+     * Hands the stream to the audio chip when the user asked for it and nothing is processing.
+     * Offload bypasses the whole processor chain, so it is only enabled while the equalizer,
+     * the gain and the silence skipping are idle (see [Offload]).
+     */
+    private fun applyOffload() {
+        val sink = sinkHolder.sink ?: return
+        if (android.os.Build.VERSION.SDK_INT < Offload.MIN_SDK) return
+        val equalizerActive = Equalizer.current?.let { !it.flat } ?: false
+        val wanted = Offload.wanted(
+            preference = AudioSettings.audioOffload,
+            sdkInt = android.os.Build.VERSION.SDK_INT,
+            equalizerActive = equalizerActive,
+            replayGain = AudioSettings.replayGainEnabled,
+            skipSilence = AudioSettings.skipSilence,
+            speed = exo.playbackParameters.speed,
+        )
+        val mode = if (wanted) {
+            androidx.media3.exoplayer.audio.AudioSink.OFFLOAD_MODE_ENABLED_GAPLESS_NOT_REQUIRED
+        } else {
+            androidx.media3.exoplayer.audio.AudioSink.OFFLOAD_MODE_DISABLED
+        }
+        if (mode != offloadMode) {
+            (sink as? androidx.media3.exoplayer.audio.DefaultAudioSink)?.setOffloadMode(mode)
+            offloadMode = mode
+        }
     }
 
     /** Track or album gain, capped by the declared peak; 1 when normalization is off. */
@@ -562,7 +609,9 @@ internal class SubsonicPlayer(
     /** A player for the outgoing tail: same renderers, no audio focus and no noisy pause of its own. */
     private fun fadeCopy(gain: Float): ExoPlayer {
         val trackGain = ReplayGainProcessor().apply { this.gain = gain }
-        return ExoPlayer.Builder(context, subsonicRenderers(context, trackGain))
+        // The copy gets its own holder: its offload mode is never switched, and the main sink
+        // would otherwise be replaced by the copy's.
+        return ExoPlayer.Builder(context, subsonicRenderers(context, trackGain, AudioSinkHolder()))
             .setAudioAttributes(attributes, /* handleAudioFocus = */ false)
             .setHandleAudioBecomingNoisy(false)
             .setWakeMode(C.WAKE_MODE_NETWORK)

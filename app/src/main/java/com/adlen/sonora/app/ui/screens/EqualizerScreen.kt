@@ -109,6 +109,12 @@ fun EqualizerScreen(navController: NavController) {
                 checked = pref.replayGainAlbum,
                 onChecked = { pref.setReplayGainAlbum(ctx, it) },
             )
+            OptionRow(
+                label = stringResource(R.string.equalizer_audio_offload),
+                detail = stringResource(R.string.equalizer_audio_offload_detail),
+                checked = pref.audioOffload,
+                onChecked = { pref.setAudioOffload(ctx, it) },
+            )
         }
     }
 }

@@ -11,4 +11,6 @@ object AudioSettings {
     @Volatile var replayGainAlbum: Boolean = false
     /** Crossfade length between two streamed songs, 0 = off (the same preference as the local player). */
     @Volatile var crossfadeSeconds: Int = 0
+    /** Hand streams to the audio chip when nothing is processing (see [Offload]). */
+    @Volatile var audioOffload: Boolean = true
 }

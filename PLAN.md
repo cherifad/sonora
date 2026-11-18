@@ -207,7 +207,9 @@ clear "not supported by this server", never an empty screen.
 - [x] Buffer tuning + pre-cache the next track on Wi-Fi: a tuned `DefaultLoadControl`, a
       bounded read-through cache under `cacheDir/streams`, and a Wi-Fi-only warm-up of the
       next song (the warm-up is the only cache writer, so no two writers race a span).
-- [ ] Audio offload where the device supports it.
+- [x] Audio offload where the device supports it: the sink is switched to offload only when
+      nothing is processing (no equalizer, gain, silence skipping or speed change), since
+      offload bypasses the whole chain; a "Hardware audio" switch turns it off.
 - [x] Tests: ReplayGain math (track/album/peak cap), `replayGain` mapping, the moved
       equalizer tests. A crossfade-ramp test waits for crossfade.
 
@@ -379,6 +381,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-13 | 13 | Ingest prefill from the server domain (`navidrome-ingest.<domain>`), HTTPS by default | `feat(upload)` |
 | 2026-11-13 | 13 | Connect feedback readable at a glance: green tick for success, red warning for failure | `fix(ui)` |
 | 2026-11-13 | 13 | Levelled logs in the ingest (text/JSON, request id, startup summary, graceful stop), `SKIP_AUDIO_VALIDATION` wired | `feat(ingest)` |
+| 2026-11-18 | 6 | Audio offload on streams behind a settings switch, disabled while any processor is active | `feat(subsonic)` |
 
 ## Decisions and risks
 

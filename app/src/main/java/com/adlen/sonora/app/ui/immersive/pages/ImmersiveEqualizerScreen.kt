@@ -101,6 +101,10 @@ fun ImmersiveEqualizerScreen(navController: NavController) {
                 ImmersiveSwitchRow(stringResource(R.string.equalizer_replay_gain_album), checked = pref.replayGainAlbum,
                     onChecked = { pref.setReplayGainAlbum(ctx, it) }, detail = stringResource(R.string.equalizer_replay_gain_album_detail))
             }
+            row {
+                ImmersiveSwitchRow(stringResource(R.string.equalizer_audio_offload), checked = pref.audioOffload,
+                    onChecked = { pref.setAudioOffload(ctx, it) }, detail = stringResource(R.string.equalizer_audio_offload_detail))
+            }
         }
     }
 }

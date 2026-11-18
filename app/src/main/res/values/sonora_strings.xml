@@ -680,6 +680,8 @@
     <string name="rating_title">Rating</string>
     <string name="rating_star">%1$d stars</string>
     <string name="equalizer_normalize_volume">Normalize volume</string>
+    <string name="equalizer_audio_offload">Hardware audio</string>
+    <string name="equalizer_audio_offload_detail">Play the stream on the phone\'s audio chip to save battery. Off while the equalizer, volume normalization, silence skipping or a speed change is on.</string>
     <string name="equalizer_normalize_volume_detail">ReplayGain: even out loudness between tracks, when the server provides the data.</string>
     <string name="equalizer_replay_gain_album">Use album gain</string>
     <string name="equalizer_replay_gain_album_detail">Keep an album\'s tracks at their relative loudness instead of normalizing each one.</string>

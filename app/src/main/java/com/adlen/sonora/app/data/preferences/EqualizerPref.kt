@@ -59,6 +59,8 @@ object EqualizerPref {
         private set
     var replayGainAlbum by mutableStateOf(p.getBoolean("replay_gain_album", false))
         private set
+    var audioOffload by mutableStateOf(p.getBoolean("audio_offload", true))
+        private set
 
     /** The gains shown and heard: the preset's, or the user's own. */
     val gains: FloatArray get() = if (preset == EqPreset.CUSTOM) customGains else preset.gains
@@ -69,6 +71,7 @@ object EqualizerPref {
         AudioSettings.skipSilence = skipSilence
         AudioSettings.replayGainEnabled = normalizeVolume
         AudioSettings.replayGainAlbum = replayGainAlbum
+        AudioSettings.audioOffload = audioOffload
     }
 
     fun setEnabled(c: Context, on: Boolean) {
@@ -136,6 +139,13 @@ object EqualizerPref {
         replayGainAlbum = on
         prefs(c).edit().putBoolean("replay_gain_album", on).apply()
         AudioSettings.replayGainAlbum = on
+    }
+
+    /** Hardware playback of the streams: the switch the backend reads (see `Offload`). */
+    fun setAudioOffload(c: Context, on: Boolean) {
+        audioOffload = on
+        prefs(c).edit().putBoolean("audio_offload", on).apply()
+        AudioSettings.audioOffload = on
     }
 
     /** Hands the curve to the players' equalizers (read on their audio threads). */
