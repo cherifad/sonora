@@ -226,6 +226,19 @@ fun SettingsScreen(navController: NavController) {
             }
             if (tab == 2) {
             Section(R.string.settings_section_app)
+            val lockReady = com.adlen.sonora.app.data.preferences.LockPref.deviceLocked(ctx)
+            OptionRow(
+                label = stringResource(R.string.settings_app_lock_title),
+                detail = stringResource(
+                    if (lockReady) R.string.settings_app_lock_detail
+                    else R.string.settings_app_lock_unavailable,
+                ),
+                checked = lockReady && com.adlen.sonora.app.data.preferences.LockPref.enabled,
+                onChecked = { on ->
+                    // Without a screen lock the phone has nothing to ask for: the row explains it.
+                    if (lockReady) com.adlen.sonora.app.data.preferences.LockPref.set(ctx, on)
+                },
+            )
             AboutRow()
             // A18: the launch check can be turned off; the manual check below keeps working.
             OptionRow(

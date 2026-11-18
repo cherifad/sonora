@@ -164,6 +164,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation("androidx.biometric:biometric:1.1.0")
     // Frosted (blurred) bars of the Immersive look. Apache-2.0.
     implementation("dev.chrisbanes.haze:haze:1.3.1")
     // MediaTransferReceiver: lets the system output switcher transfer to our Connect routes

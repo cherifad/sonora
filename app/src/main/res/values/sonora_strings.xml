@@ -680,6 +680,14 @@
     <string name="rating_title">Rating</string>
     <string name="rating_star">%1$d stars</string>
     <string name="equalizer_normalize_volume">Normalize volume</string>
+    <string name="settings_app_lock_title">Lock Sonora</string>
+    <string name="settings_app_lock_detail">Ask for your fingerprint, face or PIN when the app comes back to the front</string>
+    <string name="settings_app_lock_unavailable">Set a screen lock on the phone first</string>
+    <string name="lock_screen_title">Sonora is locked</string>
+    <string name="lock_screen_detail">Unlock to get back to your music</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_prompt_title">Unlock Sonora</string>
+    <string name="lock_prompt_subtitle">Your music is behind the phone\'s lock</string>
     <string name="equalizer_audio_offload">Hardware audio</string>
     <string name="equalizer_audio_offload_detail">Play the stream on the phone\'s audio chip to save battery. Off while the equalizer, volume normalization, silence skipping or a speed change is on.</string>
     <string name="equalizer_normalize_volume_detail">ReplayGain: even out loudness between tracks, when the server provides the data.</string>

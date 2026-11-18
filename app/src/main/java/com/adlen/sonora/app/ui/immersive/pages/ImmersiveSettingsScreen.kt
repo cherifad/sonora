@@ -661,7 +661,23 @@ private fun AppPage(navController: NavController, back: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val check = com.adlen.sonora.app.data.api.rememberUpdateCheckState(ctx)
+    val lockReady = com.adlen.sonora.app.data.preferences.LockPref.deviceLocked(ctx)
     ImmersivePage(title = stringResource(R.string.settings_section_app), onBack = back) {
+        immersiveGroup("lock") {
+            row {
+                ImmersiveSwitchRow(
+                    stringResource(R.string.settings_app_lock_title),
+                    checked = lockReady && com.adlen.sonora.app.data.preferences.LockPref.enabled,
+                    onChecked = { on ->
+                        if (lockReady) com.adlen.sonora.app.data.preferences.LockPref.set(ctx, on)
+                    },
+                    detail = stringResource(
+                        if (lockReady) R.string.settings_app_lock_detail
+                        else R.string.settings_app_lock_unavailable,
+                    ),
+                )
+            }
+        }
         immersiveGroup("updates") {
             row {
                 ImmersiveSwitchRow(stringResource(R.string.settings_auto_update_title), checked = com.adlen.sonora.app.data.preferences.AutoUpdateCheckPref.on,

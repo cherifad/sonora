@@ -124,7 +124,8 @@ class MainActivity : AppCompatActivity() {
                                     if (SonoraRuntime.isSubsonic) recreate()
                                 },
                             )
-                            signedIn -> App()
+                            // Not over picture-in-picture: the film alone is the point of it.
+                            signedIn -> com.adlen.sonora.app.ui.components.AppLockGate(active = !inPip) { App() }
                             connecting -> ConnectingScreen()
                             else -> WelcomeScreen(onLogin = { showLogin() })
                         }

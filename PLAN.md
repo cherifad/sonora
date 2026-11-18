@@ -277,7 +277,9 @@ action.
       client needs; the manifest keeps cleartext and the setup screen warns on `http://`.
 - [x] Clear the cached server credentials on logout. Downloads stay parked, encrypted, under
       the account (deleting them on sign-out would silently lose offline content).
-- [ ] Optional biometric lock.
+- [~] Optional biometric lock: off by default; when on, a system prompt (fingerprint, face or
+      PIN) stands in front of the app on a cold start and on returning, never over
+      picture-in-picture or a rotation. The rule is tested; the device pass is pending.
 - [~] Tests: the HTTP warning is visible, the TLS fingerprint has a unit test, and the
       encrypted prefs file still needs a Context-level test.
 
@@ -386,6 +388,7 @@ report arrives with the server facts needed to reproduce it.
 | 2026-11-18 | 11 | CI `contract` job: a real Navidrome, the required endpoints checked on every push | `ci(contract)` |
 | 2026-11-18 | 11 | CI `contract-jellyfin` job: Subfin installed, wizard and Subsonic device automated | `ci(contract)` |
 | 2026-11-18 | 13 | Chromaprint fingerprint via fpcalc + AcoustID, rejecting a confidently wrong file | `feat(ingest)` |
+| 2026-11-18 | 10 | Optional app lock behind the phone's own biometric prompt, both looks | `feat(security)` |
 
 ## Decisions and risks
 

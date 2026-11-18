@@ -311,6 +311,9 @@ gestionnaire d'appareils.
 
 ## Vérifications manuelles des surfaces plateforme
 
+- **Verrou de l'app** : ajouter une empreinte sur l'émulateur (Réglages → Sécurité), activer
+  « Lock Sonora » (Réglages → App), quitter et revenir : le cadenas demande l'empreinte, et
+  n'apparaît ni en rotation ni en picture-in-picture.
 - **Tuile Réglages rapides** : ajouter la tuile Sonora, lecture/pause, l'état suit le lecteur.
 - **Widget** : ajouter le widget 4x1, vérifier pochette/titre/artiste, précédent/lecture/suivant
   et le bouton shuffle.
